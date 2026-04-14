@@ -154,6 +154,9 @@ export default function AppDetailPage() {
 			setPosts(appPosts);
 			setReplies(replyMap);
 
+			// Auto-expand posts that have replies
+			setExpanded(new Set(appPosts.filter((p) => (replyCountMap[p.id] || 0) > 0).map((p) => p.id)));
+
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
 				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
