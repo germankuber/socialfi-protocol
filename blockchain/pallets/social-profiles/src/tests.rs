@@ -228,9 +228,9 @@ fn delete_profile_unsigned_origin_rejected() {
 #[test]
 fn profile_provider_exists_returns_true_after_create() {
 	new_test_ext().execute_with(|| {
-		assert!(!<SocialProfiles as ProfileProvider<u64>>::exists(&1));
+		assert!(!<SocialProfiles as ProfileProvider<u64, u64>>::exists(&1));
 		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata()));
-		assert!(<SocialProfiles as ProfileProvider<u64>>::exists(&1));
+		assert!(<SocialProfiles as ProfileProvider<u64, u64>>::exists(&1));
 	});
 }
 
@@ -238,9 +238,9 @@ fn profile_provider_exists_returns_true_after_create() {
 fn profile_provider_exists_returns_false_after_delete() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata()));
-		assert!(<SocialProfiles as ProfileProvider<u64>>::exists(&1));
+		assert!(<SocialProfiles as ProfileProvider<u64, u64>>::exists(&1));
 
 		assert_ok!(SocialProfiles::delete_profile(RuntimeOrigin::signed(1)));
-		assert!(!<SocialProfiles as ProfileProvider<u64>>::exists(&1));
+		assert!(!<SocialProfiles as ProfileProvider<u64, u64>>::exists(&1));
 	});
 }

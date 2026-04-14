@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useChainStore, type WalletAccount } from "./store/chainStore";
 import { useConnectionManagement, useConnection } from "./hooks/useConnection";
 import { useSelectedAccount } from "./hooks/social/useSelectedAccount";
+import { useProfileGate } from "./hooks/social/useProfileGate";
 import { useWallet } from "./hooks/social/useWallet";
 import { getClient } from "./hooks/useChain";
 import ThemeToggle from "./components/social/ThemeToggle";
@@ -11,8 +12,12 @@ export default function App() {
 	const location = useLocation();
 	const connected = useChainStore((s) => s.connected);
 	const blockNumber = useChainStore((s) => s.blockNumber);
+	const { hasProfile } = useProfileGate();
+	const { account } = useSelectedAccount();
 
 	useConnectionManagement();
+
+	const showSocialNav = !!account && hasProfile === true;
 
 	return (
 		<div className="min-h-screen flex flex-col">
@@ -33,7 +38,9 @@ export default function App() {
 
 					<nav className="flex gap-1">
 						<NavLink to="/" label="Home" current={location.pathname === "/"} />
-						<NavLink to="/social" label="Social" current={location.pathname.startsWith("/social")} />
+						{showSocialNav && (
+							<NavLink to="/social" label="Social" current={location.pathname.startsWith("/social")} />
+						)}
 					</nav>
 
 					<div className="ml-auto flex items-center gap-3">

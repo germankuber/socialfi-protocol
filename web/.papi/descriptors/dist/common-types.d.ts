@@ -41,7 +41,7 @@ export type DigestItem = Enum<{
 }>;
 export declare const DigestItem: GetEnum<DigestItem>;
 export type I82jm9g7pufuel = [FixedSizeBinary<4>, Binary];
-export type I5h08h4o8ti6dh = Array<{
+export type Iedp53eo43enmo = Array<{
     "phase": Phase;
     "event": Enum<{
         "System": Anonymize<Ia43aa1a0e31uc>;
@@ -58,8 +58,8 @@ export type I5h08h4o8ti6dh = Array<{
         "Statement": Anonymize<Ic1vdi0e9te2la>;
         "TemplatePallet": Anonymize<Ibs185ts04asdp>;
         "SocialAppRegistry": Anonymize<Ib2p229gqicrud>;
-        "SocialProfiles": Anonymize<I93ue0l4duq2c4>;
-        "SocialGraph": Anonymize<I7khj3ufuthda8>;
+        "SocialProfiles": Anonymize<I21lslh1sksejv>;
+        "SocialGraph": Anonymize<Idqf7jqq12gtuq>;
         "SocialFeeds": Anonymize<If2likd1r46lhs>;
         "Revive": Anonymize<I7r2d90v8n3cgn>;
     }>;
@@ -2385,7 +2385,7 @@ export type Ibh7279nftp2hh = {
     "app_id": number;
     "owner": SS58String;
 };
-export type I93ue0l4duq2c4 = AnonymousEnum<{
+export type I21lslh1sksejv = AnonymousEnum<{
     /**
      * A new profile was created.
      */
@@ -2395,20 +2395,33 @@ export type I93ue0l4duq2c4 = AnonymousEnum<{
      */
     "ProfileUpdated": Anonymize<Icbccs0ug47ilf>;
     /**
+     * Profile follow fee was updated.
+     */
+    "FollowFeeUpdated": Anonymize<I6jm7rmcmjl45d>;
+    /**
      * A profile was deleted and bond returned.
      */
     "ProfileDeleted": Anonymize<Icbccs0ug47ilf>;
 }>;
-export type I7khj3ufuthda8 = AnonymousEnum<{
+export type I6jm7rmcmjl45d = {
+    "account": SS58String;
+    "fee": bigint;
+};
+export type Idqf7jqq12gtuq = AnonymousEnum<{
     /**
      * A user followed another user.
      */
-    "Followed": Anonymize<I7uibdp0qbpf1m>;
+    "Followed": Anonymize<Ib25q8de7tg90l>;
     /**
      * A user unfollowed another user.
      */
     "Unfollowed": Anonymize<I7uibdp0qbpf1m>;
 }>;
+export type Ib25q8de7tg90l = {
+    "follower": SS58String;
+    "followed": SS58String;
+    "fee_paid": bigint;
+};
 export type I7uibdp0qbpf1m = {
     "follower": SS58String;
     "followed": SS58String;
@@ -2774,8 +2787,9 @@ export type I2v6cmdi4roc90 = {
         "Inactive": undefined;
     }>;
 };
-export type I4snhroajmv06f = {
+export type I46vkbfg9e4sk8 = {
     "metadata": Binary;
+    "follow_fee": bigint;
     "created_at": number;
 };
 export type I2na29tt2afp0j = FixedSizeArray<2, SS58String>;
@@ -3362,11 +3376,11 @@ export type I5utcetro501ir = {
     "value": bigint;
     "keep_alive": boolean;
 };
-export type I65e4f9oqndn40 = AnonymousEnum<{
+export type I8jsgbrdjan5vl = AnonymousEnum<{
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      */
-    "sudo": Anonymize<I28j02rcogloh7>;
+    "sudo": Anonymize<Ib2jffuh5of2jt>;
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      * This function does not check the weight of the call, and instead allows the
@@ -3374,7 +3388,7 @@ export type I65e4f9oqndn40 = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_unchecked_weight": Anonymize<Ia2hvuo4p459o8>;
+    "sudo_unchecked_weight": Anonymize<Ia5aagp7c7v9i5>;
     /**
      * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
      * key.
@@ -3386,7 +3400,7 @@ export type I65e4f9oqndn40 = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_as": Anonymize<I47hcktcav2p0s>;
+    "sudo_as": Anonymize<Iapfqf5ejv5sd1>;
     /**
      * Permanently removes the sudo key.
      *
@@ -3394,17 +3408,17 @@ export type I65e4f9oqndn40 = AnonymousEnum<{
      */
     "remove_key": undefined;
 }>;
-export type I28j02rcogloh7 = {
+export type Ib2jffuh5of2jt = {
     "call": TxCallData;
 };
-export type Ia2hvuo4p459o8 = {
+export type Ia5aagp7c7v9i5 = {
     "call": TxCallData;
     "weight": Anonymize<I4q39t5hn830vp>;
 };
 export type I8k3rnvpeeh4hv = {
     "new": MultiAddress;
 };
-export type I47hcktcav2p0s = {
+export type Iapfqf5ejv5sd1 = {
     "who": MultiAddress;
     "call": TxCallData;
 };
@@ -4279,46 +4293,43 @@ export type I70vuebkld5nba = {
 export type I7uphs141r660c = {
     "app_id": number;
 };
-export type Icq91kc5oevstt = AnonymousEnum<{
+export type Iddui8npk7foj6 = AnonymousEnum<{
     /**
      * Create a new profile for the caller.
-     *
-     * Reserves `T::ProfileBond`, stores profile info, and increments the
-     * global profile counter.
      */
     "create_profile": Anonymize<I70vuebkld5nba>;
     /**
      * Update the metadata CID of an existing profile.
-     *
-     * Only the profile owner (the caller) can update their metadata.
      */
     "update_metadata": Anonymize<I5vanth86cd3mt>;
     /**
+     * Set the follow fee for the caller's profile.
+     * Anyone who wants to follow this account must pay this fee.
+     * Set to 0 for free follows.
+     */
+    "set_follow_fee": Anonymize<Ib1ilbm5ipoh62>;
+    /**
      * Delete the caller's profile.
-     *
-     * Removes the profile from storage, unreserves the bond, and decrements
-     * the global profile counter.
      */
     "delete_profile": undefined;
 }>;
 export type I5vanth86cd3mt = {
     "new_metadata": Binary;
 };
+export type Ib1ilbm5ipoh62 = {
+    "fee": bigint;
+};
 export type I5lcpnc4e0dlj4 = AnonymousEnum<{
     /**
      * Follow another user.
      *
-     * Both accounts must have profiles. Transfers `T::FollowFee` from the
-     * caller to the target. The fee is non-refundable. Storage writes happen
-     * before the transfer to ensure atomicity.
+     * Both accounts must have profiles. The follow fee is determined by the
+     * target's profile (set via `set_follow_fee` in pallet-social-profiles).
+     * If the fee is 0, the follow is free.
      */
     "follow": Anonymize<I14p0q0qs0fqbj>;
     /**
-     * Unfollow a user.
-     *
-     * Removes the follow relationship. No refund of the follow fee.
-     * Does not require profiles to exist — allows cleanup after profile
-     * deletion.
+     * Unfollow a user. No refund.
      */
     "unfollow": Anonymize<I14p0q0qs0fqbj>;
 }>;
@@ -4362,7 +4373,7 @@ export type I9lv278elt0l38 = {
 export type Ia6ds36j6alqgf = {
     "post_id": bigint;
 };
-export type Ibkta9hicvecja = AnonymousEnum<{
+export type I4gf5nkn6tce16 = AnonymousEnum<{
     /**
      * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
      *
@@ -4490,7 +4501,7 @@ export type Ibkta9hicvecja = AnonymousEnum<{
      * * `call`: The Substrate runtime call to execute.
      * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
      */
-    "eth_substrate_call": Anonymize<I5g0n1khhk3bcs>;
+    "eth_substrate_call": Anonymize<I9caao9fuka35h>;
     /**
      * Upload new `code` without instantiating a contract from it.
      *
@@ -4549,7 +4560,7 @@ export type Ibkta9hicvecja = AnonymousEnum<{
      * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
      * recovery function in case an `AccountId20` was used without creating a mapping first.
      */
-    "dispatch_as_fallback_account": Anonymize<I28j02rcogloh7>;
+    "dispatch_as_fallback_account": Anonymize<Ib2jffuh5of2jt>;
 }>;
 export type Ida37oe44osb06 = {
     "payload": Binary;
@@ -4597,7 +4608,7 @@ export type Iav55bcqlrqn51 = {
     "effective_gas_price": Anonymize<I4totqt881mlti>;
     "encoded_len": number;
 };
-export type I5g0n1khhk3bcs = {
+export type I9caao9fuka35h = {
     "call": TxCallData;
     "transaction_encoded": Binary;
 };
@@ -4684,13 +4695,13 @@ export type Iei2mvq0mjvt81 = {
     }) | undefined;
     "tip": bigint;
 };
-export type I9v6e8vls1ovol = AnonymousEnum<{
+export type I6hu41sdl9pipg = AnonymousEnum<{
     "System": Anonymize<Iekve0i6djpd9f>;
     "ParachainSystem": Anonymize<I3u72uvpuo4qrt>;
     "Timestamp": Anonymize<I7d75gqfg6jh9c>;
     "ParachainInfo": undefined;
     "Balances": Anonymize<I9svldsp29mh87>;
-    "Sudo": Anonymize<I65e4f9oqndn40>;
+    "Sudo": Anonymize<I8jsgbrdjan5vl>;
     "CollatorSelection": Anonymize<I9dpq5287dur8b>;
     "Session": Anonymize<I77dda7hps0u37>;
     "XcmpQueue": Anonymize<Ib7tahn20bvsep>;
@@ -4699,10 +4710,10 @@ export type I9v6e8vls1ovol = AnonymousEnum<{
     "MessageQueue": Anonymize<Ic2uoe7jdksosp>;
     "TemplatePallet": Anonymize<Ib9g9h9vhma17r>;
     "SocialAppRegistry": Anonymize<Ie5u9ivafhla2m>;
-    "SocialProfiles": Anonymize<Icq91kc5oevstt>;
+    "SocialProfiles": Anonymize<Iddui8npk7foj6>;
     "SocialGraph": Anonymize<I5lcpnc4e0dlj4>;
     "SocialFeeds": Anonymize<Iar9otj79ngq87>;
-    "Revive": Anonymize<Ibkta9hicvecja>;
+    "Revive": Anonymize<I4gf5nkn6tce16>;
 }>;
 export type Ic1d4u2opv3fst = {
     "upward_messages": Anonymize<Itom7fk49o0c9>;

@@ -14,22 +14,22 @@ var toBinary = (base64) => {
 };
 
 // .papi/descriptors/src/stack_template.ts
-var descriptorValues = import("./descriptors-JBRHBT6Y.mjs").then((module) => module["Stack_template"]);
-var metadataTypes = import("./metadataTypes-ICE2H43R.mjs").then(
+var descriptorValues = import("./descriptors-PVJC4K2R.mjs").then((module) => module["Stack_template"]);
+var metadataTypes = import("./metadataTypes-ZW2FD7HV.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
 var asset = {};
 var extensions = {};
-var getMetadata = () => import("./stack_template_metadata-EIFJJ33G.mjs").then(
+var getMetadata = () => import("./stack_template_metadata-2H2GGBET.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
-var genesis = "0xa8c96b5526aa6f845650f8f6eeaf701779cac543b8c512baa22cc721adf03a5a";
+var genesis = "0xc04fce5f049432a987c2288bfa9c99889387f35e944d545e31e894fa0fc0d1fc";
 var _allDescriptors = { descriptors: descriptorValues, metadataTypes, asset, extensions, getMetadata, genesis };
 var stack_template_default = _allDescriptors;
 
 // .papi/descriptors/src/bulletin.ts
-var descriptorValues2 = import("./descriptors-JBRHBT6Y.mjs").then((module) => module["Bulletin"]);
-var metadataTypes2 = import("./metadataTypes-ICE2H43R.mjs").then(
+var descriptorValues2 = import("./descriptors-PVJC4K2R.mjs").then((module) => module["Bulletin"]);
+var metadataTypes2 = import("./metadataTypes-ZW2FD7HV.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
 var asset2 = {};
@@ -95,7 +95,7 @@ var XcmVersionedAsset = _Enum;
 
 // .papi/descriptors/src/index.ts
 var metadatas = {
-  ["0x5b781789a26aa25f103a714d9306319f912fe3476cd144a31b28859656621ceb"]: stack_template_default,
+  ["0xa2a6f90b40046ca34f91867123db3988d7c30bff91ed95114518a7a60205b65b"]: stack_template_default,
   ["0x1a82e5143be3211ded412b0368b486ce83bd41a80ec95eb267f6c204adda8365"]: bulletin_default
 };
 var getMetadata3 = async (codeHash) => {

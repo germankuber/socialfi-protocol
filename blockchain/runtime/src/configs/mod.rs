@@ -321,14 +321,10 @@ impl pallet_social_profiles::Config for Runtime {
 	type WeightInfo = pallet_social_profiles::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const FollowFee: Balance = EXISTENTIAL_DEPOSIT;
-}
-
 /// Configure the social graph pallet.
+/// Follow fee is per-profile (set via pallet-social-profiles::set_follow_fee).
 impl pallet_social_graph::Config for Runtime {
 	type Currency = Balances;
-	type FollowFee = FollowFee;
 	type ProfileProvider = SocialProfiles;
 	type WeightInfo = pallet_social_graph::weights::SubstrateWeight<Runtime>;
 }

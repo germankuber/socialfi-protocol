@@ -13,6 +13,7 @@ const FeedPage = lazy(() => import("./pages/social/FeedPage"));
 const GraphPage = lazy(() => import("./pages/social/GraphPage"));
 const AppDetailPage = lazy(() => import("./pages/social/AppDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/social/PostDetailPage"));
+const PublicProfilePage = lazy(() => import("./pages/social/PublicProfilePage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 
 const routeFallback = (
@@ -106,6 +107,15 @@ createRoot(document.getElementById("root")!).render(
 						element={
 							<Suspense fallback={routeFallback}>
 								<PostDetailPage />
+							</Suspense>
+						}
+					/>
+					{/* Public profile — standalone */}
+					<Route
+						path="profile/:address"
+						element={
+							<Suspense fallback={routeFallback}>
+								<PublicProfilePage />
 							</Suspense>
 						}
 					/>

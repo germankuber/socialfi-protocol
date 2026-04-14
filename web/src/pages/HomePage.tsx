@@ -106,8 +106,34 @@ export default function HomePage() {
 				</div>
 			)}
 
-			{/* Apps grid — always visible when chain is connected */}
-			{canUse && (
+			{/* Wallet connected but no profile — just show create profile */}
+			{canUse && loggedIn && hasProfile === false && (
+				<div className="panel text-center py-12 space-y-4">
+					<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
+						<svg className="w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+						</svg>
+					</div>
+					<h2 className="text-lg font-semibold">Create your profile</h2>
+					<p className="text-secondary text-sm max-w-sm mx-auto">
+						You need a profile to use the protocol. Create one to start exploring apps, posting, and following users.
+					</p>
+					<Link to="/social/profile" className="btn-brand inline-flex">
+						Create Profile
+					</Link>
+					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+				</div>
+			)}
+
+			{/* Wallet connected but no wallet */}
+			{canUse && !loggedIn && (
+				<div className="panel text-center py-10 space-y-3">
+					<p className="text-secondary text-sm">Connect your wallet to get started.</p>
+				</div>
+			)}
+
+			{/* Apps grid — only when logged in with profile */}
+			{canUse && loggedIn && hasProfile === true && (
 				<div>
 					<div className="flex items-center justify-between mb-4">
 						<h2 className="heading-2">Apps</h2>

@@ -12,6 +12,7 @@ import ProfileCard from "../../components/social/ProfileCard";
 
 interface ProfileData {
 	cid: string;
+	followFee: bigint;
 	createdAt: number;
 }
 
@@ -27,6 +28,7 @@ export default function ProfilePage() {
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
+	const [followFeeInput, setFollowFeeInput] = useState("");
 
 	const accountAddress = account?.address ?? null;
 
@@ -38,7 +40,7 @@ export default function ProfilePage() {
 			const data = await api.query.SocialProfiles.Profiles.getValue(accountAddress);
 			if (data) {
 				const cid = data.metadata.asText();
-				setProfile({ cid, createdAt: Number(data.created_at) });
+				setProfile({ cid, followFee: data.follow_fee, createdAt: Number(data.created_at) });
 
 				// Resolve metadata from IPFS
 				setLoadingMetadata(true);
@@ -108,6 +110,14 @@ export default function ProfilePage() {
 		if (ok) loadProfile();
 	}
 
+	async function handleSetFollowFee() {
+		if (!account || followFeeInput === "") return;
+		const api = getApi();
+		const tx = api.tx.SocialProfiles.set_follow_fee({ fee: BigInt(followFeeInput) });
+		const ok = await tracker.submit(tx, account.signer, "Set Follow Fee");
+		if (ok) { setFollowFeeInput(""); loadProfile(); }
+	}
+
 	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
 
 	return (
@@ -150,6 +160,39 @@ export default function ProfilePage() {
 						)}
 						<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 					</div>
+
+					{/* Follow fee settings */}
+					{profile && (
+						<div className="panel space-y-3">
+							<h2 className="heading-2">Follow Fee</h2>
+							<p className="text-xs text-secondary">
+								Set a fee that others must pay to follow you. Set to 0 for free follows.
+							</p>
+							<div className="flex items-center gap-3">
+								<span className="text-sm text-secondary">Current:</span>
+								<span className="font-mono font-semibold">
+									{profile.followFee === 0n ? "Free" : profile.followFee.toString()}
+								</span>
+							</div>
+							<div className="flex gap-2">
+								<input
+									type="text"
+									value={followFeeInput}
+									onChange={(e) => setFollowFeeInput(e.target.value)}
+									onKeyDown={(e) => e.key === "Enter" && handleSetFollowFee()}
+									placeholder="New fee (0 = free)"
+									className="input flex-1"
+								/>
+								<button
+									onClick={handleSetFollowFee}
+									disabled={followFeeInput === "" || busy}
+									className="btn-brand btn-sm"
+								>
+									Update Fee
+								</button>
+							</div>
+						</div>
+					)}
 
 					{showForm && (
 						<div className="panel space-y-4">

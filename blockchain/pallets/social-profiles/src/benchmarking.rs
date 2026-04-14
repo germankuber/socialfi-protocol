@@ -39,7 +39,7 @@ mod benchmarks {
 		T::Currency::make_free_balance_be(&caller, deposit);
 
 		let block_number = frame_system::Pallet::<T>::block_number();
-		Profiles::<T>::insert(&caller, types::ProfileInfo { metadata, created_at: block_number });
+		Profiles::<T>::insert(&caller, types::ProfileInfo { metadata, follow_fee: 0u32.into(), created_at: block_number });
 		T::Currency::reserve(&caller, bond).unwrap();
 		ProfileCount::<T>::put(1u32);
 
@@ -61,7 +61,7 @@ mod benchmarks {
 		T::Currency::make_free_balance_be(&caller, deposit);
 
 		let block_number = frame_system::Pallet::<T>::block_number();
-		Profiles::<T>::insert(&caller, types::ProfileInfo { metadata, created_at: block_number });
+		Profiles::<T>::insert(&caller, types::ProfileInfo { metadata, follow_fee: 0u32.into(), created_at: block_number });
 		T::Currency::reserve(&caller, bond).unwrap();
 		ProfileCount::<T>::put(1u32);
 

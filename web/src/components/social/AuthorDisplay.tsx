@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
 
 interface AuthorDisplayProps {
@@ -8,21 +8,14 @@ interface AuthorDisplayProps {
 
 export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayProps) {
 	const { getProfile } = useProfileCache();
-	const [copied, setCopied] = useState(false);
 	const profile = getProfile(address);
 
 	const avatarSize = size === "md" ? "w-10 h-10" : "w-6 h-6";
 	const textSize = size === "md" ? "text-sm" : "text-xs";
 	const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
-	async function handleCopy() {
-		await navigator.clipboard.writeText(address);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 1500);
-	}
-
 	return (
-		<button onClick={handleCopy} className="flex items-center gap-2 group" title={address}>
+		<Link to={`/profile/${address}`} className="flex items-center gap-2 group" title={address}>
 			{/* Avatar */}
 			{profile?.avatar ? (
 				<img
@@ -36,10 +29,10 @@ export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayPro
 					{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
 				</div>
 			)}
-			{/* Name + address */}
-			<span className={`${textSize} transition-colors ${copied ? "text-success" : "text-secondary group-hover:text-surface-100"}`}>
-				{copied ? "Copied!" : (profile?.name || truncated)}
+			{/* Name */}
+			<span className={`${textSize} text-secondary group-hover:text-brand-500 transition-colors`}>
+				{profile?.name || truncated}
 			</span>
-		</button>
+		</Link>
 	);
 }
