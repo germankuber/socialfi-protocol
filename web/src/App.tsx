@@ -190,6 +190,7 @@ function WalletButton() {
 		setConnectingWallet(name);
 		await wallet.connectWallet(name);
 		setConnectingWallet(null);
+		setOpen(false);
 	}
 
 	// ── No wallet connected ──
