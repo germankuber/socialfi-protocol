@@ -4,15 +4,18 @@ import { useIpfs } from "../../hooks/social/useIpfs";
 
 interface ProfileFormProps {
 	initial?: ProfileMetadata;
-	onSubmit: (metadata: ProfileMetadata) => void;
+	initialFollowFee?: string;
+	showFollowFee?: boolean;
+	onSubmit: (metadata: ProfileMetadata, followFee: string) => void;
 	submitLabel: string;
 	disabled?: boolean;
 }
 
-export default function ProfileForm({ initial, onSubmit, submitLabel, disabled }: ProfileFormProps) {
+export default function ProfileForm({ initial, initialFollowFee, showFollowFee = true, onSubmit, submitLabel, disabled }: ProfileFormProps) {
 	const { uploadImage, ipfsUrl } = useIpfs();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [bio, setBio] = useState(initial?.bio ?? "");
+	const [followFee, setFollowFee] = useState(initialFollowFee ?? "0");
 	const [avatarCid, setAvatarCid] = useState(initial?.avatar ?? "");
 	const [twitter, setTwitter] = useState(initial?.links?.twitter ?? "");
 	const [github, setGithub] = useState(initial?.links?.github ?? "");
@@ -56,7 +59,7 @@ export default function ProfileForm({ initial, onSubmit, submitLabel, disabled }
 		if (github.trim()) links.github = github.trim();
 		if (website.trim()) links.website = website.trim();
 
-		onSubmit({ name: name.trim(), bio: bio.trim(), avatar: avatarCid, links });
+		onSubmit({ name: name.trim(), bio: bio.trim(), avatar: avatarCid, links }, followFee);
 	}
 
 	const avatarPreviewUrl = avatarCid ? ipfsUrl(avatarCid) : "";
@@ -132,6 +135,33 @@ export default function ProfileForm({ initial, onSubmit, submitLabel, disabled }
 					</div>
 				</div>
 			</div>
+
+			{showFollowFee && (
+				<div>
+					<label className="form-label">Follow Fee</label>
+					<div className="space-y-2">
+						<input
+							type="range"
+							min="0"
+							max="10000"
+							step="100"
+							value={followFee}
+							onChange={(e) => setFollowFee(e.target.value)}
+							className="w-full accent-brand-500"
+						/>
+						<div className="flex items-center justify-between text-xs">
+							<span className="text-surface-500">Free</span>
+							<span className="font-mono font-semibold">
+								{followFee === "0" ? "Free" : followFee}
+							</span>
+							<span className="text-surface-500">10,000</span>
+						</div>
+					</div>
+					<p className="text-[10px] text-surface-500 mt-1">
+						Amount others must pay to follow you.
+					</p>
+				</div>
+			)}
 
 			<button type="submit" disabled={!name.trim() || disabled || uploadingImage} className="btn-brand w-full">
 				{disabled ? "Uploading to IPFS..." : submitLabel}

@@ -29,7 +29,7 @@ export default function RequireProfile({ children }: RequireProfileProps) {
 							You need to create a profile before using this feature.
 						</p>
 					</div>
-					<Link to="/social/profile" className="btn-brand btn-sm inline-flex">
+					<Link to="/create-profile" className="btn-brand btn-sm inline-flex">
 						Create Profile
 					</Link>
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>

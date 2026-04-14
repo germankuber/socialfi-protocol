@@ -22,7 +22,7 @@ export default function App() {
 	return (
 		<div className="min-h-screen flex flex-col">
 			<header className="sticky top-0 z-50 border-b border-surface-800 bg-surface-950/90 backdrop-blur-xl">
-				<div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
+				<div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
 					<Link to="/" className="flex items-center gap-2 shrink-0 group">
 						<div className="w-8 h-8 rounded-xl bg-brand-500 flex items-center justify-center">
 							<svg viewBox="0 0 16 16" className="w-4 h-4" fill="white">
@@ -53,7 +53,7 @@ export default function App() {
 
 			<style>{`html.light header { background: rgba(255,255,255,0.9); border-color: #e4e4e7; }`}</style>
 
-			<main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+			<main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
 				<Outlet />
 			</main>
 		</div>

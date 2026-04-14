@@ -28,7 +28,6 @@ export default function ProfilePage() {
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
-	const [followFeeInput, setFollowFeeInput] = useState("");
 
 	const accountAddress = account?.address ?? null;
 
@@ -63,7 +62,7 @@ export default function ProfilePage() {
 
 	useEffect(() => { loadProfile(); }, [loadProfile]);
 
-	async function handleCreate(metadata: ProfileMetadata) {
+	async function handleCreate(metadata: ProfileMetadata, _followFee: string) {
 		if (!account) return;
 		try {
 			setError(null);
@@ -84,7 +83,7 @@ export default function ProfilePage() {
 		}
 	}
 
-	async function handleUpdate(metadata: ProfileMetadata) {
+	async function handleUpdate(metadata: ProfileMetadata, followFee: string) {
 		if (!account) return;
 		try {
 			setError(null);
@@ -95,7 +94,17 @@ export default function ProfilePage() {
 			const api = getApi();
 			const tx = api.tx.SocialProfiles.update_metadata({ new_metadata: Binary.fromText(cid) });
 			const ok = await tracker.submit(tx, account.signer, "Update Profile");
-			if (ok) { setShowForm(false); loadProfile(); }
+			if (!ok) return;
+
+			// Update follow fee
+			const fee = BigInt(followFee || "0");
+			if (profile && fee !== profile.followFee) {
+				const feeTx = api.tx.SocialProfiles.set_follow_fee({ fee });
+				await tracker.submit(feeTx, account.signer, "Set Follow Fee");
+			}
+
+			setShowForm(false);
+			loadProfile();
 		} catch (e) {
 			setUploading(false);
 			setError(e instanceof Error ? e.message : "Upload failed");
@@ -108,14 +117,6 @@ export default function ProfilePage() {
 		const tx = api.tx.SocialProfiles.delete_profile();
 		const ok = await tracker.submit(tx, account.signer, "Delete Profile");
 		if (ok) loadProfile();
-	}
-
-	async function handleSetFollowFee() {
-		if (!account || followFeeInput === "") return;
-		const api = getApi();
-		const tx = api.tx.SocialProfiles.set_follow_fee({ fee: BigInt(followFeeInput) });
-		const ok = await tracker.submit(tx, account.signer, "Set Follow Fee");
-		if (ok) { setFollowFeeInput(""); loadProfile(); }
 	}
 
 	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
@@ -161,39 +162,6 @@ export default function ProfilePage() {
 						<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 					</div>
 
-					{/* Follow fee settings */}
-					{profile && (
-						<div className="panel space-y-3">
-							<h2 className="heading-2">Follow Fee</h2>
-							<p className="text-xs text-secondary">
-								Set a fee that others must pay to follow you. Set to 0 for free follows.
-							</p>
-							<div className="flex items-center gap-3">
-								<span className="text-sm text-secondary">Current:</span>
-								<span className="font-mono font-semibold">
-									{profile.followFee === 0n ? "Free" : profile.followFee.toString()}
-								</span>
-							</div>
-							<div className="flex gap-2">
-								<input
-									type="text"
-									value={followFeeInput}
-									onChange={(e) => setFollowFeeInput(e.target.value)}
-									onKeyDown={(e) => e.key === "Enter" && handleSetFollowFee()}
-									placeholder="New fee (0 = free)"
-									className="input flex-1"
-								/>
-								<button
-									onClick={handleSetFollowFee}
-									disabled={followFeeInput === "" || busy}
-									className="btn-brand btn-sm"
-								>
-									Update Fee
-								</button>
-							</div>
-						</div>
-					)}
-
 					{showForm && (
 						<div className="panel space-y-4">
 							<h2 className="heading-2">{profile ? "Update Profile" : "Create Profile"}</h2>
@@ -205,6 +173,7 @@ export default function ProfilePage() {
 							)}
 							<ProfileForm
 								initial={resolvedMetadata ?? undefined}
+								initialFollowFee={profile ? profile.followFee.toString() : "0"}
 								onSubmit={profile ? handleUpdate : handleCreate}
 								submitLabel={profile ? "Update Profile" : "Create Profile"}
 								disabled={busy}
