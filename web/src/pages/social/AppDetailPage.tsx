@@ -410,27 +410,58 @@ export default function AppDetailPage() {
 								</div>
 
 								{/* Footer */}
-								<div className="flex items-center gap-4 pl-[52px] text-xs">
-									{!isMine && (
-										<>
-											<span className="text-surface-500">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-											{post.replyFee > 0n && <span className="text-surface-500">Reply fee: {post.replyFee.toString()}</span>}
-											{postReplies.length > 0 && visible && (
-												<button onClick={() => toggle(post.id)} className="text-info hover:underline">
-													{isExpanded ? "Hide" : "Show"}
-												</button>
-											)}
-											{account && visible && (
-												<button onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)} className="text-brand-500 hover:underline">
-													Reply
-												</button>
-											)}
-										</>
-									)}
-									{isMine && (
-										<span className="text-surface-500">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+								<div className="flex items-center justify-between pl-[52px] pt-1 border-t border-surface-800/50 mt-2">
+									<div className="flex items-center gap-4">
+										{/* Reply count with icon */}
+										<button
+											onClick={() => !isMine && postReplies.length > 0 && visible && toggle(post.id)}
+											className={`flex items-center gap-1.5 text-xs transition-colors ${
+												!isMine && postReplies.length > 0 && visible
+													? "text-surface-400 hover:text-info cursor-pointer"
+													: "text-surface-500 cursor-default"
+											}`}
+										>
+											<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+											</svg>
+											{post.replyCount}
+										</button>
+
+										{/* Reply fee */}
+										{!isMine && post.replyFee > 0n && (
+											<span className="flex items-center gap-1 text-xs text-surface-500">
+												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+												</svg>
+												{post.replyFee.toString()}
+											</span>
+										)}
+
+										{/* Visibility badge */}
+										{post.visibility !== "Public" && post.unlockFee > 0n && (
+											<span className="flex items-center gap-1 text-xs text-surface-500">
+												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+												</svg>
+												{post.unlockFee.toString()}
+											</span>
+										)}
+									</div>
+
+									{/* Reply button */}
+									{!isMine && account && visible && (
+										<button
+											onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+											className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
+										>
+											<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+											</svg>
+											Reply
+										</button>
 									)}
 								</div>
+								<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
 
 								{/* Reply compose */}
 								{replyingTo === post.id && (
