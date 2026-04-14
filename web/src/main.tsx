@@ -11,11 +11,12 @@ const ProfilePage = lazy(() => import("./pages/social/ProfilePage"));
 const AppsPage = lazy(() => import("./pages/social/AppsPage"));
 const FeedPage = lazy(() => import("./pages/social/FeedPage"));
 const GraphPage = lazy(() => import("./pages/social/GraphPage"));
+const AppDetailPage = lazy(() => import("./pages/social/AppDetailPage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 
 const routeFallback = (
 	<div className="flex items-center justify-center py-20">
-		<div className="w-6 h-6 border-2 border-polka-500/30 border-t-polka-500 rounded-full animate-spin" />
+		<div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
 	</div>
 );
 
@@ -89,6 +90,15 @@ createRoot(document.getElementById("root")!).render(
 							}
 						/>
 					</Route>
+					{/* App detail — standalone, no social tabs */}
+					<Route
+						path="app/:appId"
+						element={
+							<Suspense fallback={routeFallback}>
+								<AppDetailPage />
+							</Suspense>
+						}
+					/>
 				</Route>
 			</Routes>
 		</HashRouter>

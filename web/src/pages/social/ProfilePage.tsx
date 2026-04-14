@@ -25,6 +25,7 @@ export default function ProfilePage() {
 	const [loadingProfile, setLoadingProfile] = useState(false);
 	const [loadingMetadata, setLoadingMetadata] = useState(false);
 	const [uploading, setUploading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
 
 	const accountAddress = account?.address ?? null;
@@ -37,8 +38,7 @@ export default function ProfilePage() {
 			const data = await api.query.SocialProfiles.Profiles.getValue(accountAddress);
 			if (data) {
 				const cid = data.metadata.asText();
-				const createdAt = Number(data.created_at);
-				setProfile({ cid, createdAt });
+				setProfile({ cid, createdAt: Number(data.created_at) });
 
 				// Resolve metadata from IPFS
 				setLoadingMetadata(true);
@@ -64,23 +64,28 @@ export default function ProfilePage() {
 	async function handleCreate(metadata: ProfileMetadata) {
 		if (!account) return;
 		try {
+			setError(null);
 			setUploading(true);
+
+			// 1. Upload metadata JSON to IPFS → get CID
 			const cid = await uploadProfileMetadata(metadata);
 			setUploading(false);
 
+			// 2. Store CID on-chain
 			const api = getApi();
 			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid) });
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (ok) { setShowForm(false); loadProfile(); }
 		} catch (e) {
 			setUploading(false);
-			tracker.state.stage === "idle" && tracker.reset();
+			setError(e instanceof Error ? e.message : "Upload failed");
 		}
 	}
 
 	async function handleUpdate(metadata: ProfileMetadata) {
 		if (!account) return;
 		try {
+			setError(null);
 			setUploading(true);
 			const cid = await uploadProfileMetadata(metadata);
 			setUploading(false);
@@ -89,8 +94,9 @@ export default function ProfilePage() {
 			const tx = api.tx.SocialProfiles.update_metadata({ new_metadata: Binary.fromText(cid) });
 			const ok = await tracker.submit(tx, account.signer, "Update Profile");
 			if (ok) { setShowForm(false); loadProfile(); }
-		} catch {
+		} catch (e) {
 			setUploading(false);
+			setError(e instanceof Error ? e.message : "Upload failed");
 		}
 	}
 
@@ -111,21 +117,15 @@ export default function ProfilePage() {
 
 			{account && (
 				<>
-					{/* Profile display */}
 					<div className="panel space-y-4">
 						<div className="flex items-center justify-between">
 							<h2 className="heading-2">Profile</h2>
 							{profile && (
 								<div className="flex gap-2">
-									<button
-										onClick={() => setShowForm(!showForm)}
-										className="btn-outline btn-sm"
-									>
+									<button onClick={() => setShowForm(!showForm)} className="btn-outline btn-sm">
 										{showForm ? "Cancel" : "Edit"}
 									</button>
-									<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">
-										Delete
-									</button>
+									<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">Delete</button>
 								</div>
 							)}
 						</div>
@@ -136,12 +136,7 @@ export default function ProfilePage() {
 								Loading...
 							</div>
 						) : profile ? (
-							<ProfileCard
-								metadata={resolvedMetadata}
-								cid={profile.cid}
-								createdAt={profile.createdAt}
-								loading={loadingMetadata}
-							/>
+							<ProfileCard metadata={resolvedMetadata} cid={profile.cid} createdAt={profile.createdAt} loading={loadingMetadata} />
 						) : (
 							<div className="text-center py-6 space-y-3">
 								<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
@@ -150,23 +145,21 @@ export default function ProfilePage() {
 									</svg>
 								</div>
 								<p className="text-secondary text-sm">No profile yet</p>
-								<button onClick={() => setShowForm(true)} className="btn-brand btn-sm">
-									Create Profile
-								</button>
+								<button onClick={() => setShowForm(true)} className="btn-brand btn-sm">Create Profile</button>
 							</div>
 						)}
 						<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 					</div>
 
-					{/* Create / Edit form */}
 					{showForm && (
 						<div className="panel space-y-4">
-							<h2 className="heading-2">
-								{profile ? "Update Profile" : "Create Profile"}
-							</h2>
+							<h2 className="heading-2">{profile ? "Update Profile" : "Create Profile"}</h2>
 							<p className="text-xs text-secondary">
-								Your profile data is uploaded to IPFS via Crust Network. Only the CID is stored on-chain.
+								Profile data and images are uploaded to IPFS. Only the CID (46 bytes) is stored on-chain.
 							</p>
+							{error && (
+								<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">{error}</div>
+							)}
 							<ProfileForm
 								initial={resolvedMetadata ?? undefined}
 								onSubmit={profile ? handleUpdate : handleCreate}
@@ -175,9 +168,6 @@ export default function ProfilePage() {
 							/>
 						</div>
 					)}
-
-					{/* Show form by default when no profile */}
-					{!profile && !loadingProfile && !showForm && null}
 				</>
 			)}
 

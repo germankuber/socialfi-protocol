@@ -13,6 +13,7 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn create_post() -> Weight;
 	fn create_reply() -> Weight;
+	fn unlock_post() -> Weight;
 }
 
 /// Weights for pallet_social_feeds using the Substrate node and recommended hardware.
@@ -29,6 +30,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
+	fn unlock_post() -> Weight {
+		Weight::from_parts(15_000_000, 1600)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 /// For backwards compatibility and tests.
@@ -43,5 +50,11 @@ impl WeightInfo for () {
 		Weight::from_parts(25_000_000, 2500)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+
+	fn unlock_post() -> Weight {
+		Weight::from_parts(15_000_000, 1600)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

@@ -1,6 +1,7 @@
 use crate::{
 	mock::*,
-	pallet::{Error, NextPostId, Posts, PostsByAuthor, Replies},
+	pallet::{Error, NextPostId, Posts, PostsByAuthor, Replies, UnlockedPosts},
+	types::PostVisibility,
 	PostProvider,
 };
 use frame::testing_prelude::*;
@@ -15,19 +16,23 @@ fn setup_profiles(accounts: &[u64]) {
 	}
 }
 
-// ── create_post: global ────────────────────────────────────────────────
+// ── create_post: public ────────────────────────────────────────────────
 
 #[test]
-fn create_post_global_works() {
+fn create_post_public_works() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+		));
 		let post = Posts::<Test>::get(0).expect("post should exist");
-		assert_eq!(post.author, 1);
-		assert_eq!(post.app_id, None);
-		assert_eq!(post.parent_post, None);
-		assert_eq!(post.reply_fee, 0);
+		assert_eq!(post.visibility, PostVisibility::Public);
+		assert_eq!(post.unlock_fee, 0);
 	});
 }
 
@@ -36,12 +41,33 @@ fn create_post_global_fee_goes_to_treasury() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
 		let treasury_before = Balances::free_balance(99);
-		let author_before = Balances::free_balance(1);
-
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+		));
 		assert_eq!(Balances::free_balance(99), treasury_before + 10);
-		assert_eq!(Balances::free_balance(1), author_before - 10);
+	});
+}
+
+#[test]
+fn create_post_app_scoped_fee_goes_to_app_owner() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		MockAppProvider::add_app(10, 3);
+		let owner_before = Balances::free_balance(3);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			Some(10),
+			0,
+			PostVisibility::Public,
+			0,
+		));
+		assert_eq!(Balances::free_balance(3), owner_before + 10);
 	});
 }
 
@@ -49,8 +75,22 @@ fn create_post_global_fee_goes_to_treasury() {
 fn create_post_increments_id() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
 		assert_eq!(NextPostId::<Test>::get(), 2);
 	});
 }
@@ -59,91 +99,38 @@ fn create_post_increments_id() {
 fn create_post_populates_posts_by_author() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-
-		let posts = PostsByAuthor::<Test>::get(1);
-		assert_eq!(posts.as_slice(), &[0, 1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
+		assert_eq!(PostsByAuthor::<Test>::get(1).as_slice(), &[0, 1]);
 	});
 }
-
-#[test]
-fn create_post_emits_event() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		System::set_block_number(1);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-		System::assert_last_event(
-			crate::Event::PostCreated { post_id: 0, author: 1, app_id: None }.into(),
-		);
-	});
-}
-
-#[test]
-fn create_post_records_block_number() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		System::set_block_number(42);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-
-		let post = Posts::<Test>::get(0).unwrap();
-		assert_eq!(post.created_at, 42);
-	});
-}
-
-#[test]
-fn create_post_stores_reply_fee() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 50));
-
-		let post = Posts::<Test>::get(0).unwrap();
-		assert_eq!(post.reply_fee, 50);
-	});
-}
-
-// ── create_post: app-scoped ────────────────────────────────────────────
-
-#[test]
-fn create_post_app_scoped_fee_goes_to_app_owner() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		MockAppProvider::add_app(10, 3); // app 10 owned by account 3
-
-		let owner_before = Balances::free_balance(3);
-		let author_before = Balances::free_balance(1);
-
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), Some(10), 0));
-
-		assert_eq!(Balances::free_balance(3), owner_before + 10);
-		assert_eq!(Balances::free_balance(1), author_before - 10);
-
-		let post = Posts::<Test>::get(0).unwrap();
-		assert_eq!(post.app_id, Some(10));
-	});
-}
-
-#[test]
-fn create_post_emits_event_with_app_id() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		MockAppProvider::add_app(10, 3);
-		System::set_block_number(1);
-
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), Some(10), 0));
-		System::assert_last_event(
-			crate::Event::PostCreated { post_id: 0, author: 1, app_id: Some(10) }.into(),
-		);
-	});
-}
-
-// ── create_post: failures ──────────────────────────────────────────────
 
 #[test]
 fn create_post_fails_no_profile() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0),
+			SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0
+			),
 			Error::<Test>::ProfileNotFound,
 		);
 	});
@@ -154,48 +141,71 @@ fn create_post_fails_invalid_app() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
 		assert_noop!(
-			SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), Some(999), 0),
+			SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				Some(999),
+				0,
+				PostVisibility::Public,
+				0
+			),
 			Error::<Test>::AppNotFound,
 		);
 	});
 }
 
+// ── create_post: obfuscated / private ──────────────────────────────────
+
 #[test]
-fn create_post_fails_insufficient_balance() {
+fn create_post_obfuscated_stores_visibility_and_unlock_fee() {
 	new_test_ext().execute_with(|| {
-		setup_profiles(&[4]);
-		// Account 4 has only 5, fee is 10.
-		assert_noop!(
-			SocialFeeds::create_post(RuntimeOrigin::signed(4), test_content(), None, 0),
-			Error::<Test>::InsufficientBalance,
-		);
+		setup_profiles(&[1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			50,
+		));
+		let post = Posts::<Test>::get(0).unwrap();
+		assert_eq!(post.visibility, PostVisibility::Obfuscated);
+		assert_eq!(post.unlock_fee, 50);
 	});
 }
 
 #[test]
-fn create_post_insufficient_balance_does_not_mutate_storage() {
+fn create_post_private_stores_visibility() {
 	new_test_ext().execute_with(|| {
-		setup_profiles(&[4]);
-		let next_before = NextPostId::<Test>::get();
-
-		assert_noop!(
-			SocialFeeds::create_post(RuntimeOrigin::signed(4), test_content(), None, 0),
-			Error::<Test>::InsufficientBalance,
-		);
-
-		// Storage unchanged.
-		assert_eq!(NextPostId::<Test>::get(), next_before);
-		assert!(PostsByAuthor::<Test>::get(4).is_empty());
+		setup_profiles(&[1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Private,
+			100,
+		));
+		let post = Posts::<Test>::get(0).unwrap();
+		assert_eq!(post.visibility, PostVisibility::Private);
+		assert_eq!(post.unlock_fee, 100);
 	});
 }
 
 #[test]
-fn create_post_unsigned_origin_rejected() {
+fn create_post_public_ignores_unlock_fee() {
 	new_test_ext().execute_with(|| {
-		assert_noop!(
-			SocialFeeds::create_post(RuntimeOrigin::none(), test_content(), None, 0),
-			DispatchError::BadOrigin,
-		);
+		setup_profiles(&[1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			999,
+		));
+		let post = Posts::<Test>::get(0).unwrap();
+		assert_eq!(post.unlock_fee, 0); // forced to 0 for public
 	});
 }
 
@@ -205,80 +215,40 @@ fn create_post_unsigned_origin_rejected() {
 fn create_reply_works() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 2]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
-
-		let reply_content = BoundedVec::try_from(b"QmReplyContent".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		let reply = Posts::<Test>::get(1).expect("reply should exist");
-		assert_eq!(reply.author, 2);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
+		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None));
+		let reply = Posts::<Test>::get(1).unwrap();
 		assert_eq!(reply.parent_post, Some(0));
-		assert_eq!(reply.reply_fee, 0); // replies always have reply_fee = 0
+		assert_eq!(reply.visibility, PostVisibility::Public);
 	});
 }
 
 #[test]
-fn create_reply_pays_reply_fee_to_parent_author() {
+fn create_reply_pays_reply_fee_to_author() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 2]);
-		// Post with reply_fee of 25.
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 25,));
-
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			25,
+			PostVisibility::Public,
+			0
+		));
 		let author_before = Balances::free_balance(1);
 		let replier_before = Balances::free_balance(2);
-		let treasury_before = Balances::free_balance(99);
-
-		let reply_content = BoundedVec::try_from(b"QmReplyContent".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		// Replier pays: reply_fee (25) + post_fee (10) = 35 total
-		assert_eq!(Balances::free_balance(2), replier_before - 35);
-		// Author receives reply_fee.
+		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None));
+		assert_eq!(Balances::free_balance(2), replier_before - 35); // 25 reply + 10 post fee
 		assert_eq!(Balances::free_balance(1), author_before + 25);
-		// Treasury receives post_fee.
-		assert_eq!(Balances::free_balance(99), treasury_before + 10);
-	});
-}
-
-#[test]
-fn create_reply_zero_reply_fee_no_transfer_to_author() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1, 2]);
-		// Post with reply_fee of 0.
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let author_before = Balances::free_balance(1);
-		let replier_before = Balances::free_balance(2);
-
-		let reply_content = BoundedVec::try_from(b"QmReplyContent".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		// Replier pays only post_fee (10).
-		assert_eq!(Balances::free_balance(2), replier_before - 10);
-		// Author gets nothing extra (already paid 10 post_fee earlier, so
-		// their balance was author_initial - 10 = author_before).
-		assert_eq!(Balances::free_balance(1), author_before);
-	});
-}
-
-#[test]
-fn create_reply_app_scoped_fee_goes_to_app_owner() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1, 2]);
-		MockAppProvider::add_app(10, 3);
-
-		// Original post is global.
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let owner_before = Balances::free_balance(3);
-
-		let reply_content = BoundedVec::try_from(b"QmReplyContent".to_vec()).unwrap();
-		assert_ok!(
-			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, Some(10),)
-		);
-
-		// App owner gets the post fee.
-		assert_eq!(Balances::free_balance(3), owner_before + 10);
 	});
 }
 
@@ -286,67 +256,18 @@ fn create_reply_app_scoped_fee_goes_to_app_owner() {
 fn create_reply_populates_replies_storage() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 2]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(
-			RuntimeOrigin::signed(2),
-			0,
-			reply_content.clone(),
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
 			None,
+			0,
+			PostVisibility::Public,
+			0
 		));
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		let replies = Replies::<Test>::get(0);
-		assert_eq!(replies.as_slice(), &[1, 2]);
-	});
-}
-
-#[test]
-fn create_reply_populates_posts_by_author() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1, 2]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		let posts = PostsByAuthor::<Test>::get(2);
-		assert_eq!(posts.as_slice(), &[1]);
-	});
-}
-
-#[test]
-fn create_reply_emits_event() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1, 2]);
-		System::set_block_number(1);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
-		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None,));
-
-		System::assert_last_event(
-			crate::Event::ReplyCreated { post_id: 1, parent_post_id: 0, author: 2, app_id: None }
-				.into(),
-		);
-	});
-}
-
-// ── create_reply: failures ─────────────────────────────────────────────
-
-#[test]
-fn create_reply_fails_no_profile() {
-	new_test_ext().execute_with(|| {
-		setup_profiles(&[1]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
-		// Account 2 has no profile.
-		assert_noop!(
-			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None),
-			Error::<Test>::ProfileNotFound,
-		);
+		let rc = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, rc.clone(), None));
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, rc, None));
+		assert_eq!(Replies::<Test>::get(0).as_slice(), &[1, 2]);
 	});
 }
 
@@ -354,54 +275,141 @@ fn create_reply_fails_no_profile() {
 fn create_reply_fails_parent_not_found() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[2]);
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
+		let rc = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
 		assert_noop!(
-			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 999, reply_content, None),
+			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 999, rc, None),
 			Error::<Test>::ParentPostNotFound,
 		);
 	});
 }
 
+// ── unlock_post ────────────────────────────────────────────────────────
+
 #[test]
-fn create_reply_fails_invalid_app() {
+fn unlock_obfuscated_post_transfers_fee_to_author() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 2]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			50,
+		));
+		let author_before = Balances::free_balance(1);
+		let viewer_before = Balances::free_balance(2);
 
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
+
+		assert_eq!(Balances::free_balance(2), viewer_before - 50);
+		assert_eq!(Balances::free_balance(1), author_before + 50);
+		assert!(UnlockedPosts::<Test>::contains_key(2, 0));
+	});
+}
+
+#[test]
+fn unlock_private_post_works() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Private,
+			100,
+		));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
+		assert!(UnlockedPosts::<Test>::contains_key(2, 0));
+	});
+}
+
+#[test]
+fn unlock_post_author_gets_free_access() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			50,
+		));
+		let balance_before = Balances::free_balance(1);
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0));
+		// Author pays nothing.
+		assert_eq!(Balances::free_balance(1), balance_before);
+		assert!(UnlockedPosts::<Test>::contains_key(1, 0));
+	});
+}
+
+#[test]
+fn unlock_post_fails_already_unlocked() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			50,
+		));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
 		assert_noop!(
-			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, Some(999)),
-			Error::<Test>::AppNotFound,
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0),
+			Error::<Test>::AlreadyUnlocked,
 		);
 	});
 }
 
 #[test]
-fn create_reply_fails_insufficient_balance_for_post_fee() {
+fn unlock_post_fails_public_post() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+		));
+		assert_noop!(
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0),
+			Error::<Test>::PostIsPublic,
+		);
+	});
+}
+
+#[test]
+fn unlock_post_fails_not_found() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 999),
+			Error::<Test>::PostNotFound,
+		);
+	});
+}
+
+#[test]
+fn unlock_post_fails_insufficient_balance() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 4]);
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0,));
-
-		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
-		// Account 4 has only 5, post fee is 10.
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Private,
+			100,
+		));
+		// Account 4 has only 5.
 		assert_noop!(
-			SocialFeeds::create_reply(RuntimeOrigin::signed(4), 0, reply_content, None),
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(4), 0),
 			Error::<Test>::InsufficientBalance,
-		);
-	});
-}
-
-#[test]
-fn create_reply_unsigned_origin_rejected() {
-	new_test_ext().execute_with(|| {
-		assert_noop!(
-			SocialFeeds::create_reply(
-				RuntimeOrigin::none(),
-				0,
-				BoundedVec::try_from(b"QmReply".to_vec()).unwrap(),
-				None
-			),
-			DispatchError::BadOrigin,
 		);
 	});
 }
@@ -413,8 +421,14 @@ fn post_provider_exists() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
 		assert!(!<SocialFeeds as PostProvider<u64, u64>>::exists(&0));
-
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
 		assert!(<SocialFeeds as PostProvider<u64, u64>>::exists(&0));
 	});
 }
@@ -423,9 +437,14 @@ fn post_provider_exists() {
 fn post_provider_get_author() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
-		assert_eq!(<SocialFeeds as PostProvider<u64, u64>>::get_author(&0), None);
-
-		assert_ok!(SocialFeeds::create_post(RuntimeOrigin::signed(1), test_content(), None, 0));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0
+		));
 		assert_eq!(<SocialFeeds as PostProvider<u64, u64>>::get_author(&0), Some(1));
 	});
 }

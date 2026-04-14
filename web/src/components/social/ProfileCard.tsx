@@ -1,4 +1,5 @@
 import type { ProfileMetadata } from "../../hooks/social/useIpfs";
+import { useIpfs } from "../../hooks/social/useIpfs";
 
 interface ProfileCardProps {
 	metadata: ProfileMetadata | null;
@@ -8,6 +9,9 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ metadata, cid, createdAt, loading }: ProfileCardProps) {
+	const { ipfsUrl } = useIpfs();
+	const avatarSrc = metadata?.avatar ? ipfsUrl(metadata.avatar) : "";
+
 	if (loading) {
 		return (
 			<div className="flex items-center gap-3 animate-pulse">
@@ -23,10 +27,10 @@ export default function ProfileCard({ metadata, cid, createdAt, loading }: Profi
 	return (
 		<div className="flex items-start gap-4">
 			{/* Avatar */}
-			{metadata?.avatar ? (
+			{avatarSrc ? (
 				<img
-					src={metadata.avatar}
-					alt={metadata.name}
+					src={avatarSrc}
+					alt={metadata?.name ?? ""}
 					className="w-14 h-14 rounded-full object-cover bg-surface-800 shrink-0"
 					onError={(e) => {
 						(e.target as HTMLImageElement).style.display = "none";
@@ -34,7 +38,7 @@ export default function ProfileCard({ metadata, cid, createdAt, loading }: Profi
 					}}
 				/>
 			) : null}
-			{(!metadata?.avatar) && (
+			{!avatarSrc && (
 				<div className="w-14 h-14 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-lg font-bold shrink-0">
 					{metadata?.name?.[0]?.toUpperCase() ?? "?"}
 				</div>
@@ -86,7 +90,9 @@ export default function ProfileCard({ metadata, cid, createdAt, loading }: Profi
 				{/* Meta */}
 				<div className="flex items-center gap-3 mt-2 text-[11px] text-surface-500">
 					<span className="font-mono">Block #{createdAt}</span>
-					<span className="font-mono truncate">{cid}</span>
+					<span className="font-mono truncate" title={cid}>
+						{cid.length > 30 ? `${cid.slice(0, 15)}...${cid.slice(-10)}` : cid}
+					</span>
 				</div>
 			</div>
 		</div>
