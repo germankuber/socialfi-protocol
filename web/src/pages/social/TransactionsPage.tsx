@@ -10,6 +10,18 @@ function explorerUrl(wsUrl: string, blockHash: string): string {
 }
 
 const INDEXER_URL = "http://localhost:3001";
+const DECIMALS = 12n;
+const UNIT = 10n ** DECIMALS;
+
+function formatAmount(raw: string): string {
+	const val = BigInt(raw || "0");
+	if (val === 0n) return "0";
+	const whole = val / UNIT;
+	const frac = val % UNIT;
+	if (frac === 0n) return whole.toString();
+	const fracStr = frac.toString().padStart(Number(DECIMALS), "0").replace(/0+$/, "");
+	return `${whole}.${fracStr}`;
+}
 
 interface TxRecord {
 	id: number;
@@ -73,10 +85,10 @@ export default function TransactionsPage() {
 	// Compute totals — "Earned" txs have from=myAddress (receiver), "Paid" txs have from=myAddress (payer)
 	const addr = account?.address || "";
 	const totalEarned = txs
-		.filter((t) => t.kind.endsWith("Earned") && t.from === addr)
+		.filter((t) => t.kind.endsWith("Earned") && t.from === addr && !(t.to && t.from === t.to))
 		.reduce((s, t) => s + BigInt(t.amount || "0"), 0n);
 	const totalSpent = txs
-		.filter((t) => t.kind.endsWith("Paid") && t.from === addr)
+		.filter((t) => t.kind.endsWith("Paid") && t.from === addr && !(t.to && t.from === t.to))
 		.reduce((s, t) => s + BigInt(t.amount || "0"), 0n);
 
 	return (
@@ -85,11 +97,11 @@ export default function TransactionsPage() {
 				{/* Totals */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="panel text-center py-4">
-						<p className="text-2xl font-bold font-mono text-success">+{totalEarned.toString()}</p>
+						<p className="text-2xl font-bold font-mono text-success">+{formatAmount(totalEarned.toString())}</p>
 						<p className="text-xs text-secondary uppercase tracking-wider mt-1">Total Earned</p>
 					</div>
 					<div className="panel text-center py-4">
-						<p className="text-2xl font-bold font-mono text-danger">-{totalSpent.toString()}</p>
+						<p className="text-2xl font-bold font-mono text-danger">-{formatAmount(totalSpent.toString())}</p>
 						<p className="text-xs text-secondary uppercase tracking-wider mt-1">Total Spent</p>
 					</div>
 				</div>
@@ -133,9 +145,11 @@ export default function TransactionsPage() {
 								const hasAmount = isPayment && tx.amount !== "0" && tx.amount !== "";
 								const counterpart = tx.to && tx.to !== addr ? tx.to : (tx.from !== addr ? tx.from : "");
 
-								// Skip duplicate perspective records (e.g. don't show "FollowFeeEarned" to the payer)
-								if (tx.kind.endsWith("Earned") && !iAmFrom) return null;
-								if (tx.kind.endsWith("Paid") && !iAmFrom) return null;
+								// Only show money transactions (Earned/Paid) where I'm the actor
+								if (!tx.kind.endsWith("Earned") && !tx.kind.endsWith("Paid")) return null;
+								if (!iAmFrom) return null;
+								// Skip self-payments (paying yourself, e.g. posting in your own app)
+								if (tx.to && tx.from === tx.to) return null;
 
 								return (
 									<div key={tx.id} className="py-3 first:pt-0 last:pb-0 flex items-center gap-3">
@@ -185,7 +199,7 @@ export default function TransactionsPage() {
 												config.direction === "in" ? "text-success" :
 												config.direction === "out" ? "text-danger" : "text-secondary"
 											}`}>
-												{config.direction === "in" ? "+" : config.direction === "out" ? "-" : ""}{tx.amount}
+												{config.direction === "in" ? "+" : config.direction === "out" ? "-" : ""}{formatAmount(tx.amount)}
 											</span>
 										)}
 									</div>
