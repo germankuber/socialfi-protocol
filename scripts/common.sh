@@ -702,7 +702,7 @@ run_local_node_foreground() {
         --tmp \
         --alice \
         --force-authoring \
-        --dev-block-time 3000 \
+        --instant-seal \
         --no-prometheus \
         --unsafe-force-node-key-generation \
         --rpc-cors all \

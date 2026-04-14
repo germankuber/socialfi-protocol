@@ -252,6 +252,9 @@ mod runtime {
 	#[runtime::pallet_index(50)]
 	pub type TemplatePallet = pallet_template;
 
+	#[runtime::pallet_index(51)]
+	pub type SocialAppRegistry = pallet_social_app_registry;
+
 	// Smart contracts (EVM + PVM via pallet-revive)
 	#[runtime::pallet_index(90)]
 	pub type Revive = pallet_revive;

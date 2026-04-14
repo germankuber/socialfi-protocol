@@ -291,6 +291,22 @@ impl pallet_template::Config for Runtime {
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const AppBond: Balance = 10 * EXISTENTIAL_DEPOSIT;
+	pub const MaxMetadataLen: u32 = 128;
+	pub const MaxAppsPerOwner: u32 = 10;
+}
+
+/// Configure the social app registry pallet.
+impl pallet_social_app_registry::Config for Runtime {
+	type AppId = u32;
+	type Currency = Balances;
+	type AppBond = AppBond;
+	type MaxMetadataLen = MaxMetadataLen;
+	type MaxAppsPerOwner = MaxAppsPerOwner;
+	type WeightInfo = pallet_social_app_registry::weights::SubstrateWeight<Runtime>;
+}
+
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────
 
 parameter_types! {
