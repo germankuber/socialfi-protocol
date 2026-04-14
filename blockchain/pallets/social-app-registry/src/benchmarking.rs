@@ -24,7 +24,8 @@ mod benchmarks {
 		#[extrinsic_call]
 		register_app(RawOrigin::Signed(caller.clone()), metadata);
 
-		assert!(Apps::<T>::contains_key(T::AppId::from(1u32)));
+		// First registration gets ID 0 (NextAppId starts at Default::default()).
+		assert!(Apps::<T>::contains_key(T::AppId::default()));
 	}
 
 	#[benchmark]
@@ -37,7 +38,8 @@ mod benchmarks {
 		let deposit = bond.saturating_mul(2u32.into());
 		T::Currency::make_free_balance_be(&caller, deposit);
 
-		let app_id = T::AppId::from(1u32);
+		// Register via the extrinsic to populate all storage (Apps + AppsByOwner).
+		let app_id = T::AppId::default();
 		let block_number = frame_system::Pallet::<T>::block_number();
 		Apps::<T>::insert(
 			app_id,
@@ -48,11 +50,10 @@ mod benchmarks {
 				status: types::AppStatus::Active,
 			},
 		);
-		NextAppId::<T>::put({
-			let mut next = app_id;
-			next += T::AppId::from(1u32);
-			next
-		});
+		let mut next = app_id;
+		next += T::AppId::from(1u32);
+		NextAppId::<T>::put(next);
+		AppsByOwner::<T>::try_mutate(&caller, |apps| apps.try_push(app_id)).unwrap();
 		T::Currency::reserve(&caller, bond).unwrap();
 
 		#[extrinsic_call]

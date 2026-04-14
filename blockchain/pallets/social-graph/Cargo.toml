@@ -30,7 +30,9 @@ std = [
 ]
 runtime-benchmarks = [
 	"frame/runtime-benchmarks",
+	"pallet-social-profiles/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame/try-runtime",
+	"pallet-social-profiles/try-runtime",
 ]

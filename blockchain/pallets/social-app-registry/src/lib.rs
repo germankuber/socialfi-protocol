@@ -50,7 +50,9 @@ pub mod pallet {
 			+ Copy
 			+ Default
 			+ frame::traits::One
+			+ frame::traits::CheckedAdd
 			+ core::ops::AddAssign
+			+ PartialOrd
 			+ From<u32>;
 
 		/// Currency used for bond management.
@@ -113,14 +115,17 @@ pub mod pallet {
 		TooManyApps,
 		/// The provided metadata exceeds the maximum allowed length.
 		MetadataTooLong,
+		/// The app ID counter has overflowed — no more apps can be registered.
+		AppIdOverflow,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Register a new social app.
 		///
-		/// Reserves `T::AppBond` from the caller, assigns the next available AppId,
-		/// stores the app record, and updates the owner's app list.
+		/// Validates capacity and balance before making any state changes.
+		/// Reserves `T::AppBond`, assigns the next available AppId, stores the
+		/// app record, and updates the owner's app list.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::register_app())]
 		pub fn register_app(
@@ -129,13 +134,18 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			// 1. All validation first — no side effects.
+			let app_id = NextAppId::<T>::get();
+			let next_id = app_id.checked_add(&T::AppId::one()).ok_or(Error::<T>::AppIdOverflow)?;
+
+			// Check owner capacity before reserving.
+			let mut owner_apps = AppsByOwner::<T>::get(&who);
+			owner_apps.try_push(app_id).map_err(|_| Error::<T>::TooManyApps)?;
+
+			// 2. Side effects — all infallible from here (except reserve which we check before
+			//    committing any storage writes).
 			T::Currency::reserve(&who, T::AppBond::get())
 				.map_err(|_| Error::<T>::InsufficientBond)?;
-
-			let app_id = NextAppId::<T>::get();
-			let mut next_id = app_id;
-			next_id += T::AppId::one();
-			NextAppId::<T>::put(next_id);
 
 			let block_number = frame_system::Pallet::<T>::block_number();
 			let app = AppInfo {
@@ -145,11 +155,9 @@ pub mod pallet {
 				status: AppStatus::Active,
 			};
 
+			NextAppId::<T>::put(next_id);
 			Apps::<T>::insert(app_id, app);
-
-			AppsByOwner::<T>::try_mutate(&who, |apps| {
-				apps.try_push(app_id).map_err(|_| Error::<T>::TooManyApps)
-			})?;
+			AppsByOwner::<T>::insert(&who, owner_apps);
 
 			Self::deposit_event(Event::AppRegistered { app_id, owner: who });
 			Ok(())
@@ -157,8 +165,8 @@ pub mod pallet {
 
 		/// Deregister an existing app.
 		///
-		/// Sets the app status to `Inactive` and unreserves the bond. Only the
-		/// original owner can deregister. The app record is kept for history.
+		/// Sets the app status to `Inactive`, unreserves the bond, and removes
+		/// the app from the owner's index. The app record is kept for history.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::deregister_app())]
 		pub fn deregister_app(origin: OriginFor<T>, app_id: T::AppId) -> DispatchResult {
@@ -174,6 +182,11 @@ pub mod pallet {
 
 				Ok(())
 			})?;
+
+			// Remove from owner index so the slot is freed.
+			AppsByOwner::<T>::mutate(&who, |apps| {
+				apps.retain(|id| *id != app_id);
+			});
 
 			Self::deposit_event(Event::AppDeregistered { app_id, owner: who });
 			Ok(())

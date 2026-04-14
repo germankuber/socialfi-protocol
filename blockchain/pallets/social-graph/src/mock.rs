@@ -31,6 +31,14 @@ impl MockProfileProvider {
 	}
 }
 
+impl MockProfileProvider {
+	pub fn remove_profile(account: u64) {
+		PROFILE_ACCOUNTS.with(|v| {
+			v.borrow_mut().retain(|a| *a != account);
+		});
+	}
+}
+
 impl ProfileProvider<u64> for MockProfileProvider {
 	fn exists(account: &u64) -> bool {
 		PROFILE_ACCOUNTS.with(|v| v.borrow().contains(account))

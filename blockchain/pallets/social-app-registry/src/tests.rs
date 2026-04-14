@@ -90,21 +90,7 @@ fn register_app_fails_insufficient_bond() {
 }
 
 #[test]
-fn register_app_reserves_bond_until_exhausted() {
-	new_test_ext().execute_with(|| {
-		// Account 1 has 1_000. Bond is 100 each. Existential deposit may limit
-		// how many can be reserved. Eventually the bond reservation fails.
-		let mut count = 0u32;
-		while SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()).is_ok() {
-			count += 1;
-		}
-		assert!(count > 0);
-		assert!(count <= 10);
-	});
-}
-
-#[test]
-fn register_app_fails_too_many_apps_limit() {
+fn register_app_fails_too_many_apps() {
 	new_test_ext().execute_with(|| {
 		// Give account 2 enough balance for 11 bonds.
 		Balances::make_free_balance_be(&2, 2_000);
@@ -116,6 +102,46 @@ fn register_app_fails_too_many_apps_limit() {
 			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
 			Error::<Test>::TooManyApps,
 		);
+	});
+}
+
+#[test]
+fn register_app_too_many_apps_does_not_lock_bond() {
+	new_test_ext().execute_with(|| {
+		// CRITICAL fix test: when TooManyApps is hit, bond must NOT be reserved.
+		Balances::make_free_balance_be(&2, 2_000);
+
+		for _ in 0..10 {
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(),));
+		}
+		let reserved_before = Balances::reserved_balance(2);
+		let free_before = Balances::free_balance(2);
+
+		// 11th fails.
+		assert_noop!(
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
+			Error::<Test>::TooManyApps,
+		);
+
+		// Bond unchanged — no funds locked by the failed call.
+		assert_eq!(Balances::reserved_balance(2), reserved_before);
+		assert_eq!(Balances::free_balance(2), free_before);
+	});
+}
+
+#[test]
+fn register_app_insufficient_bond_does_not_mutate_storage() {
+	new_test_ext().execute_with(|| {
+		let next_id_before = NextAppId::<Test>::get();
+
+		assert_noop!(
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(3), test_metadata()),
+			Error::<Test>::InsufficientBond,
+		);
+
+		// NextAppId unchanged — no ID leak.
+		assert_eq!(NextAppId::<Test>::get(), next_id_before);
+		assert!(AppsByOwner::<Test>::get(3).is_empty());
 	});
 }
 
@@ -151,6 +177,43 @@ fn deregister_app_unreserves_bond() {
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
 		assert_eq!(Balances::reserved_balance(1), 0);
 		assert_eq!(Balances::free_balance(1), 1_000);
+	});
+}
+
+#[test]
+fn deregister_app_removes_from_owner_index() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_eq!(AppsByOwner::<Test>::get(1).len(), 2);
+
+		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
+		let owned = AppsByOwner::<Test>::get(1);
+		assert_eq!(owned.as_slice(), &[1]); // only app 1 remains
+	});
+}
+
+#[test]
+fn deregister_app_frees_owner_slot() {
+	new_test_ext().execute_with(|| {
+		// HIGH fix test: after deregistering, the owner should be able to
+		// register a new app in the freed slot.
+		Balances::make_free_balance_be(&2, 2_000);
+
+		for _ in 0..10 {
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(),));
+		}
+		// At limit — cannot register more.
+		assert_noop!(
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
+			Error::<Test>::TooManyApps,
+		);
+
+		// Deregister one — should free a slot.
+		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(2), 0));
+
+		// Now can register again.
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()));
 	});
 }
 

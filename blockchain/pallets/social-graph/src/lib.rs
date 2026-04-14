@@ -126,18 +126,28 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Follow another user.
 		///
-		/// Transfers `T::FollowFee` from the caller to the target. Both must have
-		/// profiles. The fee is non-refundable.
+		/// Both accounts must have profiles. Transfers `T::FollowFee` from the
+		/// caller to the target. The fee is non-refundable. Storage writes happen
+		/// before the transfer to ensure atomicity.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::follow())]
 		pub fn follow(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			// 1. All validation first — no side effects.
 			ensure!(who != target, Error::<T>::CannotFollowSelf);
 			ensure!(T::ProfileProvider::exists(&who), Error::<T>::ProfileNotFound);
 			ensure!(T::ProfileProvider::exists(&target), Error::<T>::ProfileNotFound);
 			ensure!(!Follows::<T>::contains_key(&who, &target), Error::<T>::AlreadyFollowing);
 
+			// 2. Storage writes (infallible inserts/mutates).
+			let block_number = frame_system::Pallet::<T>::block_number();
+			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
+			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
+			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
+
+			// 3. Fee transfer last — if this fails, the storage overlay is rolled back by the FRAME
+			//    transactional layer (dispatch returns Err).
 			T::Currency::transfer(
 				&who,
 				&target,
@@ -146,12 +156,6 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::InsufficientBalance)?;
 
-			let block_number = frame_system::Pallet::<T>::block_number();
-			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
-
-			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
-			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
-
 			Self::deposit_event(Event::Followed { follower: who, followed: target });
 			Ok(())
 		}
@@ -159,6 +163,8 @@ pub mod pallet {
 		/// Unfollow a user.
 		///
 		/// Removes the follow relationship. No refund of the follow fee.
+		/// Does not require profiles to exist — allows cleanup after profile
+		/// deletion.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::unfollow())]
 		pub fn unfollow(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {

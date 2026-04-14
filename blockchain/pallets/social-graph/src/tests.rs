@@ -131,6 +131,23 @@ fn follow_fails_insufficient_balance() {
 }
 
 #[test]
+fn follow_insufficient_balance_does_not_mutate_storage() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[4, 2]);
+		// CRITICAL fix test: if transfer fails, storage must not be modified.
+		assert_noop!(
+			SocialGraph::follow(RuntimeOrigin::signed(4), 2),
+			Error::<Test>::InsufficientBalance,
+		);
+
+		// No follow recorded, no counters changed.
+		assert!(!Follows::<Test>::contains_key(4, 2));
+		assert_eq!(FollowerCount::<Test>::get(2), 0);
+		assert_eq!(FollowingCount::<Test>::get(4), 0);
+	});
+}
+
+#[test]
 fn follow_unsigned_origin_rejected() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(SocialGraph::follow(RuntimeOrigin::none(), 2), DispatchError::BadOrigin,);
@@ -201,6 +218,22 @@ fn unfollow_fails_not_following() {
 fn unfollow_unsigned_origin_rejected() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(SocialGraph::unfollow(RuntimeOrigin::none(), 2), DispatchError::BadOrigin,);
+	});
+}
+
+#[test]
+fn unfollow_works_after_profile_deletion() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialGraph::follow(RuntimeOrigin::signed(1), 2));
+
+		// Simulate profile deletion — remove from mock provider.
+		MockProfileProvider::remove_profile(1);
+
+		// Unfollow should still work (no profile check on unfollow).
+		assert_ok!(SocialGraph::unfollow(RuntimeOrigin::signed(1), 2));
+		assert!(!Follows::<Test>::contains_key(1, 2));
+		assert_eq!(FollowerCount::<Test>::get(2), 0);
 	});
 }
 
