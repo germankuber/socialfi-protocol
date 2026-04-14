@@ -1,4 +1,10 @@
+import { useChainStore } from "../../store/chainStore";
 import type { TxState, TxStage } from "../../hooks/social/useTxTracker";
+
+function explorerUrl(wsUrl: string, blockHash: string): string {
+	const rpc = encodeURIComponent(wsUrl);
+	return `https://polkadot.js.org/apps/?rpc=${rpc}#/explorer/query/${blockHash}`;
+}
 
 interface TxToastProps {
 	state: TxState;
@@ -24,6 +30,8 @@ const STAGE_PROGRESS: Record<TxStage, number> = {
 };
 
 export default function TxToast({ state, onDismiss }: TxToastProps) {
+	const wsUrl = useChainStore((s) => s.wsUrl);
+
 	if (state.stage === "idle") return null;
 
 	const config = STAGE_CONFIG[state.stage];
@@ -78,9 +86,17 @@ export default function TxToast({ state, onDismiss }: TxToastProps) {
 							{state.message}
 						</p>
 						{state.blockHash && (
-							<p className="text-[10px] font-mono text-surface-500 mt-1 truncate">
-								{state.blockHash}
-							</p>
+							<a
+								href={explorerUrl(wsUrl, state.blockHash)}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-1 text-[11px] font-mono text-brand-500 hover:text-brand-400 mt-1.5 transition-colors"
+							>
+								View on Polkadot.js Apps
+								<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+									<path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+								</svg>
+							</a>
 						)}
 					</div>
 

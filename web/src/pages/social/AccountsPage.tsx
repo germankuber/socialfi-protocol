@@ -44,10 +44,9 @@ export default function AccountsPage() {
 				<div className="space-y-2">
 					<div className="flex items-center justify-between">
 						<p className="text-sm font-medium">Polkadot Host (Nova Mobile)</p>
-						<span className={`badge ${
-							wallet.spektrStatus === "connected" ? "badge-success" :
+						<span className={`badge ${wallet.spektrStatus === "connected" ? "badge-success" :
 							wallet.spektrStatus === "unavailable" ? "badge-neutral" : "badge-danger"
-						}`}>
+							}`}>
 							{wallet.spektrStatus === "connected"
 								? `${wallet.spektrAccounts.length} account${wallet.spektrAccounts.length !== 1 ? "s" : ""}`
 								: wallet.spektrStatus === "unavailable"

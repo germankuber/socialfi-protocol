@@ -4,6 +4,7 @@ import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import AccountSelector from "../../components/social/AccountSelector";
+import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import AddressDisplay from "../../components/social/AddressDisplay";
 
@@ -100,125 +101,127 @@ export default function FeedPage() {
 	}
 
 	return (
-		<div className="space-y-4">
-			<AccountSelector />
+		<RequireProfile>
+			<div className="space-y-4">
+				<AccountSelector />
 
-			{/* Compose */}
-			<div className="panel space-y-3">
-				<h2 className="heading-2">New Post</h2>
-				<input
-					type="text"
-					value={content}
-					onChange={(e) => setContent(e.target.value)}
-					placeholder="Content CID (QmYour...)"
-					className="input"
-				/>
-				<div className="grid grid-cols-2 gap-3">
-					<div>
-						<label className="form-label">App ID</label>
-						<input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="Optional" className="input" />
+				{/* Compose */}
+				<div className="panel space-y-3">
+					<h2 className="heading-2">New Post</h2>
+					<input
+						type="text"
+						value={content}
+						onChange={(e) => setContent(e.target.value)}
+						placeholder="Content CID (QmYour...)"
+						className="input"
+					/>
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<label className="form-label">App ID</label>
+							<input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="Optional" className="input" />
+						</div>
+						<div>
+							<label className="form-label">Reply Fee</label>
+							<input value={replyFee} onChange={(e) => setReplyFee(e.target.value)} placeholder="0" className="input" />
+						</div>
 					</div>
-					<div>
-						<label className="form-label">Reply Fee</label>
-						<input value={replyFee} onChange={(e) => setReplyFee(e.target.value)} placeholder="0" className="input" />
-					</div>
-				</div>
-				<button onClick={createPost} disabled={!content.trim() || !account || busy} className="btn-brand w-full">
-					Post
-				</button>
-			</div>
-
-			{/* Feed */}
-			<div className="space-y-3">
-				<div className="flex items-center justify-between">
-					<h2 className="heading-2">Feed</h2>
-					<button onClick={loadPosts} disabled={loading} className="btn-ghost btn-sm">
-						{loading ? "..." : "Refresh"}
+					<button onClick={createPost} disabled={!content.trim() || !account || busy} className="btn-brand w-full">
+						Post
 					</button>
 				</div>
 
-				{posts.length === 0 ? (
-					<div className="panel text-center py-8 text-secondary text-sm">No posts yet.</div>
-				) : (
-					posts.map((post) => {
-						const postReplies = replies[post.id] || [];
-						const isExpanded = expanded.has(post.id);
+				{/* Feed */}
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<h2 className="heading-2">Feed</h2>
+						<button onClick={loadPosts} disabled={loading} className="btn-ghost btn-sm">
+							{loading ? "..." : "Refresh"}
+						</button>
+					</div>
 
-						return (
-							<div key={post.id} className="panel space-y-3">
-								<div className="flex items-center gap-3">
-									<div className="avatar bg-brand-500 text-xs">{post.author.slice(2, 4)}</div>
-									<div className="flex-1 min-w-0">
-										<AddressDisplay address={post.author} />
-										<p className="text-[11px] text-surface-500 font-mono">
-											Block #{post.createdAt}
-											{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
-										</p>
+					{posts.length === 0 ? (
+						<div className="panel text-center py-8 text-secondary text-sm">No posts yet.</div>
+					) : (
+						posts.map((post) => {
+							const postReplies = replies[post.id] || [];
+							const isExpanded = expanded.has(post.id);
+
+							return (
+								<div key={post.id} className="panel space-y-3">
+									<div className="flex items-center gap-3">
+										<div className="avatar bg-brand-500 text-xs">{post.author.slice(2, 4)}</div>
+										<div className="flex-1 min-w-0">
+											<AddressDisplay address={post.author} />
+											<p className="text-[11px] text-surface-500 font-mono">
+												Block #{post.createdAt}
+												{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
+											</p>
+										</div>
+										<span className="text-[11px] font-mono text-surface-600">#{post.id}</span>
 									</div>
-									<span className="text-[11px] font-mono text-surface-600">#{post.id}</span>
-								</div>
 
-								<p className="text-sm font-mono break-all pl-[52px]">{post.content}</p>
+									<p className="text-sm font-mono break-all pl-[52px]">{post.content}</p>
 
-								<div className="flex items-center gap-4 pl-[52px] text-xs">
-									<span className="text-surface-500">
-										Reply fee: {post.replyFee === 0n ? "Free" : post.replyFee.toString()}
-									</span>
-									{postReplies.length > 0 && (
-										<button onClick={() => toggle(post.id)} className="text-info hover:underline">
-											{isExpanded ? "Hide" : "Show"} {postReplies.length} {postReplies.length === 1 ? "reply" : "replies"}
-										</button>
-									)}
-									{account && (
-										<button
-											onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-											className="text-brand-500 hover:underline"
-										>
-											Reply
-										</button>
-									)}
-								</div>
-
-								{replyingTo === post.id && (
-									<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
-										<input
-											value={replyContent}
-											onChange={(e) => setReplyContent(e.target.value)}
-											onKeyDown={(e) => e.key === "Enter" && createReply(post.id)}
-											placeholder="Reply content CID..."
-											className="input"
-										/>
-										<div className="flex gap-2">
-											<input
-												value={replyAppId}
-												onChange={(e) => setReplyAppId(e.target.value)}
-												placeholder="App ID (opt.)"
-												className="input flex-1"
-											/>
-											<button onClick={() => createReply(post.id)} disabled={!replyContent.trim() || busy} className="btn-brand btn-sm">
+									<div className="flex items-center gap-4 pl-[52px] text-xs">
+										<span className="text-surface-500">
+											Reply fee: {post.replyFee === 0n ? "Free" : post.replyFee.toString()}
+										</span>
+										{postReplies.length > 0 && (
+											<button onClick={() => toggle(post.id)} className="text-info hover:underline">
+												{isExpanded ? "Hide" : "Show"} {postReplies.length} {postReplies.length === 1 ? "reply" : "replies"}
+											</button>
+										)}
+										{account && (
+											<button
+												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+												className="text-brand-500 hover:underline"
+											>
 												Reply
 											</button>
-										</div>
+										)}
 									</div>
-								)}
 
-								{isExpanded && postReplies.map((r) => (
-									<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
-										<div className="flex items-center gap-2 text-xs">
-											<AddressDisplay address={r.author} />
-											<span className="text-surface-600 font-mono">#{r.createdAt}</span>
-											{r.appId !== null && <span className="text-info">App #{r.appId}</span>}
+									{replyingTo === post.id && (
+										<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
+											<input
+												value={replyContent}
+												onChange={(e) => setReplyContent(e.target.value)}
+												onKeyDown={(e) => e.key === "Enter" && createReply(post.id)}
+												placeholder="Reply content CID..."
+												className="input"
+											/>
+											<div className="flex gap-2">
+												<input
+													value={replyAppId}
+													onChange={(e) => setReplyAppId(e.target.value)}
+													placeholder="App ID (opt.)"
+													className="input flex-1"
+												/>
+												<button onClick={() => createReply(post.id)} disabled={!replyContent.trim() || busy} className="btn-brand btn-sm">
+													Reply
+												</button>
+											</div>
 										</div>
-										<p className="text-xs font-mono text-surface-400 break-all">{r.content}</p>
-									</div>
-								))}
-							</div>
-						);
-					})
-				)}
+									)}
+
+									{isExpanded && postReplies.map((r) => (
+										<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
+											<div className="flex items-center gap-2 text-xs">
+												<AddressDisplay address={r.author} />
+												<span className="text-surface-600 font-mono">#{r.createdAt}</span>
+												{r.appId !== null && <span className="text-info">App #{r.appId}</span>}
+											</div>
+											<p className="text-xs font-mono text-surface-400 break-all">{r.content}</p>
+										</div>
+									))}
+								</div>
+							);
+						})
+					)}
+				</div>
+
+				<TxToast state={tracker.state} onDismiss={tracker.reset} />
 			</div>
-
-			<TxToast state={tracker.state} onDismiss={tracker.reset} />
-		</div>
+		</RequireProfile>
 	);
 }
