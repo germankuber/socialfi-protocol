@@ -1,37 +1,8 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useChainStore } from "../store/chainStore";
-import { useConnection } from "../hooks/useConnection";
-import { getClient } from "../hooks/useChain";
-import { LOCAL_WS_URL } from "../config/network";
 
 export default function HomePage() {
-	const { wsUrl, connected, blockNumber, socialAvailable } = useChainStore();
-	const { connect } = useConnection();
-	const [urlInput, setUrlInput] = useState(wsUrl);
-	const [error, setError] = useState<string | null>(null);
-	const [chainName, setChainName] = useState<string | null>(null);
-	const [connecting, setConnecting] = useState(false);
-
-	useEffect(() => { setUrlInput(wsUrl); }, [wsUrl]);
-
-	useEffect(() => {
-		if (!connected) return;
-		getClient(wsUrl).getChainSpecData().then((d) => setChainName(d.name)).catch(() => {});
-	}, [connected, wsUrl]);
-
-	async function handleConnect() {
-		setConnecting(true);
-		setError(null);
-		try {
-			const result = await connect(urlInput);
-			if (result?.ok && result.chain) setChainName(result.chain.name);
-		} catch {
-			setError("Could not connect. Is the chain running?");
-		} finally {
-			setConnecting(false);
-		}
-	}
+	const { connected, socialAvailable } = useChainStore();
 
 	return (
 		<div className="space-y-8 animate-fade-in">
@@ -48,37 +19,6 @@ export default function HomePage() {
 					On-chain profiles, app registry, feeds, and social graph. Shared
 					primitives for decentralized social networks.
 				</p>
-			</div>
-
-			{/* Connect */}
-			<div className="panel space-y-4">
-				<div className="flex gap-2">
-					<input
-						type="text"
-						value={urlInput}
-						onChange={(e) => setUrlInput(e.target.value)}
-						onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-						placeholder={LOCAL_WS_URL}
-						className="input flex-1"
-					/>
-					<button onClick={handleConnect} disabled={connecting} className="btn-brand shrink-0">
-						{connecting ? "Connecting..." : "Connect"}
-					</button>
-				</div>
-
-				{error && (
-					<p className="text-sm text-danger">{error}</p>
-				)}
-
-				{connected && (
-					<div className="flex items-center justify-between pt-2">
-						<div className="flex items-center gap-3">
-							<span className="badge-success">Connected</span>
-							<span className="text-sm text-secondary">{chainName}</span>
-						</div>
-						<span className="text-sm font-mono text-secondary">Block #{blockNumber}</span>
-					</div>
-				)}
 			</div>
 
 			{/* Feature cards */}
@@ -118,6 +58,12 @@ export default function HomePage() {
 			{connected && socialAvailable === false && (
 				<div className="panel text-center py-8">
 					<p className="text-danger text-sm">Social pallets not found on the connected chain.</p>
+				</div>
+			)}
+
+			{!connected && (
+				<div className="panel text-center py-8 space-y-2">
+					<p className="text-secondary">Click the connection indicator in the top bar to connect to a chain.</p>
 				</div>
 			)}
 		</div>

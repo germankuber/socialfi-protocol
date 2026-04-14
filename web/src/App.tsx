@@ -1,8 +1,9 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useChainStore } from "./store/chainStore";
-import { useConnectionManagement } from "./hooks/useConnection";
+import { useConnectionManagement, useConnection } from "./hooks/useConnection";
 import { useSelectedAccount } from "./hooks/social/useSelectedAccount";
+import { getClient } from "./hooks/useChain";
 import ThemeToggle from "./components/social/ThemeToggle";
 
 export default function App() {
@@ -14,7 +15,6 @@ export default function App() {
 
 	return (
 		<div className="min-h-screen flex flex-col">
-			{/* Top bar */}
 			<header className="sticky top-0 z-50 border-b border-surface-800 bg-surface-950/90 backdrop-blur-xl">
 				<div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
 					{/* Logo */}
@@ -33,46 +33,31 @@ export default function App() {
 						</span>
 					</Link>
 
-					{/* Nav links */}
+					{/* Nav */}
 					<nav className="flex gap-1">
 						<NavLink to="/" label="Home" current={location.pathname === "/"} />
-						<NavLink
-							to="/social"
-							label="Social"
-							current={location.pathname.startsWith("/social")}
-						/>
+						<NavLink to="/social" label="Social" current={location.pathname.startsWith("/social")} />
 					</nav>
 
-					{/* Right side */}
+					{/* Right */}
 					<div className="ml-auto flex items-center gap-3">
-						{connected && (
-							<span className="text-xs font-mono text-secondary hidden sm:inline">
-								#{blockNumber}
-							</span>
-						)}
-						<span
-							className={`w-2 h-2 rounded-full shrink-0 ${
-								connected ? "bg-success shadow-[0_0_6px_rgba(34,197,94,0.4)]" : "bg-surface-600"
-							}`}
-						/>
 						<ThemeToggle />
+						<ChainIndicator connected={connected} blockNumber={blockNumber} />
 						<WalletButton />
 					</div>
 				</div>
 			</header>
 
-			{/* Light mode header override */}
-			<style>{`
-				html.light header { background: rgba(255,255,255,0.9); border-color: #e4e4e7; }
-			`}</style>
+			<style>{`html.light header { background: rgba(255,255,255,0.9); border-color: #e4e4e7; }`}</style>
 
-			{/* Content */}
 			<main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
 				<Outlet />
 			</main>
 		</div>
 	);
 }
+
+/* ── Nav link ──────────────────────────────────────────── */
 
 function NavLink({ to, label, current }: { to: string; label: string; current: boolean }) {
 	return (
@@ -89,27 +74,137 @@ function NavLink({ to, label, current }: { to: string; label: string; current: b
 	);
 }
 
+/* ── Chain indicator (dot + popup) ─────────────────────── */
+
+function ChainIndicator({ connected, blockNumber }: { connected: boolean; blockNumber: number }) {
+	const wsUrl = useChainStore((s) => s.wsUrl);
+	const { connect } = useConnection();
+	const [open, setOpen] = useState(false);
+	const [urlInput, setUrlInput] = useState(wsUrl);
+	const [chainName, setChainName] = useState<string | null>(null);
+	const [connecting, setConnecting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => { setUrlInput(wsUrl); }, [wsUrl]);
+
+	useEffect(() => {
+		if (!connected) { setChainName(null); return; }
+		getClient(wsUrl).getChainSpecData().then((d) => setChainName(d.name)).catch(() => {});
+	}, [connected, wsUrl]);
+
+	// Close on outside click
+	useEffect(() => {
+		function handle(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+		}
+		document.addEventListener("mousedown", handle);
+		return () => document.removeEventListener("mousedown", handle);
+	}, []);
+
+	async function handleConnect() {
+		setConnecting(true);
+		setError(null);
+		try {
+			const result = await connect(urlInput);
+			if (result?.ok && result.chain) setChainName(result.chain.name);
+		} catch {
+			setError("Connection failed");
+		} finally {
+			setConnecting(false);
+		}
+	}
+
+	return (
+		<div className="relative" ref={ref}>
+			<button
+				onClick={() => setOpen(!open)}
+				className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-800 transition-colors"
+				title={connected ? `${chainName ?? "Connected"} — Block #${blockNumber}` : "Disconnected — Click to connect"}
+			>
+				<span
+					className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+						connected
+							? "bg-success shadow-[0_0_6px_rgba(34,197,94,0.5)]"
+							: "bg-danger shadow-[0_0_6px_rgba(239,68,68,0.4)]"
+					}`}
+				/>
+				{connected && (
+					<span className="text-[11px] font-mono text-secondary hidden sm:inline">
+						#{blockNumber}
+					</span>
+				)}
+			</button>
+
+			{open && (
+				<div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-surface-700 bg-surface-900 shadow-lg p-4 space-y-3 z-50 animate-fade-in">
+					{/* Status */}
+					{connected ? (
+						<div className="flex items-center gap-2">
+							<span className="badge-success">Connected</span>
+							<span className="text-xs text-secondary truncate">{chainName}</span>
+							<span className="text-xs font-mono text-secondary ml-auto">#{blockNumber}</span>
+						</div>
+					) : (
+						<div className="flex items-center gap-2">
+							<span className="badge-danger">Disconnected</span>
+						</div>
+					)}
+
+					{/* URL input */}
+					<div>
+						<label className="form-label">WebSocket Endpoint</label>
+						<div className="flex gap-2">
+							<input
+								type="text"
+								value={urlInput}
+								onChange={(e) => setUrlInput(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+								placeholder="ws://localhost:9944"
+								className="input flex-1 text-xs"
+							/>
+							<button
+								onClick={handleConnect}
+								disabled={connecting}
+								className="btn-brand btn-sm shrink-0"
+							>
+								{connecting ? "..." : "Connect"}
+							</button>
+						</div>
+					</div>
+
+					{error && <p className="text-xs text-danger">{error}</p>}
+
+					{/* Light mode */}
+					<style>{`
+						html.light .bg-surface-900 { background: white; }
+						html.light .border-surface-700 { border-color: #e4e4e7; }
+					`}</style>
+				</div>
+			)}
+		</div>
+	);
+}
+
+/* ── Wallet button + dropdown ──────────────────────────── */
+
 function WalletButton() {
 	const navigate = useNavigate();
 	const { account, allAccounts, selectedAccountIndex, setSelectedAccountIndex } = useSelectedAccount();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 
-	// Close dropdown on outside click
 	useEffect(() => {
-		function handleClick(e: MouseEvent) {
+		function handle(e: MouseEvent) {
 			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
 		}
-		document.addEventListener("mousedown", handleClick);
-		return () => document.removeEventListener("mousedown", handleClick);
+		document.addEventListener("mousedown", handle);
+		return () => document.removeEventListener("mousedown", handle);
 	}, []);
 
 	if (!account) {
 		return (
-			<button
-				onClick={() => navigate("/social/accounts")}
-				className="btn-brand btn-sm"
-			>
+			<button onClick={() => navigate("/social/accounts")} className="btn-brand btn-sm">
 				Connect
 			</button>
 		);
@@ -134,7 +229,6 @@ function WalletButton() {
 
 			{open && (
 				<div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-surface-700 bg-surface-900 shadow-lg overflow-hidden z-50 animate-fade-in">
-					{/* Account list */}
 					<div className="max-h-60 overflow-y-auto">
 						{allAccounts.map((acc, i) => (
 							<button
@@ -161,8 +255,6 @@ function WalletButton() {
 							</button>
 						))}
 					</div>
-
-					{/* Footer */}
 					<div className="border-t border-surface-800 p-2">
 						<button
 							onClick={() => { navigate("/social/accounts"); setOpen(false); }}
@@ -174,8 +266,6 @@ function WalletButton() {
 							Manage wallets
 						</button>
 					</div>
-
-					{/* Light mode dropdown override */}
 					<style>{`
 						html.light .bg-surface-900 { background: white; }
 						html.light .border-surface-700 { border-color: #e4e4e7; }
