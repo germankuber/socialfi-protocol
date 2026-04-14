@@ -10,33 +10,14 @@ export default function App() {
 
 	useConnectionManagement();
 
-	const navItems = [
-		{ path: "/", label: "Home", exact: true },
-		{ path: "/social", label: "Social" },
-	];
-
-	function isActive(item: (typeof navItems)[number]) {
-		if (item.exact) return location.pathname === item.path;
-		return location.pathname.startsWith(item.path);
-	}
-
 	return (
-		<div className="min-h-screen bg-pattern relative">
-			{/* Ambient gradient orbs */}
-			<div
-				className="gradient-orb"
-				style={{ background: "#e6007a", top: "-200px", right: "-100px" }}
-			/>
-			<div
-				className="gradient-orb"
-				style={{ background: "#a78bfa", bottom: "-200px", left: "-100px" }}
-			/>
-
-			{/* Navigation */}
-			<nav className="sticky top-0 z-50 nav-blur">
-				<div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-6">
-					<Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-						<div className="w-8 h-8 rounded-xl bg-gradient-to-br from-polka-500 to-accent-purple flex items-center justify-center shadow-glow transition-shadow group-hover:shadow-glow-lg">
+		<div className="min-h-screen flex flex-col">
+			{/* Top bar */}
+			<header className="sticky top-0 z-50 border-b border-surface-800 bg-surface-950/90 backdrop-blur-xl">
+				<div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
+					{/* Logo */}
+					<Link to="/" className="flex items-center gap-2 shrink-0 group">
+						<div className="w-8 h-8 rounded-xl bg-brand-500 flex items-center justify-center">
 							<svg viewBox="0 0 16 16" className="w-4 h-4" fill="white">
 								<circle cx="8" cy="3" r="2" />
 								<circle cx="3" cy="8" r="2" />
@@ -45,52 +26,62 @@ export default function App() {
 								<circle cx="8" cy="8" r="1.5" opacity="0.6" />
 							</svg>
 						</div>
-						<span className="text-base font-semibold font-display tracking-tight">
+						<span className="text-[15px] font-bold tracking-tight hidden sm:inline">
 							SocialFi
 						</span>
 					</Link>
 
-					<div className="flex gap-1">
-						{navItems.map((item) => (
-							<Link
-								key={item.path}
-								to={item.path}
-								className={`relative px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-									isActive(item)
-										? "text-white"
-										: "text-text-secondary hover:text-text-primary hover:bg-white/[0.05]"
-								}`}
-							>
-								{isActive(item) && (
-									<span className="absolute inset-0 rounded-lg bg-polka-500/15 border border-polka-500/25" />
-								)}
-								<span className="relative">{item.label}</span>
-							</Link>
-						))}
-					</div>
-
-					<div className="ml-auto flex items-center gap-3 shrink-0">
-						<ThemeToggle />
-						{connected && (
-							<span className="text-xs font-mono text-text-tertiary">
-								#{blockNumber}
-							</span>
-						)}
-						<span
-							className={`w-2 h-2 rounded-full transition-colors duration-500 ${
-								connected
-									? "bg-accent-green shadow-[0_0_6px_rgba(52,211,153,0.5)]"
-									: "bg-text-muted"
-							}`}
+					{/* Nav links */}
+					<nav className="flex gap-1">
+						<NavLink to="/" label="Home" current={location.pathname === "/"} />
+						<NavLink
+							to="/social"
+							label="Social"
+							current={location.pathname.startsWith("/social")}
 						/>
+					</nav>
+
+					{/* Right side */}
+					<div className="ml-auto flex items-center gap-2">
+						<ThemeToggle />
+						<div className="flex items-center gap-2 text-xs text-secondary">
+							{connected && (
+								<span className="font-mono">#{blockNumber}</span>
+							)}
+							<span
+								className={`w-2 h-2 rounded-full ${
+									connected ? "bg-success shadow-[0_0_6px_rgba(34,197,94,0.4)]" : "bg-surface-600"
+								}`}
+							/>
+						</div>
 					</div>
 				</div>
-			</nav>
+			</header>
 
-			{/* Main content */}
-			<main className="relative z-10 max-w-4xl mx-auto px-6 py-8">
+			{/* Light mode header override */}
+			<style>{`
+				html.light header { background: rgba(255,255,255,0.9); border-color: #e4e4e7; }
+			`}</style>
+
+			{/* Content */}
+			<main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
 				<Outlet />
 			</main>
 		</div>
+	);
+}
+
+function NavLink({ to, label, current }: { to: string; label: string; current: boolean }) {
+	return (
+		<Link
+			to={to}
+			className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+				current
+					? "bg-brand-500/10 text-brand-500"
+					: "text-surface-400 hover:text-surface-100 hover:bg-surface-800"
+			}`}
+		>
+			{label}
+		</Link>
 	);
 }

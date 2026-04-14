@@ -19,10 +19,14 @@ export default function AddressDisplay({ address, chars = 8 }: AddressDisplayPro
 	return (
 		<button
 			onClick={handleCopy}
-			className="font-mono text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+			className="font-mono text-xs text-secondary hover:text-surface-100 transition-colors"
 			title={address}
 		>
-			{copied ? "Copied!" : truncated}
+			{copied ? (
+				<span className="text-success">Copied!</span>
+			) : (
+				truncated
+			)}
 		</button>
 	);
 }

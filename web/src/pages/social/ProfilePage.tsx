@@ -6,7 +6,6 @@ import { useTxStatus } from "../../hooks/social/useTxStatus";
 import { formatDispatchError } from "../../utils/format";
 import AccountSelector from "../../components/social/AccountSelector";
 import TxStatusBanner from "../../components/social/TxStatusBanner";
-import AddressDisplay from "../../components/social/AddressDisplay";
 
 interface ProfileData {
 	metadata: string;
@@ -41,149 +40,107 @@ export default function ProfilePage() {
 		}
 	}, [account.address, getApi]);
 
-	useEffect(() => {
-		loadProfile();
-	}, [loadProfile]);
+	useEffect(() => { loadProfile(); }, [loadProfile]);
 
 	async function createProfile() {
 		if (!metadataInput.trim()) return;
 		try {
-			tx.setStatus("Submitting create_profile...");
+			tx.setStatus("Creating profile...");
 			const api = getApi();
 			const result = await api.tx.SocialProfiles.create_profile({
 				metadata: Binary.fromText(metadataInput),
 			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
 			tx.setSuccess("Profile created!");
 			setMetadataInput("");
 			loadProfile();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	async function updateMetadata() {
 		if (!metadataInput.trim()) return;
 		try {
-			tx.setStatus("Submitting update_metadata...");
+			tx.setStatus("Updating metadata...");
 			const api = getApi();
 			const result = await api.tx.SocialProfiles.update_metadata({
 				new_metadata: Binary.fromText(metadataInput),
 			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
 			tx.setSuccess("Metadata updated!");
 			setMetadataInput("");
 			loadProfile();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	async function deleteProfile() {
 		try {
-			tx.setStatus("Submitting delete_profile...");
+			tx.setStatus("Deleting profile...");
 			const api = getApi();
 			const result = await api.tx.SocialProfiles.delete_profile().signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
-			tx.setSuccess("Profile deleted! Bond returned.");
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
+			tx.setSuccess("Profile deleted. Bond returned.");
 			loadProfile();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<AccountSelector />
+			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
-			{/* Profile Status */}
-			<div className="card space-y-4">
-				<h2 className="section-title text-accent-purple">Profile Status</h2>
+			{/* Current profile */}
+			<div className="panel space-y-4">
+				<h2 className="heading-2">Profile Status</h2>
+
 				{loading ? (
-					<p className="text-text-muted text-sm">Loading...</p>
+					<div className="flex items-center gap-2 text-secondary text-sm">
+						<div className="w-4 h-4 border-2 border-surface-600 border-t-brand-500 rounded-full animate-spin" />
+						Loading...
+					</div>
 				) : profile ? (
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
-							<span className="w-2 h-2 rounded-full bg-accent-green" />
-							<span className="text-sm font-medium text-accent-green">Active</span>
+							<span className="badge-success">Active</span>
+							<span className="text-xs text-secondary font-mono">
+								Block #{profile.createdAt}
+							</span>
 						</div>
-						<div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3 space-y-2 text-sm">
-							<p>
-								<span className="text-text-tertiary">Owner: </span>
-								<AddressDisplay address={account.address} />
-							</p>
-							<p>
-								<span className="text-text-tertiary">Metadata: </span>
-								<span className="font-mono text-xs text-text-secondary">
-									{profile.metadata}
-								</span>
-							</p>
-							<p>
-								<span className="text-text-tertiary">Created at block: </span>
-								<span className="font-mono text-text-secondary">#{profile.createdAt}</span>
-							</p>
+						<div className="rounded-xl bg-surface-800 p-4 space-y-1">
+							<p className="text-xs text-secondary">Metadata CID</p>
+							<p className="font-mono text-sm break-all">{profile.metadata}</p>
 						</div>
-						<button
-							onClick={deleteProfile}
-							className="px-3 py-1.5 rounded-lg bg-accent-red/10 text-accent-red text-xs font-medium hover:bg-accent-red/20 transition-colors"
-						>
+						<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+						<button onClick={deleteProfile} className="btn-danger btn-sm">
 							Delete Profile
 						</button>
 					</div>
 				) : (
-					<div className="flex items-center gap-2">
-						<span className="w-2 h-2 rounded-full bg-text-muted" />
-						<span className="text-sm text-text-muted">No profile for this account</span>
-					</div>
+					<p className="text-secondary text-sm">No profile found for this account.</p>
 				)}
 			</div>
 
-			{/* Create / Update Form */}
-			<div className="card space-y-4">
-				<h2 className="section-title">{profile ? "Update Metadata" : "Create Profile"}</h2>
+			{/* Form */}
+			<div className="panel space-y-4">
+				<h2 className="heading-2">{profile ? "Update Metadata" : "Create Profile"}</h2>
 				<div>
-					<label className="label">Metadata CID</label>
+					<label className="form-label">Metadata CID</label>
 					<input
 						type="text"
 						value={metadataInput}
 						onChange={(e) => setMetadataInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && (profile ? updateMetadata() : createProfile())}
 						placeholder="QmYourIpfsCid..."
-						className="input-field w-full"
+						className="input"
 					/>
-					<p className="text-xs text-text-muted mt-1">
-						IPFS CID pointing to your profile JSON (name, bio, avatar, links).
-					</p>
 				</div>
-				{profile ? (
-					<button
-						onClick={updateMetadata}
-						disabled={!metadataInput.trim()}
-						className="btn-primary"
-					>
-						Update Metadata
-					</button>
-				) : (
-					<button
-						onClick={createProfile}
-						disabled={!metadataInput.trim()}
-						className="btn-primary"
-					>
-						Create Profile
-					</button>
-				)}
+				<button
+					onClick={profile ? updateMetadata : createProfile}
+					disabled={!metadataInput.trim()}
+					className="btn-brand"
+				>
+					{profile ? "Update Metadata" : "Create Profile"}
+				</button>
 			</div>
-
-			<TxStatusBanner status={tx.status} isError={tx.isError} />
 		</div>
 	);
 }

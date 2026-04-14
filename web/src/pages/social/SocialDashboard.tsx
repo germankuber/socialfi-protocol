@@ -39,72 +39,48 @@ export default function SocialDashboard() {
 		}
 	}
 
-	const features = [
-		{
-			title: "Profile",
-			description: "Create and manage your on-chain social identity.",
-			path: "/social/profile",
-			accent: "text-accent-purple",
-			border: "hover:border-accent-purple/20",
-		},
-		{
-			title: "Apps",
-			description: "Register social apps that consume shared primitives.",
-			path: "/social/apps",
-			accent: "text-accent-orange",
-			border: "hover:border-accent-orange/20",
-		},
-		{
-			title: "Feed",
-			description: "Create posts and replies with configurable fees.",
-			path: "/social/feed",
-			accent: "text-accent-blue",
-			border: "hover:border-accent-blue/20",
-		},
-		{
-			title: "Graph",
-			description: "Follow and unfollow users with paid relationships.",
-			path: "/social/graph",
-			accent: "text-accent-green",
-			border: "hover:border-accent-green/20",
-		},
-	];
-
 	return (
 		<div className="space-y-6">
 			{/* Stats */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 				<StatCard
 					label="Profiles"
 					value={loading ? "..." : stats.profileCount}
-					accentColor="text-accent-purple"
+					icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
 				/>
 				<StatCard
-					label="Registered Apps"
+					label="Apps"
 					value={loading ? "..." : stats.appCount}
-					accentColor="text-accent-orange"
+					icon="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
 				/>
 				<StatCard
 					label="Posts"
 					value={loading ? "..." : stats.postCount}
-					accentColor="text-accent-blue"
+					icon="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
 				/>
 			</div>
 
-			{/* Feature cards */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				{features.map((f) => (
+			{/* Quick links */}
+			<div className="space-y-1">
+				{[
+					{ to: "/social/profile", label: "Manage Profile", desc: "Create or update your on-chain identity", color: "bg-purple-500" },
+					{ to: "/social/apps", label: "App Registry", desc: "Register and manage social apps", color: "bg-orange-500" },
+					{ to: "/social/feed", label: "Feed", desc: "Create posts and replies", color: "bg-blue-500" },
+					{ to: "/social/graph", label: "Social Graph", desc: "Follow and unfollow users", color: "bg-emerald-500" },
+				].map((item) => (
 					<Link
-						key={f.path}
-						to={f.path}
-						className={`card-hover block group ${f.border}`}
+						key={item.to}
+						to={item.to}
+						className="panel-hover flex items-center gap-4"
 					>
-						<h3 className={`text-lg font-semibold mb-1 font-display ${f.accent}`}>
-							{f.title}
-						</h3>
-						<p className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
-							{f.description}
-						</p>
+						<div className={`w-2 h-8 rounded-full ${item.color}`} />
+						<div className="flex-1">
+							<p className="font-medium text-sm">{item.label}</p>
+							<p className="text-xs text-secondary">{item.desc}</p>
+						</div>
+						<svg className="w-4 h-4 text-surface-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+						</svg>
 					</Link>
 				))}
 			</div>

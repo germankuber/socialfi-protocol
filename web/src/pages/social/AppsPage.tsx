@@ -45,128 +45,96 @@ export default function AppsPage() {
 		}
 	}, [getApi]);
 
-	useEffect(() => {
-		loadApps();
-	}, [loadApps]);
+	useEffect(() => { loadApps(); }, [loadApps]);
 
 	async function registerApp() {
 		if (!metadataInput.trim()) return;
 		try {
-			tx.setStatus("Submitting register_app...");
+			tx.setStatus("Registering app...");
 			const api = getApi();
 			const result = await api.tx.SocialAppRegistry.register_app({
 				metadata: Binary.fromText(metadataInput),
 			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
 			tx.setSuccess("App registered!");
 			setMetadataInput("");
 			loadApps();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	async function deregisterApp(appId: number) {
 		try {
-			tx.setStatus("Submitting deregister_app...");
+			tx.setStatus("Deregistering app...");
 			const api = getApi();
 			const result = await api.tx.SocialAppRegistry.deregister_app({
 				app_id: appId,
 			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
-			tx.setSuccess("App deregistered! Bond returned.");
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
+			tx.setSuccess("App deregistered. Bond returned.");
 			loadApps();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<AccountSelector />
+			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
-			{/* Register Form */}
-			<div className="card space-y-4">
-				<h2 className="section-title text-accent-orange">Register App</h2>
+			{/* Register */}
+			<div className="panel space-y-4">
+				<h2 className="heading-2">Register App</h2>
 				<div>
-					<label className="label">Metadata CID</label>
+					<label className="form-label">Metadata CID</label>
 					<input
 						type="text"
 						value={metadataInput}
 						onChange={(e) => setMetadataInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && registerApp()}
 						placeholder="QmYourAppMetadata..."
-						className="input-field w-full"
+						className="input"
 					/>
 				</div>
-				<button
-					onClick={registerApp}
-					disabled={!metadataInput.trim()}
-					className="btn-primary"
-				>
+				<button onClick={registerApp} disabled={!metadataInput.trim()} className="btn-brand">
 					Register App
 				</button>
 			</div>
 
-			<TxStatusBanner status={tx.status} isError={tx.isError} />
-
-			{/* App List */}
-			<div className="card space-y-4">
+			{/* List */}
+			<div className="panel space-y-4">
 				<div className="flex items-center justify-between">
-					<h2 className="section-title">Registered Apps</h2>
-					<button onClick={loadApps} disabled={loading} className="btn-secondary text-xs">
-						{loading ? "Loading..." : "Refresh"}
+					<h2 className="heading-2">Apps ({apps.length})</h2>
+					<button onClick={loadApps} disabled={loading} className="btn-ghost btn-sm">
+						{loading ? "..." : "Refresh"}
 					</button>
 				</div>
 
 				{apps.length === 0 ? (
-					<p className="text-text-muted text-sm">No apps registered yet.</p>
+					<p className="text-secondary text-sm py-4 text-center">No apps registered yet.</p>
 				) : (
-					<div className="space-y-2">
+					<div className="divide-y divide-surface-800">
 						{apps.map((app) => (
-							<div
-								key={app.id}
-								className="rounded-lg border border-white/[0.04] bg-white/[0.02] p-3 text-sm space-y-1.5"
-							>
+							<div key={app.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className="font-mono font-semibold text-text-primary">
-											App #{app.id}
-										</span>
-										<span
-											className={`status-badge ${
-												app.status === "Active"
-													? "bg-accent-green/10 text-accent-green"
-													: "bg-text-muted/10 text-text-muted"
-											}`}
-										>
+										<span className="font-semibold text-sm">App #{app.id}</span>
+										<span className={app.status === "Active" ? "badge-success" : "badge-neutral"}>
 											{app.status}
 										</span>
 									</div>
 									{app.status === "Active" && app.owner === account.address && (
-										<button
-											onClick={() => deregisterApp(app.id)}
-											className="px-2 py-1 rounded-md bg-accent-red/10 text-accent-red text-xs font-medium hover:bg-accent-red/20 transition-colors"
-										>
+										<button onClick={() => deregisterApp(app.id)} className="btn-danger btn-sm">
 											Deregister
 										</button>
 									)}
 								</div>
-								<p className="text-text-tertiary">
-									Owner: <AddressDisplay address={app.owner} /> | Block:{" "}
-									<span className="font-mono text-text-secondary">#{app.createdAt}</span>
-								</p>
-								<p className="font-mono text-xs text-text-muted break-all">
-									{app.metadata}
-								</p>
+								<div className="text-xs text-secondary flex items-center gap-2">
+									<AddressDisplay address={app.owner} />
+									<span className="font-mono">Block #{app.createdAt}</span>
+								</div>
+								<p className="font-mono text-xs text-surface-500 break-all">{app.metadata}</p>
 							</div>
 						))}
+						<style>{`html.light .divide-surface-800 { --tw-divide-opacity: 1; --tw-divide-color: #e4e4e7; }`}</style>
 					</div>
 				)}
 			</div>

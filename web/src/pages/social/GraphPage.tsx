@@ -20,153 +20,117 @@ export default function GraphPage() {
 	const [followerCount, setFollowerCount] = useState(0);
 	const [followingCount, setFollowingCount] = useState(0);
 	const [loading, setLoading] = useState(true);
-	const [targetInput, setTargetInput] = useState("");
+	const [target, setTarget] = useState("");
 
 	const loadGraph = useCallback(async () => {
 		try {
 			setLoading(true);
 			const api = getApi();
-
-			// Load following list for this account
-			// FollowInfo has a single field `created_at`, which PAPI flattens to just `number`.
 			const entries = await api.query.SocialGraph.Follows.getEntries(account.address);
-			const followList: FollowData[] = entries.map((entry) => ({
-				followed: entry.keyArgs[1].toString(),
-				createdAt: Number(entry.value),
-			}));
-			setFollowing(followList);
-
-			// Load counts
-			const [fwerCount, fwingCount] = await Promise.all([
+			setFollowing(entries.map((e) => ({
+				followed: e.keyArgs[1].toString(),
+				createdAt: Number(e.value),
+			})));
+			const [fc, fgc] = await Promise.all([
 				api.query.SocialGraph.FollowerCount.getValue(account.address),
 				api.query.SocialGraph.FollowingCount.getValue(account.address),
 			]);
-			setFollowerCount(Number(fwerCount));
-			setFollowingCount(Number(fwingCount));
+			setFollowerCount(Number(fc));
+			setFollowingCount(Number(fgc));
 		} catch {
 			setFollowing([]);
-			setFollowerCount(0);
-			setFollowingCount(0);
 		} finally {
 			setLoading(false);
 		}
 	}, [account.address, getApi]);
 
-	useEffect(() => {
-		loadGraph();
-	}, [loadGraph]);
+	useEffect(() => { loadGraph(); }, [loadGraph]);
 
 	async function followUser() {
-		if (!targetInput.trim()) return;
+		if (!target.trim()) return;
 		try {
-			tx.setStatus("Submitting follow...");
+			tx.setStatus("Following...");
 			const api = getApi();
-			const result = await api.tx.SocialGraph.follow({
-				target: targetInput.trim(),
-			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
+			const result = await api.tx.SocialGraph.follow({ target: target.trim() }).signAndSubmit(account.signer);
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
 			tx.setSuccess("Followed!");
-			setTargetInput("");
+			setTarget("");
 			loadGraph();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
-	async function unfollowUser(target: string) {
+	async function unfollowUser(addr: string) {
 		try {
-			tx.setStatus("Submitting unfollow...");
+			tx.setStatus("Unfollowing...");
 			const api = getApi();
-			const result = await api.tx.SocialGraph.unfollow({
-				target,
-			}).signAndSubmit(account.signer);
-			if (!result.ok) {
-				tx.setError(formatDispatchError(result.dispatchError));
-				return;
-			}
+			const result = await api.tx.SocialGraph.unfollow({ target: addr }).signAndSubmit(account.signer);
+			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
 			tx.setSuccess("Unfollowed!");
 			loadGraph();
-		} catch (e) {
-			tx.setError(e instanceof Error ? e.message : String(e));
-		}
+		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<AccountSelector />
-
-			{/* Follow User */}
-			<div className="card space-y-4">
-				<h2 className="section-title text-accent-green">Follow User</h2>
-				<div>
-					<label className="label">Account Address</label>
-					<input
-						type="text"
-						value={targetInput}
-						onChange={(e) => setTargetInput(e.target.value)}
-						onKeyDown={(e) => e.key === "Enter" && followUser()}
-						placeholder="5GrwvaEF..."
-						className="input-field w-full"
-					/>
-				</div>
-				<button
-					onClick={followUser}
-					disabled={!targetInput.trim()}
-					className="btn-primary"
-				>
-					Follow
-				</button>
-			</div>
-
 			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
-			{/* Stats */}
-			<div className="grid grid-cols-2 gap-4">
-				<div className="card text-center">
-					<p className="text-2xl font-bold font-mono text-accent-green">{followerCount}</p>
-					<p className="text-xs text-text-tertiary uppercase tracking-wider mt-1">Followers</p>
-				</div>
-				<div className="card text-center">
-					<p className="text-2xl font-bold font-mono text-accent-blue">{followingCount}</p>
-					<p className="text-xs text-text-tertiary uppercase tracking-wider mt-1">Following</p>
+			{/* Follow form */}
+			<div className="panel space-y-3">
+				<h2 className="heading-2">Follow User</h2>
+				<div className="flex gap-2">
+					<input
+						value={target}
+						onChange={(e) => setTarget(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && followUser()}
+						placeholder="SS58 address..."
+						className="input flex-1"
+					/>
+					<button onClick={followUser} disabled={!target.trim()} className="btn-brand shrink-0">
+						Follow
+					</button>
 				</div>
 			</div>
 
-			{/* Following List */}
-			<div className="card space-y-4">
+			{/* Stats */}
+			<div className="grid grid-cols-2 gap-3">
+				<div className="panel text-center py-4">
+					<p className="text-3xl font-bold font-mono">{followerCount}</p>
+					<p className="text-xs text-secondary uppercase tracking-wider mt-1">Followers</p>
+				</div>
+				<div className="panel text-center py-4">
+					<p className="text-3xl font-bold font-mono">{followingCount}</p>
+					<p className="text-xs text-secondary uppercase tracking-wider mt-1">Following</p>
+				</div>
+			</div>
+
+			{/* Following list */}
+			<div className="panel space-y-4">
 				<div className="flex items-center justify-between">
-					<h2 className="section-title">Following ({following.length})</h2>
-					<button onClick={loadGraph} disabled={loading} className="btn-secondary text-xs">
-						{loading ? "Loading..." : "Refresh"}
+					<h2 className="heading-2">Following</h2>
+					<button onClick={loadGraph} disabled={loading} className="btn-ghost btn-sm">
+						{loading ? "..." : "Refresh"}
 					</button>
 				</div>
 
 				{following.length === 0 ? (
-					<p className="text-text-muted text-sm">Not following anyone yet.</p>
+					<p className="text-secondary text-sm text-center py-4">Not following anyone.</p>
 				) : (
-					<div className="space-y-2">
+					<div className="divide-y divide-surface-800">
 						{following.map((f) => (
-							<div
-								key={f.followed}
-								className="flex items-center justify-between rounded-lg border border-white/[0.04] bg-white/[0.02] p-3"
-							>
-								<div className="space-y-0.5">
+							<div key={f.followed} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+								<div>
 									<AddressDisplay address={f.followed} />
-									<p className="text-xs text-text-muted">
-										Since block <span className="font-mono">#{f.createdAt}</span>
+									<p className="text-[11px] text-surface-500 font-mono mt-0.5">
+										Since block #{f.createdAt}
 									</p>
 								</div>
-								<button
-									onClick={() => unfollowUser(f.followed)}
-									className="px-2 py-1 rounded-md bg-accent-red/10 text-accent-red text-xs font-medium hover:bg-accent-red/20 transition-colors"
-								>
+								<button onClick={() => unfollowUser(f.followed)} className="btn-danger btn-sm">
 									Unfollow
 								</button>
 							</div>
 						))}
+						<style>{`html.light .divide-surface-800 { --tw-divide-opacity: 1; --tw-divide-color: #e4e4e7; }`}</style>
 					</div>
 				)}
 			</div>
