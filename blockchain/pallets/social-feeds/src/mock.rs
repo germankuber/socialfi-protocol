@@ -33,9 +33,13 @@ impl MockProfileProvider {
 	}
 }
 
-impl ProfileProvider<u64> for MockProfileProvider {
+impl ProfileProvider<u64, u64> for MockProfileProvider {
 	fn exists(account: &u64) -> bool {
 		PROFILE_ACCOUNTS.with(|v| v.borrow().contains(account))
+	}
+
+	fn follow_fee(_account: &u64) -> u64 {
+		0
 	}
 }
 

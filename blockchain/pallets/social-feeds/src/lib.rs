@@ -79,7 +79,7 @@ pub mod pallet {
 		type TreasuryAccount: Get<Self::AccountId>;
 
 		/// Profile existence checker.
-		type ProfileProvider: ProfileProvider<Self::AccountId>;
+		type ProfileProvider: ProfileProvider<Self::AccountId, BalanceOf<Self>>;
 
 		/// App info provider.
 		type AppProvider: AppProvider<Self::AccountId, Self::AppId>;
