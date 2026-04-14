@@ -255,6 +255,12 @@ mod runtime {
 	#[runtime::pallet_index(51)]
 	pub type SocialAppRegistry = pallet_social_app_registry;
 
+	#[runtime::pallet_index(52)]
+	pub type SocialProfiles = pallet_social_profiles;
+
+	#[runtime::pallet_index(53)]
+	pub type SocialGraph = pallet_social_graph;
+
 	// Smart contracts (EVM + PVM via pallet-revive)
 	#[runtime::pallet_index(90)]
 	pub type Revive = pallet_revive;

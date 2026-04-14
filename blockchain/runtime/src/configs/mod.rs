@@ -33,8 +33,8 @@ use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
 	MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-	System, Timestamp, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS,
-	MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
+	SocialProfiles, System, Timestamp, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT,
+	HOURS, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -305,6 +305,31 @@ impl pallet_social_app_registry::Config for Runtime {
 	type MaxMetadataLen = MaxMetadataLen;
 	type MaxAppsPerOwner = MaxAppsPerOwner;
 	type WeightInfo = pallet_social_app_registry::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const ProfileBond: Balance = 10 * EXISTENTIAL_DEPOSIT;
+	pub const MaxProfileMetadataLen: u32 = 128;
+}
+
+/// Configure the social profiles pallet.
+impl pallet_social_profiles::Config for Runtime {
+	type Currency = Balances;
+	type ProfileBond = ProfileBond;
+	type MaxMetadataLen = MaxProfileMetadataLen;
+	type WeightInfo = pallet_social_profiles::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const FollowFee: Balance = EXISTENTIAL_DEPOSIT;
+}
+
+/// Configure the social graph pallet.
+impl pallet_social_graph::Config for Runtime {
+	type Currency = Balances;
+	type FollowFee = FollowFee;
+	type ProfileProvider = SocialProfiles;
+	type WeightInfo = pallet_social_graph::weights::SubstrateWeight<Runtime>;
 }
 
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────

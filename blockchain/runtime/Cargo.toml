@@ -22,6 +22,8 @@ hex-literal = { workspace = true, default-features = true }
 log = { workspace = true }
 pallet-template.workspace = true
 pallet-social-app-registry.workspace = true
+pallet-social-profiles.workspace = true
+pallet-social-graph.workspace = true
 polkadot-sdk = { workspace = true, features = [
 	"cumulus-pallet-aura-ext",
 	"cumulus-pallet-session-benchmarking",
@@ -66,6 +68,8 @@ std = [
 	"cumulus-pallet-parachain-system/std",
 	"log/std",
 	"pallet-social-app-registry/std",
+	"pallet-social-graph/std",
+	"pallet-social-profiles/std",
 	"pallet-template/std",
 	"polkadot-sdk/std",
 	"scale-info/std",
@@ -75,12 +79,16 @@ std = [
 runtime-benchmarks = [
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"pallet-social-app-registry/runtime-benchmarks",
+	"pallet-social-graph/runtime-benchmarks",
+	"pallet-social-profiles/runtime-benchmarks",
 	"pallet-template/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-parachain-system/try-runtime",
 	"pallet-social-app-registry/try-runtime",
+	"pallet-social-graph/try-runtime",
+	"pallet-social-profiles/try-runtime",
 	"pallet-template/try-runtime",
 	"polkadot-sdk/try-runtime",
 ]
