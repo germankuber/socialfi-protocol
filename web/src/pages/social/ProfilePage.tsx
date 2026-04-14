@@ -4,7 +4,6 @@ import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs, type ProfileMetadata } from "../../hooks/social/useIpfs";
-import AccountSelector from "../../components/social/AccountSelector";
 import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
@@ -124,7 +123,6 @@ export default function ProfilePage() {
 	return (
 		<RequireWallet>
 		<div className="space-y-4">
-			<AccountSelector />
 
 			{account && (
 				<>

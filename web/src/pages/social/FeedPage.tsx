@@ -5,7 +5,6 @@ import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
-import AccountSelector from "../../components/social/AccountSelector";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import ConfirmModal from "../../components/social/ConfirmModal";
@@ -212,7 +211,6 @@ export default function FeedPage() {
 	return (
 		<RequireProfile>
 			<div className="space-y-4">
-				<AccountSelector />
 
 				{/* Compose */}
 				<div className="panel space-y-3">

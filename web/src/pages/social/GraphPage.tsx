@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
-import AccountSelector from "../../components/social/AccountSelector";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import AddressDisplay from "../../components/social/AddressDisplay";
@@ -76,7 +75,6 @@ export default function GraphPage() {
 	return (
 		<RequireProfile>
 		<div className="space-y-4">
-			<AccountSelector />
 
 			<div className="panel space-y-3">
 				<h2 className="heading-2">Follow User</h2>
