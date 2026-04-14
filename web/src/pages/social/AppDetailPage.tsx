@@ -6,6 +6,8 @@ import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
 import AddressDisplay from "../../components/social/AddressDisplay";
+import AuthorDisplay from "../../components/social/AuthorDisplay";
+import ConfirmModal from "../../components/social/ConfirmModal";
 import TxToast from "../../components/social/TxToast";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
@@ -71,6 +73,7 @@ export default function AppDetailPage() {
 	// Reply
 	const [replyingTo, setReplyingTo] = useState<number | null>(null);
 	const [replyContent, setReplyContent] = useState("");
+	const [confirmReplyTo, setConfirmReplyTo] = useState<number | null>(null);
 
 	const [feedTab, setFeedTab] = useState<"all" | "mine">("all");
 
@@ -137,14 +140,21 @@ export default function AppDetailPage() {
 			setPosts(appPosts);
 			setReplies(replyMap);
 
+			let unlockedSet = new Set<number>();
 			if (accountAddress) {
 				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
-				setUnlocked(new Set(unlockedEntries.map((e) => Number(e.keyArgs[1]))));
+				unlockedSet = new Set(unlockedEntries.map((e) => Number(e.keyArgs[1])));
+				setUnlocked(unlockedSet);
 			}
 
 			// Resolve content from IPFS in background
+			// Public: always. Non-public: if author or unlocked.
 			for (const p of appPosts) {
-				if (p.visibility === "Public") {
+				const shouldResolve =
+					p.visibility === "Public" ||
+					p.author === accountAddress ||
+					unlockedSet.has(p.id);
+				if (shouldResolve) {
 					fetchPostContent(p.contentCid).then((text) => {
 						if (text) setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: text } : pp));
 					});
@@ -372,9 +382,8 @@ export default function AppDetailPage() {
 							<div key={post.id} className="panel space-y-3">
 								{/* Author */}
 								<div className="flex items-center gap-3">
-									<div className="avatar bg-brand-500 text-xs">{post.author.slice(2, 4)}</div>
+									<AuthorDisplay address={post.author} size="md" />
 									<div className="flex-1 min-w-0">
-										<AddressDisplay address={post.author} />
 										<p className="text-[11px] text-surface-500 font-mono">Block #{post.createdAt}</p>
 									</div>
 									<div className="flex items-center gap-2">
@@ -383,7 +392,7 @@ export default function AppDetailPage() {
 												{post.visibility}
 											</span>
 										)}
-										<span className="text-[11px] font-mono text-surface-600">#{post.id}</span>
+										<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
 									</div>
 								</div>
 
@@ -469,15 +478,18 @@ export default function AppDetailPage() {
 										<textarea
 											value={replyContent}
 											onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value); }}
-											onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); createReply(post.id); } }}
 											placeholder="Write a reply..."
 											rows={2}
 											className="input resize-none w-full"
 										/>
 										<div className="flex items-center justify-between">
 											<span className="text-[10px] text-surface-500">{MAX_CHARS - replyContent.length} chars left</span>
-											<button onClick={() => createReply(post.id)} disabled={!replyContent.trim() || busy} className="btn-brand btn-sm">
-												{uploading ? "..." : "Reply"}
+											<button
+												onClick={() => setConfirmReplyTo(post.id)}
+												disabled={!replyContent.trim() || busy}
+												className="btn-brand btn-sm"
+											>
+												Reply
 											</button>
 										</div>
 									</div>
@@ -501,6 +513,47 @@ export default function AppDetailPage() {
 				);
 				})()}
 			</div>
+
+			{/* Reply cost confirmation */}
+			<ConfirmModal
+				open={confirmReplyTo !== null}
+				title="Reply Cost"
+				confirmLabel={busy ? "Sending..." : "Confirm & Reply"}
+				confirmDisabled={busy}
+				onCancel={() => setConfirmReplyTo(null)}
+				onConfirm={async () => {
+					if (confirmReplyTo !== null) {
+						const pid = confirmReplyTo;
+						setConfirmReplyTo(null);
+						await createReply(pid);
+					}
+				}}
+			>
+				{(() => {
+					const parent = confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
+					const postFee = "Post fee (to app/treasury)";
+					return (
+						<div className="space-y-3 text-sm">
+							<div className="rounded-xl bg-surface-800 p-3 space-y-2">
+								<div className="flex items-center justify-between">
+									<span className="text-secondary">{postFee}</span>
+									<span className="font-mono font-semibold">Post Fee</span>
+								</div>
+								{parent && parent.replyFee > 0n && (
+									<div className="flex items-center justify-between">
+										<span className="text-secondary">Reply fee (to post author)</span>
+										<span className="font-mono font-semibold">{parent.replyFee.toString()}</span>
+									</div>
+								)}
+							</div>
+							<p className="text-xs text-secondary">
+								These fees will be deducted from your balance when the reply is submitted.
+							</p>
+							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+						</div>
+					);
+				})()}
+			</ConfirmModal>
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
@@ -7,6 +8,7 @@ import { useIpfs } from "../../hooks/social/useIpfs";
 import AccountSelector from "../../components/social/AccountSelector";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
+import ConfirmModal from "../../components/social/ConfirmModal";
 import AddressDisplay from "../../components/social/AddressDisplay";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
@@ -48,6 +50,7 @@ export default function FeedPage() {
 	const [replyingTo, setReplyingTo] = useState<number | null>(null);
 	const [replyContent, setReplyContent] = useState("");
 	const [replyAppId, setReplyAppId] = useState("");
+	const [confirmReplyTo, setConfirmReplyTo] = useState<number | null>(null);
 
 	const accountAddress = account?.address ?? null;
 
@@ -83,14 +86,17 @@ export default function FeedPage() {
 			}
 			setReplies(rMap);
 
+			let unlockedSet = new Set<number>();
 			if (accountAddress) {
 				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
-				setUnlocked(new Set(unlockedEntries.map((e) => Number(e.keyArgs[1]))));
+				unlockedSet = new Set(unlockedEntries.map((e) => Number(e.keyArgs[1])));
+				setUnlocked(unlockedSet);
 			}
 
 			// Resolve text content from IPFS in background
+			// Public: always. Non-public: if author or unlocked.
 			for (const p of originals) {
-				if (p.visibility === "Public") {
+				if (p.visibility === "Public" || p.author === accountAddress || unlockedSet.has(p.id)) {
 					fetchPostContent(p.contentCid).then((text) => {
 						if (text) {
 							setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: text } : pp));
@@ -300,7 +306,7 @@ export default function FeedPage() {
 													{post.visibility}
 												</span>
 											)}
-											<span className="text-[11px] font-mono text-surface-600">#{post.id}</span>
+											<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
 										</div>
 									</div>
 
@@ -355,9 +361,6 @@ export default function FeedPage() {
 												onChange={(e) => {
 													if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value);
 												}}
-												onKeyDown={(e) => {
-													if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); createReply(post.id); }
-												}}
 												placeholder="Write a reply..."
 												rows={2}
 												className="input resize-none w-full"
@@ -366,9 +369,9 @@ export default function FeedPage() {
 												<span className="text-[10px] text-surface-500">
 													{MAX_CHARS - replyContent.length} chars left
 												</span>
-												<button onClick={() => createReply(post.id)} disabled={!replyContent.trim() || busy}
+												<button onClick={() => setConfirmReplyTo(post.id)} disabled={!replyContent.trim() || busy}
 													className="btn-brand btn-sm">
-													{uploading ? "Uploading..." : "Reply"}
+													Reply
 												</button>
 											</div>
 										</div>
@@ -391,6 +394,49 @@ export default function FeedPage() {
 						})
 					)}
 				</div>
+
+				<ConfirmModal
+					open={confirmReplyTo !== null}
+					title="Reply Cost"
+					confirmLabel={busy ? "Sending..." : "Confirm & Reply"}
+					confirmDisabled={busy}
+					onCancel={() => setConfirmReplyTo(null)}
+					onConfirm={async () => {
+						if (confirmReplyTo !== null) {
+							const pid = confirmReplyTo;
+							setConfirmReplyTo(null);
+							await createReply(pid);
+						}
+					}}
+				>
+					{(() => {
+						const parent = confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
+						return (
+							<div className="space-y-3 text-sm">
+								<div className="rounded-xl bg-surface-800 p-3 space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="text-secondary">Post fee</span>
+										<span className="font-mono font-semibold">Post Fee</span>
+									</div>
+									{parent && parent.replyFee > 0n && (
+										<div className="flex items-center justify-between">
+											<span className="text-secondary">Reply fee (to author)</span>
+											<span className="font-mono font-semibold">{parent.replyFee.toString()}</span>
+										</div>
+									)}
+									{parent && parent.replyFee === 0n && (
+										<div className="flex items-center justify-between">
+											<span className="text-secondary">Reply fee</span>
+											<span className="font-mono text-success">Free</span>
+										</div>
+									)}
+								</div>
+								<p className="text-xs text-secondary">Fees are deducted when the reply is submitted.</p>
+								<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+							</div>
+						);
+					})()}
+				</ConfirmModal>
 
 				<TxToast state={tracker.state} onDismiss={tracker.reset} />
 			</div>
