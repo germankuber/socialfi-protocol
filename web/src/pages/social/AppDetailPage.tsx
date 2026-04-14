@@ -499,7 +499,7 @@ export default function AppDetailPage() {
 								{isExpanded && visible && postReplies.map((r) => (
 									<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
 										<div className="flex items-center gap-2 text-xs">
-											<AddressDisplay address={r.author} />
+											<AuthorDisplay address={r.author} size="sm" />
 											<span className="text-surface-600 font-mono">#{r.createdAt}</span>
 										</div>
 										<p className="text-sm whitespace-pre-wrap break-words">

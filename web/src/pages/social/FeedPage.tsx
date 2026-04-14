@@ -9,7 +9,7 @@ import AccountSelector from "../../components/social/AccountSelector";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import ConfirmModal from "../../components/social/ConfirmModal";
-import AddressDisplay from "../../components/social/AddressDisplay";
+import AuthorDisplay from "../../components/social/AuthorDisplay";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
 const MAX_CHARS = 400;
@@ -292,9 +292,8 @@ export default function FeedPage() {
 								<div key={post.id} className="panel space-y-3">
 									{/* Header */}
 									<div className="flex items-center gap-3">
-										<div className="avatar bg-brand-500 text-xs">{post.author.slice(2, 4)}</div>
+										<AuthorDisplay address={post.author} size="md" />
 										<div className="flex-1 min-w-0">
-											<AddressDisplay address={post.author} />
 											<p className="text-[11px] text-surface-500 font-mono">
 												Block #{post.createdAt}
 												{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
@@ -381,7 +380,7 @@ export default function FeedPage() {
 									{isExpanded && visible && postReplies.map((r) => (
 										<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
 											<div className="flex items-center gap-2 text-xs">
-												<AddressDisplay address={r.author} />
+												<AuthorDisplay address={r.author} size="sm" />
 												<span className="text-surface-600 font-mono">#{r.createdAt}</span>
 											</div>
 											<p className="text-sm whitespace-pre-wrap break-words">

@@ -5,7 +5,7 @@ import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
-import AddressDisplay from "../../components/social/AddressDisplay";
+import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
 import TxToast from "../../components/social/TxToast";
 
@@ -184,9 +184,8 @@ export default function PostDetailPage() {
 			{/* Post */}
 			<div className="panel space-y-4">
 				<div className="flex items-center gap-3">
-					<div className="avatar bg-brand-500 text-xs">{post.author.slice(2, 4)}</div>
+					<AuthorDisplay address={post.author} size="md" />
 					<div className="flex-1 min-w-0">
-						<AddressDisplay address={post.author} />
 						<p className="text-[11px] text-surface-500 font-mono">
 							Block #{post.createdAt}
 							{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
@@ -255,9 +254,8 @@ export default function PostDetailPage() {
 					{replies.map((r) => (
 						<div key={r.id} className="panel space-y-2">
 							<div className="flex items-center gap-3">
-								<div className="avatar bg-surface-700 text-xs">{r.author.slice(2, 4)}</div>
+								<AuthorDisplay address={r.author} size="sm" />
 								<div className="flex-1 min-w-0">
-									<AddressDisplay address={r.author} />
 									<p className="text-[11px] text-surface-500 font-mono">Block #{r.createdAt}</p>
 								</div>
 								<span className="text-[11px] font-mono text-surface-600">#{r.id}</span>
