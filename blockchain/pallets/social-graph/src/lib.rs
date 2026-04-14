@@ -1,13 +1,8 @@
 //! # Social Graph Pallet
 //!
 //! Global social graph for the SocialFi protocol — follow/unfollow relationships
-//! shared across all registered apps. Following costs a configurable fee that is
-//! transferred directly to the followed account (no refund on unfollow).
-//!
-//! Both follower and followed must have an existing profile, validated via the
-//! `ProfileProvider` trait from `pallet-social-profiles`.
-//!
-//! Other pallets can query follow relationships via the `GraphProvider` trait.
+//! shared across all registered apps. The follow fee is set per-profile by the
+//! target user (via pallet-social-profiles). If their fee is 0, follows are free.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -52,19 +47,14 @@ pub mod pallet {
 		/// Currency for follow fee transfers.
 		type Currency: Currency<Self::AccountId>;
 
-		/// Fee paid to follow someone (transferred to the followed account, no refund).
-		#[pallet::constant]
-		type FollowFee: Get<BalanceOf<Self>>;
-
-		/// Profile existence checker — provided by pallet-social-profiles.
-		type ProfileProvider: ProfileProvider<Self::AccountId>;
+		/// Profile provider — checks existence and provides per-profile follow fee.
+		type ProfileProvider: ProfileProvider<Self::AccountId, BalanceOf<Self>>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
 	/// Follow relationship: (follower, followed) -> FollowInfo.
-	/// If the key exists, the follow is active.
 	#[pallet::storage]
 	pub type Follows<T: Config> = StorageDoubleMap<
 		_,
@@ -75,12 +65,12 @@ pub mod pallet {
 		FollowInfo<T>,
 	>;
 
-	/// Follower count per account (how many people follow this account).
+	/// Follower count per account.
 	#[pallet::storage]
 	pub type FollowerCount<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery>;
 
-	/// Following count per account (how many people this account follows).
+	/// Following count per account.
 	#[pallet::storage]
 	pub type FollowingCount<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery>;
@@ -89,7 +79,11 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A user followed another user.
-		Followed { follower: T::AccountId, followed: T::AccountId },
+		Followed {
+			follower: T::AccountId,
+			followed: T::AccountId,
+			fee_paid: BalanceOf<T>,
+		},
 		/// A user unfollowed another user.
 		Unfollowed { follower: T::AccountId, followed: T::AccountId },
 	}
@@ -126,45 +120,37 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Follow another user.
 		///
-		/// Both accounts must have profiles. Transfers `T::FollowFee` from the
-		/// caller to the target. The fee is non-refundable. Storage writes happen
-		/// before the transfer to ensure atomicity.
+		/// Both accounts must have profiles. The follow fee is determined by the
+		/// target's profile (set via `set_follow_fee` in pallet-social-profiles).
+		/// If the fee is 0, the follow is free.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::follow())]
 		pub fn follow(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// 1. All validation first — no side effects.
 			ensure!(who != target, Error::<T>::CannotFollowSelf);
 			ensure!(T::ProfileProvider::exists(&who), Error::<T>::ProfileNotFound);
 			ensure!(T::ProfileProvider::exists(&target), Error::<T>::ProfileNotFound);
 			ensure!(!Follows::<T>::contains_key(&who, &target), Error::<T>::AlreadyFollowing);
 
-			// 2. Storage writes (infallible inserts/mutates).
+			// Storage writes first (atomicity).
 			let block_number = frame_system::Pallet::<T>::block_number();
 			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
 			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
 			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
 
-			// 3. Fee transfer last — if this fails, the storage overlay is rolled back by the FRAME
-			//    transactional layer (dispatch returns Err).
-			T::Currency::transfer(
-				&who,
-				&target,
-				T::FollowFee::get(),
-				ExistenceRequirement::KeepAlive,
-			)
-			.map_err(|_| Error::<T>::InsufficientBalance)?;
+			// Transfer per-profile follow fee to target (if > 0).
+			let fee = T::ProfileProvider::follow_fee(&target);
+			if fee > Zero::zero() {
+				T::Currency::transfer(&who, &target, fee, ExistenceRequirement::KeepAlive)
+					.map_err(|_| Error::<T>::InsufficientBalance)?;
+			}
 
-			Self::deposit_event(Event::Followed { follower: who, followed: target });
+			Self::deposit_event(Event::Followed { follower: who, followed: target, fee_paid: fee });
 			Ok(())
 		}
 
-		/// Unfollow a user.
-		///
-		/// Removes the follow relationship. No refund of the follow fee.
-		/// Does not require profiles to exist — allows cleanup after profile
-		/// deletion.
+		/// Unfollow a user. No refund.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::unfollow())]
 		pub fn unfollow(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
@@ -173,7 +159,6 @@ pub mod pallet {
 			ensure!(Follows::<T>::contains_key(&who, &target), Error::<T>::NotFollowing);
 
 			Follows::<T>::remove(&who, &target);
-
 			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_sub(1));
 			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_sub(1));
 

@@ -1,11 +1,7 @@
 //! # Social Profiles Pallet
 //!
 //! Global profile registry for the SocialFi protocol. One profile per AccountId,
-//! shared across all registered apps. A profile represents a user's existence in
-//! the protocol — without one, an AccountId cannot interact with other social
-//! pallets (feeds, graph, collect).
-//!
-//! Other pallets verify profile existence via the `ProfileProvider` trait.
+//! shared across all registered apps.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -23,9 +19,10 @@ pub mod weights;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-/// Trait that other pallets use to verify a user has a profile.
-pub trait ProfileProvider<AccountId> {
+/// Trait that other pallets use to verify a user has a profile and query follow fee.
+pub trait ProfileProvider<AccountId, Balance> {
 	fn exists(account: &AccountId) -> bool;
+	fn follow_fee(account: &AccountId) -> Balance;
 }
 
 #[frame::pallet]
@@ -36,7 +33,7 @@ pub mod pallet {
 		traits::{Currency, ReservableCurrency},
 	};
 
-	type BalanceOf<T> =
+	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	#[pallet::pallet]
@@ -74,6 +71,8 @@ pub mod pallet {
 		ProfileCreated { account: T::AccountId },
 		/// Profile metadata was updated.
 		ProfileUpdated { account: T::AccountId },
+		/// Profile follow fee was updated.
+		FollowFeeUpdated { account: T::AccountId, fee: BalanceOf<T> },
 		/// A profile was deleted and bond returned.
 		ProfileDeleted { account: T::AccountId },
 	}
@@ -90,18 +89,21 @@ pub mod pallet {
 		MetadataTooLong,
 	}
 
-	impl<T: Config> ProfileProvider<T::AccountId> for Pallet<T> {
+	impl<T: Config> ProfileProvider<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		fn exists(account: &T::AccountId) -> bool {
 			Profiles::<T>::contains_key(account)
+		}
+
+		fn follow_fee(account: &T::AccountId) -> BalanceOf<T> {
+			Profiles::<T>::get(account)
+				.map(|p| p.follow_fee)
+				.unwrap_or_else(Zero::zero)
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Create a new profile for the caller.
-		///
-		/// Reserves `T::ProfileBond`, stores profile info, and increments the
-		/// global profile counter.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_profile())]
 		pub fn create_profile(
@@ -116,7 +118,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InsufficientBond)?;
 
 			let block_number = frame_system::Pallet::<T>::block_number();
-			Profiles::<T>::insert(&who, ProfileInfo { metadata, created_at: block_number });
+			Profiles::<T>::insert(
+				&who,
+				ProfileInfo { metadata, follow_fee: Zero::zero(), created_at: block_number },
+			);
 
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_add(1));
 
@@ -125,8 +130,6 @@ pub mod pallet {
 		}
 
 		/// Update the metadata CID of an existing profile.
-		///
-		/// Only the profile owner (the caller) can update their metadata.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::update_metadata())]
 		pub fn update_metadata(
@@ -145,10 +148,28 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Set the follow fee for the caller's profile.
+		/// Anyone who wants to follow this account must pay this fee.
+		/// Set to 0 for free follows.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::update_metadata())]
+		pub fn set_follow_fee(
+			origin: OriginFor<T>,
+			fee: BalanceOf<T>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Profiles::<T>::try_mutate(&who, |maybe_profile| -> DispatchResult {
+				let profile = maybe_profile.as_mut().ok_or(Error::<T>::ProfileNotFound)?;
+				profile.follow_fee = fee;
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::FollowFeeUpdated { account: who.clone(), fee });
+			Ok(())
+		}
+
 		/// Delete the caller's profile.
-		///
-		/// Removes the profile from storage, unreserves the bond, and decrements
-		/// the global profile counter.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::delete_profile())]
 		pub fn delete_profile(origin: OriginFor<T>) -> DispatchResult {

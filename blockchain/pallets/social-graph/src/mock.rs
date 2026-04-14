@@ -13,11 +13,12 @@ use frame::{
 use pallet_social_profiles::ProfileProvider;
 use polkadot_sdk::pallet_balances;
 
-/// Mock ProfileProvider backed by a thread-local set of accounts.
+/// Mock ProfileProvider backed by thread-local state.
 pub struct MockProfileProvider;
 
 thread_local! {
 	static PROFILE_ACCOUNTS: RefCell<Vec<u64>> = RefCell::new(Vec::new());
+	static FOLLOW_FEES: RefCell<Vec<(u64, u64)>> = RefCell::new(Vec::new());
 }
 
 impl MockProfileProvider {
@@ -29,19 +30,31 @@ impl MockProfileProvider {
 			}
 		});
 	}
-}
 
-impl MockProfileProvider {
 	pub fn remove_profile(account: u64) {
 		PROFILE_ACCOUNTS.with(|v| {
 			v.borrow_mut().retain(|a| *a != account);
 		});
 	}
+
+	pub fn set_follow_fee(account: u64, fee: u64) {
+		FOLLOW_FEES.with(|v| {
+			let mut v = v.borrow_mut();
+			v.retain(|(a, _)| *a != account);
+			v.push((account, fee));
+		});
+	}
 }
 
-impl ProfileProvider<u64> for MockProfileProvider {
+impl ProfileProvider<u64, u64> for MockProfileProvider {
 	fn exists(account: &u64) -> bool {
 		PROFILE_ACCOUNTS.with(|v| v.borrow().contains(account))
+	}
+
+	fn follow_fee(account: &u64) -> u64 {
+		FOLLOW_FEES.with(|v| {
+			v.borrow().iter().find(|(a, _)| a == account).map(|(_, f)| *f).unwrap_or(0)
+		})
 	}
 }
 
@@ -84,21 +97,16 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 }
 
-parameter_types! {
-	pub const FollowFee: u64 = 10;
-}
-
 impl crate::Config for Test {
 	type Currency = Balances;
-	type FollowFee = FollowFee;
 	type ProfileProvider = MockProfileProvider;
 	type WeightInfo = ();
 }
 
 /// Build genesis storage with pre-funded accounts for testing.
 pub fn new_test_ext() -> TestState {
-	// Reset profile accounts for each test.
 	PROFILE_ACCOUNTS.with(|v| v.borrow_mut().clear());
+	FOLLOW_FEES.with(|v| v.borrow_mut().clear());
 
 	let mut storage = GenesisConfig::<Test>::default().build_storage().unwrap();
 
