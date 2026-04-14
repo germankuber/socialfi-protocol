@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useChainStore } from "../store/chainStore";
 import { useConnection } from "../hooks/useConnection";
 import { getClient } from "../hooks/useChain";
-import {
-	LOCAL_ETH_RPC_URL,
-	LOCAL_WS_URL,
-	getNetworkPresetEndpoints,
-	type NetworkPreset,
-} from "../config/network";
+import { LOCAL_WS_URL } from "../config/network";
 
 export default function HomePage() {
-	const { wsUrl, ethRpcUrl, setEthRpcUrl, connected, blockNumber, pallets } = useChainStore();
+	const { wsUrl, connected, blockNumber, socialAvailable } = useChainStore();
 	const { connect } = useConnection();
 	const [urlInput, setUrlInput] = useState(wsUrl);
-	const [ethRpcInput, setEthRpcInput] = useState(ethRpcUrl);
 	const [error, setError] = useState<string | null>(null);
 	const [chainName, setChainName] = useState<string | null>(null);
 	const [connecting, setConnecting] = useState(false);
@@ -23,14 +18,7 @@ export default function HomePage() {
 	}, [wsUrl]);
 
 	useEffect(() => {
-		setEthRpcInput(ethRpcUrl);
-	}, [ethRpcUrl]);
-
-	useEffect(() => {
-		if (!connected) {
-			return;
-		}
-
+		if (!connected) return;
 		getClient(wsUrl)
 			.getChainSpecData()
 			.then((data) => setChainName(data.name))
@@ -46,199 +34,173 @@ export default function HomePage() {
 			if (result?.ok && result.chain) {
 				setChainName(result.chain.name);
 			}
-		} catch (e) {
-			setError(`Could not connect to ${urlInput}. Is the chain running?`);
-			console.error(e);
+		} catch {
+			setError("Could not connect. Is the chain running?");
 		} finally {
 			setConnecting(false);
 		}
 	}
 
-	function applyPreset(preset: NetworkPreset) {
-		const endpoints = getNetworkPresetEndpoints(preset);
-		setUrlInput(endpoints.wsUrl);
-		setEthRpcInput(endpoints.ethRpcUrl);
-		setEthRpcUrl(endpoints.ethRpcUrl);
-	}
-
 	return (
-		<div className="space-y-8 animate-fade-in">
+		<div className="space-y-10 animate-fade-in">
 			{/* Hero */}
-			<div className="space-y-3">
-				<h1 className="page-title">
-					Polkadot Stack{" "}
-					<span className="bg-gradient-to-r from-polka-400 to-polka-600 bg-clip-text text-transparent">
-						Template
+			<div className="text-center space-y-4 py-8">
+				<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-polka-500/10 border border-polka-500/20 text-polka-400 text-xs font-medium mb-2">
+					<span className="w-1.5 h-1.5 rounded-full bg-polka-500 animate-pulse-slow" />
+					Built on Polkadot
+				</div>
+				<h1 className="text-4xl sm:text-5xl font-bold font-display tracking-tight leading-tight">
+					Decentralized{" "}
+					<span className="bg-gradient-to-r from-polka-400 via-accent-purple to-accent-blue bg-clip-text text-transparent">
+						Social Protocol
 					</span>
 				</h1>
-				<p className="text-text-secondary text-base leading-relaxed max-w-2xl">
-					A developer starter template demonstrating Proof of Existence implemented three
-					ways: as a Substrate pallet, a Solidity EVM contract, and a PVM contract. Drop a
-					file to claim its hash on-chain.
+				<p className="text-text-secondary text-lg max-w-xl mx-auto leading-relaxed">
+					Profiles, apps, feeds, and social graph — shared primitives for the next
+					generation of social networks.
 				</p>
 			</div>
 
-			{/* Connection card */}
-			<div className="card space-y-5">
-				<div className="flex flex-wrap gap-2">
-					<button onClick={() => applyPreset("local")} className="btn-secondary text-xs">
-						Use Local Dev
-					</button>
-					<button
-						onClick={() => applyPreset("testnet")}
-						className="btn-secondary text-xs"
-					>
-						Use Hub TestNet
-					</button>
-				</div>
-
-				<div>
-					<label className="label">Substrate WebSocket Endpoint</label>
-					<div className="flex gap-2">
-						<input
-							type="text"
-							value={urlInput}
-							onChange={(e) => setUrlInput(e.target.value)}
-							onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-							placeholder={LOCAL_WS_URL}
-							className="input-field flex-1"
-						/>
-						<button
-							onClick={handleConnect}
-							disabled={connecting}
-							className="btn-primary"
-						>
-							{connecting ? "Connecting..." : "Connect"}
-						</button>
-					</div>
-				</div>
-
-				<div>
-					<label className="label">Ethereum JSON-RPC Endpoint</label>
+			{/* Connection */}
+			<div className="card space-y-4">
+				<h2 className="section-title">Connect to Chain</h2>
+				<div className="flex gap-2">
 					<input
 						type="text"
-						value={ethRpcInput}
-						onChange={(e) => {
-							setEthRpcInput(e.target.value);
-							setEthRpcUrl(e.target.value);
-						}}
-						placeholder={LOCAL_ETH_RPC_URL}
-						className="input-field w-full"
+						value={urlInput}
+						onChange={(e) => setUrlInput(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+						placeholder={LOCAL_WS_URL}
+						className="input-field flex-1"
 					/>
-					<p className="text-xs text-text-muted mt-2">
-						Used by the EVM and PVM contract pages.
-					</p>
+					<button onClick={handleConnect} disabled={connecting} className="btn-primary">
+						{connecting ? "..." : "Connect"}
+					</button>
 				</div>
 
-				{/* Status grid */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<StatusItem label="Chain Status">
-						{error ? (
-							<span className="text-accent-red text-sm">{error}</span>
-						) : connected ? (
-							<span className="text-accent-green flex items-center gap-1.5">
-								<span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse-slow" />
-								Connected
-							</span>
-						) : connecting ? (
-							<span className="text-accent-yellow">Connecting...</span>
-						) : (
-							<span className="text-text-muted">Disconnected</span>
-						)}
-					</StatusItem>
-					<StatusItem label="Chain Name">
-						{chainName || <span className="text-text-muted">...</span>}
-					</StatusItem>
-					<StatusItem label="Latest Block">
-						<span className="font-mono">#{blockNumber}</span>
-					</StatusItem>
-				</div>
+				{error && <p className="text-sm text-accent-red">{error}</p>}
+
+				{connected && (
+					<div className="grid grid-cols-3 gap-4 pt-2">
+						<StatusPill label="Chain" value={chainName || "..."} />
+						<StatusPill label="Block" value={`#${blockNumber}`} mono />
+						<StatusPill
+							label="Social"
+							value={
+								socialAvailable === null
+									? "Detecting..."
+									: socialAvailable
+										? "Available"
+										: "Not found"
+							}
+							color={
+								socialAvailable === true
+									? "text-accent-green"
+									: socialAvailable === false
+										? "text-accent-red"
+										: "text-accent-yellow"
+							}
+						/>
+					</div>
+				)}
 			</div>
 
-			{/* Feature cards */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<FeatureCard
-					title="Pallet PoE"
-					description="Claim file hashes via the Substrate FRAME pallet using PAPI."
-					link="/pallet"
-					accentColor="text-accent-blue"
-					borderColor="hover:border-accent-blue/20"
-					available={pallets.templatePallet}
-					unavailableReason="TemplatePallet not found in connected runtime"
-				/>
-				<FeatureCard
-					title="EVM PoE (solc)"
-					description="Same proof of existence via Solidity compiled with solc, deployed to the EVM backend."
-					link="/evm"
-					accentColor="text-accent-purple"
-					borderColor="hover:border-accent-purple/20"
-					available={pallets.revive}
-					unavailableReason="pallet-revive not found in connected runtime"
-				/>
-				<FeatureCard
-					title="PVM PoE (resolc)"
-					description="Same Solidity contract compiled with resolc to PolkaVM bytecode, deployed via pallet-revive."
-					link="/pvm"
-					accentColor="text-accent-green"
-					borderColor="hover:border-accent-green/20"
-					available={pallets.revive}
-					unavailableReason="pallet-revive not found in connected runtime"
-				/>
-			</div>
+			{/* Feature grid */}
+			{connected && socialAvailable && (
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<FeatureLink
+						to="/social/profile"
+						title="Profile"
+						description="Create your on-chain social identity with metadata."
+						icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+						color="from-accent-purple to-polka-500"
+					/>
+					<FeatureLink
+						to="/social/apps"
+						title="App Registry"
+						description="Register social apps that consume shared primitives."
+						icon="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+						color="from-accent-orange to-accent-yellow"
+					/>
+					<FeatureLink
+						to="/social/feed"
+						title="Feed"
+						description="Create posts and replies with configurable fees."
+						icon="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+						color="from-accent-blue to-accent-purple"
+					/>
+					<FeatureLink
+						to="/social/graph"
+						title="Social Graph"
+						description="Follow users with paid relationships across all apps."
+						icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+						color="from-accent-green to-accent-blue"
+					/>
+				</div>
+			)}
 		</div>
 	);
 }
 
-function StatusItem({ label, children }: { label: string; children: React.ReactNode }) {
+function StatusPill({
+	label,
+	value,
+	mono,
+	color,
+}: {
+	label: string;
+	value: string;
+	mono?: boolean;
+	color?: string;
+}) {
 	return (
-		<div>
-			<h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wider mb-1">
+		<div className="text-center">
+			<p className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest mb-0.5">
 				{label}
-			</h3>
-			<p className="text-lg font-semibold text-text-primary">{children}</p>
+			</p>
+			<p className={`text-sm font-semibold ${color || "text-text-primary"} ${mono ? "font-mono" : ""}`}>
+				{value}
+			</p>
 		</div>
 	);
 }
 
-function FeatureCard({
+function FeatureLink({
+	to,
 	title,
 	description,
-	link,
-	accentColor,
-	borderColor,
-	available,
-	unavailableReason,
+	icon,
+	color,
 }: {
+	to: string;
 	title: string;
 	description: string;
-	link: string;
-	accentColor: string;
-	borderColor: string;
-	available: boolean | null;
-	unavailableReason: string;
+	icon: string;
+	color: string;
 }) {
-	if (available !== true) {
-		return (
-			<div className="card opacity-40">
-				<h3 className="text-lg font-semibold mb-2 text-text-muted font-display">{title}</h3>
-				<p className="text-sm text-text-muted">{description}</p>
-				<p className="text-xs mt-3">
-					{available === null ? (
-						<span className="text-accent-yellow">Detecting...</span>
-					) : (
-						<span className="text-accent-red">{unavailableReason}</span>
-					)}
-				</p>
-			</div>
-		);
-	}
-
 	return (
-		<a href={`#${link}`} className={`card-hover block group ${borderColor}`}>
-			<h3 className={`text-lg font-semibold mb-2 font-display ${accentColor}`}>{title}</h3>
-			<p className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
-				{description}
-			</p>
-		</a>
+		<Link to={to} className="card-hover group block">
+			<div className="flex items-start gap-3.5">
+				<div
+					className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shrink-0 opacity-80 group-hover:opacity-100 transition-opacity`}
+				>
+					<svg
+						className="w-5 h-5 text-white"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={1.5}
+					>
+						<path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+					</svg>
+				</div>
+				<div>
+					<h3 className="font-semibold font-display text-text-primary group-hover:text-white transition-colors">
+						{title}
+					</h3>
+					<p className="text-sm text-text-secondary mt-0.5">{description}</p>
+				</div>
+			</div>
+		</Link>
 	);
 }

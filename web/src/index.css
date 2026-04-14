@@ -14,42 +14,35 @@
     color: #f0eef5;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(155, 151, 168, 0.25);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(155, 151, 168, 0.4);
+  /* Light mode body */
+  html.light body {
+    background-color: #fafafe;
+    color: #1a1a2e;
   }
 
-  /* Selection color */
-  ::selection {
-    background: rgba(230, 0, 122, 0.3);
-    color: #fff;
-  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(155, 151, 168, 0.25); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(155, 151, 168, 0.4); }
+  html.light ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); }
+  html.light ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.2); }
+
+  /* Selection */
+  ::selection { background: rgba(230, 0, 122, 0.3); color: #fff; }
+  html.light ::selection { background: rgba(230, 0, 122, 0.15); }
 }
 
 @layer components {
+  /* ── Cards ─────────────────────────────────────────────── */
   .card {
-    @apply rounded-xl border border-white/[0.06] p-5;
-    background: linear-gradient(
-      135deg,
-      rgba(16, 16, 24, 0.85) 0%,
-      rgba(20, 18, 28, 0.8) 100%
-    );
-    backdrop-filter: blur(12px);
+    @apply rounded-2xl border p-5;
+    border-color: rgba(255, 255, 255, 0.06);
+    background: linear-gradient(135deg, rgba(16, 16, 24, 0.85) 0%, rgba(22, 20, 32, 0.8) 100%);
+    backdrop-filter: blur(16px);
     box-shadow:
-      0 1px 3px 0 rgba(0, 0, 0, 0.3),
-      0 1px 2px -1px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
   .card-hover {
@@ -58,85 +51,143 @@
   .card-hover:hover {
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow:
-      0 4px 12px 0 rgba(0, 0, 0, 0.4),
-      0 2px 4px -1px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-    transform: translateY(-1px);
+      0 8px 24px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
   }
 
+  /* ── Inputs ────────────────────────────────────────────── */
   .input-field {
-    @apply rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-text-primary font-mono text-sm;
+    @apply rounded-xl border px-3.5 py-2.5 text-sm font-mono;
     @apply transition-all duration-200 placeholder:text-text-muted;
-    @apply focus:outline-none focus:border-polka-500/40 focus:ring-1 focus:ring-polka-500/20;
+    @apply focus:outline-none focus:ring-2 focus:ring-polka-500/20 focus:border-polka-500/40;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #f0eef5;
   }
 
+  /* ── Buttons ───────────────────────────────────────────── */
   .btn-primary {
-    @apply rounded-lg px-4 py-2 text-sm font-medium text-white transition-all duration-200;
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200;
     @apply disabled:opacity-40 disabled:cursor-not-allowed;
     background: linear-gradient(135deg, #e6007a 0%, #c30066 100%);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(230, 0, 122, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   .btn-primary:not(:disabled):hover {
     background: linear-gradient(135deg, #ff1a8f 0%, #e6007a 100%);
-    box-shadow: 0 2px 8px rgba(230, 0, 122, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    transform: translateY(-0.5px);
+    box-shadow: 0 4px 16px rgba(230, 0, 122, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
   }
-  .btn-primary:active {
-    transform: translateY(0);
-  }
+  .btn-primary:active { transform: translateY(0); }
 
   .btn-secondary {
-    @apply rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200;
-    @apply text-text-secondary border border-white/[0.08] bg-white/[0.04];
+    @apply rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200;
+    @apply border;
+    color: #9b97a8;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
     @apply disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-secondary:not(:disabled):hover {
-    @apply text-text-primary bg-white/[0.08] border-white/[0.12];
+    color: #f0eef5;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
-  .btn-accent {
-    @apply rounded-lg px-4 py-2 text-sm font-medium text-white transition-all duration-200;
-    @apply disabled:opacity-40 disabled:cursor-not-allowed;
-  }
-
+  /* ── Typography ────────────────────────────────────────── */
   .label {
-    @apply block text-sm font-medium text-text-secondary mb-1.5;
+    @apply block text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2;
   }
-
   .page-title {
     @apply text-3xl font-bold tracking-tight font-display;
   }
-
   .section-title {
-    @apply text-lg font-semibold text-text-primary font-display;
+    @apply text-lg font-semibold font-display;
   }
 
+  /* ── Badges ────────────────────────────────────────────── */
   .status-badge {
     @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+
+  /* ── Nav blur ──────────────────────────────────────────── */
+  .nav-blur {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    background: rgba(10, 10, 15, 0.8);
+  }
 }
 
-/* Background pattern — subtle dot grid */
+/* ── Background pattern ──────────────────────────────────── */
 .bg-pattern {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-/* Animated gradient orb */
+/* ── Gradient orbs ───────────────────────────────────────── */
 .gradient-orb {
   position: fixed;
-  width: 600px;
-  height: 600px;
+  width: 700px;
+  height: 700px;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.07;
+  filter: blur(140px);
+  opacity: 0.06;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Staggered animation delays */
+/* ── Stagger animations ──────────────────────────────────── */
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
+
+html.light .card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(16px);
+}
+html.light .card-hover:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+html.light .input-field {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1a1a2e;
+}
+html.light .input-field::placeholder { color: #9ca3af; }
+html.light .input-field:focus { border-color: rgba(230, 0, 122, 0.4); }
+
+html.light .btn-secondary {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #6b7280;
+}
+html.light .btn-secondary:not(:disabled):hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #1a1a2e;
+}
+
+html.light .nav-blur {
+  border-color: rgba(0, 0, 0, 0.06);
+  background: rgba(250, 250, 254, 0.85);
+}
+
+html.light .bg-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+html.light .gradient-orb { opacity: 0.04; }
+
+html.light .text-text-primary { color: #1a1a2e; }
+html.light .text-text-secondary { color: #6b7280; }
+html.light .text-text-tertiary { color: #9ca3af; }
+html.light .text-text-muted { color: #d1d5db; }

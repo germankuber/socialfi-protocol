@@ -1,5 +1,5 @@
 import { StorageDescriptor, PlainDescriptor, TxDescriptor, RuntimeDescriptor, Enum, ApisFromDef, QueryFromPalletsDef, TxFromPalletsDef, EventsFromPalletsDef, ErrorsFromPalletsDef, ConstFromPalletsDef, ViewFnsFromPalletsDef, SS58String, FixedSizeBinary, Binary, FixedSizeArray } from "polkadot-api";
-import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, Ibhm6cadnrj8ab, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, I20qifse1k61t0, Ifk1h9oo3rkqf3, I8k3rnvpeeh4hv, I6siaqgb2u9dl9, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I83l866hlqq38g, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I9hbqhk6otgba2, Icbccs0ug47ilf, I855j4i3kr8ko1, I268r55594blt6, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I3t2db5s2bmfa8, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, I7svbvm6hg57aj, I8jhsbaiultviu, Ia246gkb4f2soh, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, I205hi2ig012m3, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, Ibednls348smbh, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I8aq8rmkjo25um, I9sijb8gfrns29, Icskkb9gddueej, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, Idurem13iqg682, I295j1d7noqo25, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, Ielmcggkdu2qj } from "./common-types";
+import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, Ia6rhbckdti4r1, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, I2v6cmdi4roc90, I4snhroajmv06f, I2na29tt2afp0j, I4or7tso9unufp, Iafqnechp3omqg, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, Icjfp9imiskso9, I4klguonbal4sc, I8k3rnvpeeh4hv, Idrsbkcloj2qre, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I70vuebkld5nba, I7uphs141r660c, I5vanth86cd3mt, I14p0q0qs0fqbj, I17lfb3aso87av, I9lv278elt0l38, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I1som7l55td62u, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I6ineo41al8gfu, Icbccs0ug47ilf, I855j4i3kr8ko1, I4b1m85hn1p2d5, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I2fbu70gmdbj2v, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I7uibdp0qbpf1m, Ieqg84amin6koq, I9o8g4g69f34ol, I7svbvm6hg57aj, I8jhsbaiultviu, I7eehfnacpufeh, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, Idkmc7u8uph6vd, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, Idc4u13jqebe1u, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I3onh9h94giqoe, I9sijb8gfrns29, Iah988lm0lrbji, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, I4gdt8emptengv, Ie12qropkfd0i4, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, Ibe33ik7mmlcqh } from "./common-types";
 type AnonymousEnum<T extends {}> = T & {
     __anonymous: true;
 };
@@ -61,7 +61,7 @@ type IStorage = {
          * Events have a large in-memory size. Box the events to not go out-of-memory
          * just in case someone still reads them from within the runtime.
          */
-        Events: StorageDescriptor<[], Anonymize<Ibhm6cadnrj8ab>, false, never>;
+        Events: StorageDescriptor<[], Anonymize<Ia6rhbckdti4r1>, false, never>;
         /**
          * The number of events in the `Events<T>` list.
          */
@@ -642,6 +642,63 @@ type IStorage = {
          */
         Claims: StorageDescriptor<[Key: FixedSizeBinary<32>], Anonymize<I7offqqltf3agj>, true, never>;
     };
+    SocialAppRegistry: {
+        /**
+         * Auto-incrementing app ID counter.
+         */
+        NextAppId: StorageDescriptor<[], number, false, never>;
+        /**
+         * Main registry: AppId -> AppInfo.
+         */
+        Apps: StorageDescriptor<[Key: number], Anonymize<I2v6cmdi4roc90>, true, never>;
+        /**
+         * Reverse lookup: AccountId -> Vec<AppId> (apps owned by this account).
+         */
+        AppsByOwner: StorageDescriptor<[Key: SS58String], Anonymize<Icgljjb6j82uhn>, false, never>;
+    };
+    SocialProfiles: {
+        /**
+         * Total number of profiles (for stats).
+         */
+        ProfileCount: StorageDescriptor<[], number, false, never>;
+        /**
+         * Main registry: AccountId -> ProfileInfo.
+         */
+        Profiles: StorageDescriptor<[Key: SS58String], Anonymize<I4snhroajmv06f>, true, never>;
+    };
+    SocialGraph: {
+        /**
+         * Follow relationship: (follower, followed) -> FollowInfo.
+         * If the key exists, the follow is active.
+         */
+        Follows: StorageDescriptor<Anonymize<I2na29tt2afp0j>, number, true, never>;
+        /**
+         * Follower count per account (how many people follow this account).
+         */
+        FollowerCount: StorageDescriptor<[Key: SS58String], number, false, never>;
+        /**
+         * Following count per account (how many people this account follows).
+         */
+        FollowingCount: StorageDescriptor<[Key: SS58String], number, false, never>;
+    };
+    SocialFeeds: {
+        /**
+         * Auto-incrementing Post ID counter.
+         */
+        NextPostId: StorageDescriptor<[], bigint, false, never>;
+        /**
+         * Main post storage: PostId -> PostInfo.
+         */
+        Posts: StorageDescriptor<[Key: bigint], Anonymize<I4or7tso9unufp>, true, never>;
+        /**
+         * Posts by author: AccountId -> BoundedVec<PostId>.
+         */
+        PostsByAuthor: StorageDescriptor<[Key: SS58String], Anonymize<Iafqnechp3omqg>, false, never>;
+        /**
+         * Replies to a post: PostId -> BoundedVec<PostId>.
+         */
+        Replies: StorageDescriptor<[Key: bigint], Anonymize<Iafqnechp3omqg>, false, never>;
+    };
     Revive: {
         /**
          * A mapping from a contract's code hash to its code.
@@ -930,7 +987,7 @@ type ICalls = {
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          */
-        sudo: TxDescriptor<Anonymize<I20qifse1k61t0>>;
+        sudo: TxDescriptor<Anonymize<Icjfp9imiskso9>>;
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          * This function does not check the weight of the call, and instead allows the
@@ -938,7 +995,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_unchecked_weight: TxDescriptor<Anonymize<Ifk1h9oo3rkqf3>>;
+        sudo_unchecked_weight: TxDescriptor<Anonymize<I4klguonbal4sc>>;
         /**
          * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
          * key.
@@ -950,7 +1007,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_as: TxDescriptor<Anonymize<I6siaqgb2u9dl9>>;
+        sudo_as: TxDescriptor<Anonymize<Idrsbkcloj2qre>>;
         /**
          * Permanently removes the sudo key.
          *
@@ -1434,6 +1491,80 @@ type ICalls = {
          */
         revoke_claim: TxDescriptor<Anonymize<I1jm8m1rh9e20v>>;
     };
+    SocialAppRegistry: {
+        /**
+         * Register a new social app.
+         *
+         * Validates capacity and balance before making any state changes.
+         * Reserves `T::AppBond`, assigns the next available AppId, stores the
+         * app record, and updates the owner's app list.
+         */
+        register_app: TxDescriptor<Anonymize<I70vuebkld5nba>>;
+        /**
+         * Deregister an existing app.
+         *
+         * Sets the app status to `Inactive`, unreserves the bond, and removes
+         * the app from the owner's index. The app record is kept for history.
+         */
+        deregister_app: TxDescriptor<Anonymize<I7uphs141r660c>>;
+    };
+    SocialProfiles: {
+        /**
+         * Create a new profile for the caller.
+         *
+         * Reserves `T::ProfileBond`, stores profile info, and increments the
+         * global profile counter.
+         */
+        create_profile: TxDescriptor<Anonymize<I70vuebkld5nba>>;
+        /**
+         * Update the metadata CID of an existing profile.
+         *
+         * Only the profile owner (the caller) can update their metadata.
+         */
+        update_metadata: TxDescriptor<Anonymize<I5vanth86cd3mt>>;
+        /**
+         * Delete the caller's profile.
+         *
+         * Removes the profile from storage, unreserves the bond, and decrements
+         * the global profile counter.
+         */
+        delete_profile: TxDescriptor<undefined>;
+    };
+    SocialGraph: {
+        /**
+         * Follow another user.
+         *
+         * Both accounts must have profiles. Transfers `T::FollowFee` from the
+         * caller to the target. The fee is non-refundable. Storage writes happen
+         * before the transfer to ensure atomicity.
+         */
+        follow: TxDescriptor<Anonymize<I14p0q0qs0fqbj>>;
+        /**
+         * Unfollow a user.
+         *
+         * Removes the follow relationship. No refund of the follow fee.
+         * Does not require profiles to exist — allows cleanup after profile
+         * deletion.
+         */
+        unfollow: TxDescriptor<Anonymize<I14p0q0qs0fqbj>>;
+    };
+    SocialFeeds: {
+        /**
+         * Create a new original post.
+         *
+         * All validation and capacity checks happen first. The fee transfer is
+         * the last fallible operation to ensure storage consistency.
+         */
+        create_post: TxDescriptor<Anonymize<I17lfb3aso87av>>;
+        /**
+         * Create a reply to an existing post.
+         *
+         * Pays both the post creation fee (to app owner / treasury) and the
+         * parent post's reply fee (to the parent author). Reply fee of 0 means
+         * no transfer to the parent author.
+         */
+        create_reply: TxDescriptor<Anonymize<I9lv278elt0l38>>;
+    };
     Revive: {
         /**
          * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
@@ -1562,7 +1693,7 @@ type ICalls = {
          * * `call`: The Substrate runtime call to execute.
          * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
          */
-        eth_substrate_call: TxDescriptor<Anonymize<I83l866hlqq38g>>;
+        eth_substrate_call: TxDescriptor<Anonymize<I1som7l55td62u>>;
         /**
          * Upload new `code` without instantiating a contract from it.
          *
@@ -1621,7 +1752,7 @@ type ICalls = {
          * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
          * recovery function in case an `AccountId20` was used without creating a mapping first.
          */
-        dispatch_as_fallback_account: TxDescriptor<Anonymize<I20qifse1k61t0>>;
+        dispatch_as_fallback_account: TxDescriptor<Anonymize<Icjfp9imiskso9>>;
     };
 };
 type IEvent = {
@@ -1633,7 +1764,7 @@ type IEvent = {
         /**
          * An extrinsic failed.
          */
-        ExtrinsicFailed: PlainDescriptor<Anonymize<I9hbqhk6otgba2>>;
+        ExtrinsicFailed: PlainDescriptor<Anonymize<I6ineo41al8gfu>>;
         /**
          * `:code` was updated.
          */
@@ -1657,7 +1788,7 @@ type IEvent = {
         /**
          * An invalid authorized upgrade was rejected while trying to apply it.
          */
-        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<I268r55594blt6>>;
+        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<I4b1m85hn1p2d5>>;
     };
     ParachainSystem: {
         /**
@@ -1820,7 +1951,7 @@ type IEvent = {
         /**
          * A sudo call just took place.
          */
-        Sudid: PlainDescriptor<Anonymize<I3t2db5s2bmfa8>>;
+        Sudid: PlainDescriptor<Anonymize<I2fbu70gmdbj2v>>;
         /**
          * The sudo key has been updated.
          */
@@ -1832,7 +1963,7 @@ type IEvent = {
         /**
          * A [sudo_as](Pallet::sudo_as) call just took place.
          */
-        SudoAsDone: PlainDescriptor<Anonymize<I3t2db5s2bmfa8>>;
+        SudoAsDone: PlainDescriptor<Anonymize<I2fbu70gmdbj2v>>;
     };
     CollatorSelection: {
         /**
@@ -2105,6 +2236,50 @@ type IEvent = {
          */
         ClaimRevoked: PlainDescriptor<Anonymize<I9p6tgcfbrrlod>>;
     };
+    SocialAppRegistry: {
+        /**
+         * A new app was registered.
+         */
+        AppRegistered: PlainDescriptor<Anonymize<Ibh7279nftp2hh>>;
+        /**
+         * An app was deregistered (set to inactive, bond returned).
+         */
+        AppDeregistered: PlainDescriptor<Anonymize<Ibh7279nftp2hh>>;
+    };
+    SocialProfiles: {
+        /**
+         * A new profile was created.
+         */
+        ProfileCreated: PlainDescriptor<Anonymize<Icbccs0ug47ilf>>;
+        /**
+         * Profile metadata was updated.
+         */
+        ProfileUpdated: PlainDescriptor<Anonymize<Icbccs0ug47ilf>>;
+        /**
+         * A profile was deleted and bond returned.
+         */
+        ProfileDeleted: PlainDescriptor<Anonymize<Icbccs0ug47ilf>>;
+    };
+    SocialGraph: {
+        /**
+         * A user followed another user.
+         */
+        Followed: PlainDescriptor<Anonymize<I7uibdp0qbpf1m>>;
+        /**
+         * A user unfollowed another user.
+         */
+        Unfollowed: PlainDescriptor<Anonymize<I7uibdp0qbpf1m>>;
+    };
+    SocialFeeds: {
+        /**
+         * A new post was created.
+         */
+        PostCreated: PlainDescriptor<Anonymize<Ieqg84amin6koq>>;
+        /**
+         * A reply was created.
+         */
+        ReplyCreated: PlainDescriptor<Anonymize<I9o8g4g69f34ol>>;
+    };
     Revive: {
         /**
          * A custom event emitted by the contract.
@@ -2122,7 +2297,7 @@ type IEvent = {
          * To distinguish reverted calls from successful ones, this event is emitted
          * for failed Ethereum transactions.
          */
-        EthExtrinsicRevert: PlainDescriptor<Anonymize<Ia246gkb4f2soh>>;
+        EthExtrinsicRevert: PlainDescriptor<Anonymize<I7eehfnacpufeh>>;
     };
 };
 type IError = {
@@ -2540,6 +2715,110 @@ type IError = {
          * No claim exists for this hash.
          */
         ClaimNotFound: PlainDescriptor<undefined>;
+    };
+    SocialAppRegistry: {
+        /**
+         * The caller does not have enough balance to cover the registration bond.
+         */
+        InsufficientBond: PlainDescriptor<undefined>;
+        /**
+         * No app exists with the given ID.
+         */
+        AppNotFound: PlainDescriptor<undefined>;
+        /**
+         * The caller is not the owner of this app.
+         */
+        NotAppOwner: PlainDescriptor<undefined>;
+        /**
+         * The app is already inactive.
+         */
+        AppAlreadyInactive: PlainDescriptor<undefined>;
+        /**
+         * The owner has reached the maximum number of registered apps.
+         */
+        TooManyApps: PlainDescriptor<undefined>;
+        /**
+         * The provided metadata exceeds the maximum allowed length.
+         */
+        MetadataTooLong: PlainDescriptor<undefined>;
+        /**
+         * The app ID counter has overflowed — no more apps can be registered.
+         */
+        AppIdOverflow: PlainDescriptor<undefined>;
+    };
+    SocialProfiles: {
+        /**
+         * A profile already exists for this account.
+         */
+        ProfileAlreadyExists: PlainDescriptor<undefined>;
+        /**
+         * No profile found for this account.
+         */
+        ProfileNotFound: PlainDescriptor<undefined>;
+        /**
+         * The caller does not have enough balance to cover the profile bond.
+         */
+        InsufficientBond: PlainDescriptor<undefined>;
+        /**
+         * The provided metadata exceeds the maximum allowed length.
+         */
+        MetadataTooLong: PlainDescriptor<undefined>;
+    };
+    SocialGraph: {
+        /**
+         * One or both accounts do not have a profile.
+         */
+        ProfileNotFound: PlainDescriptor<undefined>;
+        /**
+         * A user cannot follow themselves.
+         */
+        CannotFollowSelf: PlainDescriptor<undefined>;
+        /**
+         * The follow relationship already exists.
+         */
+        AlreadyFollowing: PlainDescriptor<undefined>;
+        /**
+         * The follow relationship does not exist.
+         */
+        NotFollowing: PlainDescriptor<undefined>;
+        /**
+         * The follower does not have enough balance to pay the follow fee.
+         */
+        InsufficientBalance: PlainDescriptor<undefined>;
+    };
+    SocialFeeds: {
+        /**
+         * The caller does not have a profile.
+         */
+        ProfileNotFound: PlainDescriptor<undefined>;
+        /**
+         * The specified app does not exist or is inactive.
+         */
+        AppNotFound: PlainDescriptor<undefined>;
+        /**
+         * The parent post does not exist.
+         */
+        ParentPostNotFound: PlainDescriptor<undefined>;
+        /**
+         * The caller does not have enough balance to pay the fee.
+         */
+        InsufficientBalance: PlainDescriptor<undefined>;
+        /**
+         * The provided content exceeds the maximum allowed length.
+         */
+        ContentTooLong: PlainDescriptor<undefined>;
+        /**
+         * The author has reached the maximum number of posts.
+         */
+        TooManyPosts: PlainDescriptor<undefined>;
+        /**
+         * The parent post has reached the maximum number of replies.
+         */
+        TooManyReplies: PlainDescriptor<undefined>;
+        /**
+         * The post ID counter has overflowed.
+         */
+        PostIdOverflow: PlainDescriptor<undefined>;
     };
     Revive: {
         /**
@@ -3053,6 +3332,54 @@ type IConstants = {
          */
         MaxAllowedBytes: PlainDescriptor<number>;
     };
+    SocialAppRegistry: {
+        /**
+         * Bond amount required to register an app.
+         */
+        AppBond: PlainDescriptor<bigint>;
+        /**
+         * Maximum length of the metadata CID (bytes).
+         */
+        MaxMetadataLen: PlainDescriptor<number>;
+        /**
+         * Maximum number of apps a single account can own.
+         */
+        MaxAppsPerOwner: PlainDescriptor<number>;
+    };
+    SocialProfiles: {
+        /**
+         * Bond amount required to create a profile.
+         */
+        ProfileBond: PlainDescriptor<bigint>;
+        /**
+         * Maximum length of the metadata CID (bytes).
+         */
+        MaxMetadataLen: PlainDescriptor<number>;
+    };
+    SocialGraph: {
+        /**
+         * Fee paid to follow someone (transferred to the followed account, no refund).
+         */
+        FollowFee: PlainDescriptor<bigint>;
+    };
+    SocialFeeds: {
+        /**
+         * Fee to create a post (transferred to app owner or treasury).
+         */
+        PostFee: PlainDescriptor<bigint>;
+        /**
+         * Max length of content CID.
+         */
+        MaxContentLen: PlainDescriptor<number>;
+        /**
+         * Max posts per author.
+         */
+        MaxPostsPerAuthor: PlainDescriptor<number>;
+        /**
+         * Max replies per post.
+         */
+        MaxRepliesPerPost: PlainDescriptor<number>;
+    };
     Revive: {
         /**
          * The amount of balance a caller has to pay for each byte of storage.
@@ -3261,7 +3588,7 @@ type IRuntimeCalls = {
          * Returns an inclusion outcome which specifies if this extrinsic is included in
          * this block or not.
          */
-        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<I205hi2ig012m3>>;
+        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<Idkmc7u8uph6vd>>;
         /**
          * Finish the current block.
          */
@@ -3359,11 +3686,11 @@ type IRuntimeCalls = {
         /**
          * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
          */
-        query_call_info: RuntimeDescriptor<[call: Anonymize<Ibednls348smbh>, len: number], Anonymize<I6spmpef2c7svf>>;
+        query_call_info: RuntimeDescriptor<[call: Anonymize<Idc4u13jqebe1u>, len: number], Anonymize<I6spmpef2c7svf>>;
         /**
          * Query fee details of a given encoded `Call`.
          */
-        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<Ibednls348smbh>, len: number], Anonymize<Iei2mvq0mjvt81>>;
+        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<Idc4u13jqebe1u>, len: number], Anonymize<Iei2mvq0mjvt81>>;
         /**
          * Query the output of the current `WeightToFee` given some input.
          */
@@ -3483,13 +3810,13 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_call`].
          */
-        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I8aq8rmkjo25um>>;
+        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I3onh9h94giqoe>>;
         /**
          * Instantiate a new contract.
          *
          * See `[crate::Pallet::bare_instantiate]`.
          */
-        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<Icskkb9gddueej>>;
+        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<Iah988lm0lrbji>>;
         /**
          * Perform an Ethereum call.
          *
@@ -3508,7 +3835,7 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_upload_code`].
          */
-        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<Idurem13iqg682>>;
+        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<I4gdt8emptengv>>;
         /**
          * Query a given storage key in a given contract.
          *
@@ -3516,7 +3843,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<I295j1d7noqo25>>;
+        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<Ie12qropkfd0i4>>;
         /**
          * Query a given variable-sized storage key in a given contract.
          *
@@ -3524,7 +3851,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<I295j1d7noqo25>>;
+        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<Ie12qropkfd0i4>>;
         /**
          * Traces the execution of an entire block and returns call traces.
          *
@@ -3575,7 +3902,7 @@ type IRuntimeCalls = {
         new_balance_with_dust: RuntimeDescriptor<[balance: Anonymize<I4totqt881mlti>], Anonymize<I512dtcl0pn07c>>;
     };
 };
-export type Stack_templateDispatchError = Anonymize<Ielmcggkdu2qj>;
+export type Stack_templateDispatchError = Anonymize<Ibe33ik7mmlcqh>;
 type IAsset = PlainDescriptor<void>;
 export type Stack_templateExtensions = {};
 type PalletsTypedef = {
@@ -3606,7 +3933,7 @@ export type Stack_templateEvents = EventsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateErrors = ErrorsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateConstants = ConstFromPalletsDef<PalletsTypedef>;
 export type Stack_templateViewFns = ViewFnsFromPalletsDef<PalletsTypedef>;
-export type Stack_templateCallData = Anonymize<Ibednls348smbh> & {
+export type Stack_templateCallData = Anonymize<Idc4u13jqebe1u> & {
     value: {
         type: string;
     };
@@ -3629,6 +3956,10 @@ type AllInteractions = {
         PolkadotXcm: ['QueryCounter', 'Queries', 'AssetTraps', 'SafeXcmVersion', 'SupportedVersion', 'VersionNotifiers', 'VersionNotifyTargets', 'VersionDiscoveryQueue', 'CurrentMigration', 'RemoteLockedFungibles', 'LockedFungibles', 'XcmExecutionSuspended', 'ShouldRecordXcm', 'RecordedXcm', 'AuthorizedAliases'];
         MessageQueue: ['BookStateFor', 'ServiceHead', 'Pages'];
         TemplatePallet: ['Claims'];
+        SocialAppRegistry: ['NextAppId', 'Apps', 'AppsByOwner'];
+        SocialProfiles: ['ProfileCount', 'Profiles'];
+        SocialGraph: ['Follows', 'FollowerCount', 'FollowingCount'];
+        SocialFeeds: ['NextPostId', 'Posts', 'PostsByAuthor', 'Replies'];
         Revive: ['PristineCode', 'CodeInfoOf', 'AccountInfoOf', 'ImmutableDataOf', 'DeletionQueue', 'DeletionQueueCounter', 'OriginalAccount', 'EthereumBlock', 'BlockHash', 'ReceiptInfoData', 'EthBlockBuilderIR', 'EthBlockBuilderFirstValues', 'DebugSettingsOf'];
     };
     tx: {
@@ -3643,6 +3974,10 @@ type AllInteractions = {
         PolkadotXcm: ['send', 'teleport_assets', 'reserve_transfer_assets', 'execute', 'force_xcm_version', 'force_default_xcm_version', 'force_subscribe_version_notify', 'force_unsubscribe_version_notify', 'limited_reserve_transfer_assets', 'limited_teleport_assets', 'force_suspension', 'transfer_assets', 'claim_assets', 'transfer_assets_using_type_and_then', 'add_authorized_alias', 'remove_authorized_alias', 'remove_all_authorized_aliases'];
         MessageQueue: ['reap_page', 'execute_overweight'];
         TemplatePallet: ['create_claim', 'revoke_claim'];
+        SocialAppRegistry: ['register_app', 'deregister_app'];
+        SocialProfiles: ['create_profile', 'update_metadata', 'delete_profile'];
+        SocialGraph: ['follow', 'unfollow'];
+        SocialFeeds: ['create_post', 'create_reply'];
         Revive: ['eth_transact', 'call', 'instantiate', 'instantiate_with_code', 'eth_instantiate_with_code', 'eth_call', 'eth_substrate_call', 'upload_code', 'remove_code', 'set_code', 'map_account', 'unmap_account', 'dispatch_as_fallback_account'];
     };
     events: {
@@ -3659,6 +3994,10 @@ type AllInteractions = {
         MessageQueue: ['ProcessingFailed', 'Processed', 'OverweightEnqueued', 'PageReaped'];
         Statement: ['NewStatement'];
         TemplatePallet: ['ClaimCreated', 'ClaimRevoked'];
+        SocialAppRegistry: ['AppRegistered', 'AppDeregistered'];
+        SocialProfiles: ['ProfileCreated', 'ProfileUpdated', 'ProfileDeleted'];
+        SocialGraph: ['Followed', 'Unfollowed'];
+        SocialFeeds: ['PostCreated', 'ReplyCreated'];
         Revive: ['ContractEmitted', 'Instantiated', 'EthExtrinsicRevert'];
     };
     errors: {
@@ -3672,6 +4011,10 @@ type AllInteractions = {
         PolkadotXcm: ['Unreachable', 'SendFailure', 'Filtered', 'UnweighableMessage', 'DestinationNotInvertible', 'Empty', 'CannotReanchor', 'TooManyAssets', 'InvalidOrigin', 'BadVersion', 'BadLocation', 'NoSubscription', 'AlreadySubscribed', 'CannotCheckOutTeleport', 'LowBalance', 'TooManyLocks', 'AccountNotSovereign', 'FeesNotMet', 'LockNotFound', 'InUse', 'InvalidAssetUnknownReserve', 'InvalidAssetUnsupportedReserve', 'TooManyReserves', 'LocalExecutionIncomplete', 'TooManyAuthorizedAliases', 'ExpiresInPast', 'AliasNotFound', 'LocalExecutionIncompleteWithError'];
         MessageQueue: ['NotReapable', 'NoPage', 'NoMessage', 'AlreadyProcessed', 'Queued', 'InsufficientWeight', 'TemporarilyUnprocessable', 'QueuePaused', 'RecursiveDisallowed'];
         TemplatePallet: ['AlreadyClaimed', 'NotClaimOwner', 'ClaimNotFound'];
+        SocialAppRegistry: ['InsufficientBond', 'AppNotFound', 'NotAppOwner', 'AppAlreadyInactive', 'TooManyApps', 'MetadataTooLong', 'AppIdOverflow'];
+        SocialProfiles: ['ProfileAlreadyExists', 'ProfileNotFound', 'InsufficientBond', 'MetadataTooLong'];
+        SocialGraph: ['ProfileNotFound', 'CannotFollowSelf', 'AlreadyFollowing', 'NotFollowing', 'InsufficientBalance'];
+        SocialFeeds: ['ProfileNotFound', 'AppNotFound', 'ParentPostNotFound', 'InsufficientBalance', 'ContentTooLong', 'TooManyPosts', 'TooManyReplies', 'PostIdOverflow'];
         Revive: ['InvalidSchedule', 'InvalidCallFlags', 'OutOfGas', 'TransferFailed', 'MaxCallDepthReached', 'ContractNotFound', 'CodeNotFound', 'CodeInfoNotFound', 'OutOfBounds', 'DecodingFailed', 'ContractTrapped', 'ValueTooLarge', 'TerminatedWhileReentrant', 'InputForwarded', 'TooManyTopics', 'DuplicateContract', 'TerminatedInConstructor', 'ReentranceDenied', 'ReenteredPallet', 'StateChangeDenied', 'StorageDepositNotEnoughFunds', 'StorageDepositLimitExhausted', 'CodeInUse', 'ContractReverted', 'CodeRejected', 'BlobTooLarge', 'StaticMemoryTooLarge', 'BasicBlockTooLarge', 'InvalidInstruction', 'MaxDelegateDependenciesReached', 'DelegateDependencyNotFound', 'DelegateDependencyAlreadyExists', 'CannotAddSelfAsDelegateDependency', 'OutOfTransientStorage', 'InvalidSyscall', 'InvalidStorageFlags', 'ExecutionFailed', 'BalanceConversionFailed', 'InvalidImmutableAccess', 'AccountUnmapped', 'AccountAlreadyMapped', 'InvalidGenericTransaction', 'RefcountOverOrUnderflow', 'UnsupportedPrecompileAddress', 'CallDataTooLarge', 'ReturnDataTooLarge', 'InvalidJump', 'StackUnderflow', 'StackOverflow', 'TxFeeOverdraw', 'EvmConstructorNonEmptyData', 'EvmConstructedFromHash', 'StorageRefundNotEnoughFunds', 'StorageRefundLocked', 'PrecompileDelegateDenied', 'EcdsaRecoveryFailed'];
     };
     constants: {
@@ -3687,6 +4030,10 @@ type AllInteractions = {
         PolkadotXcm: ['UniversalLocation', 'AdvertisedXcmVersion', 'MaxLockers', 'MaxRemoteLockConsumers'];
         MessageQueue: ['HeapSize', 'MaxStale', 'ServiceWeight', 'IdleMaxServiceWeight'];
         Statement: ['StatementCost', 'ByteCost', 'MinAllowedStatements', 'MaxAllowedStatements', 'MinAllowedBytes', 'MaxAllowedBytes'];
+        SocialAppRegistry: ['AppBond', 'MaxMetadataLen', 'MaxAppsPerOwner'];
+        SocialProfiles: ['ProfileBond', 'MaxMetadataLen'];
+        SocialGraph: ['FollowFee'];
+        SocialFeeds: ['PostFee', 'MaxContentLen', 'MaxPostsPerAuthor', 'MaxRepliesPerPost'];
         Revive: ['DepositPerByte', 'DepositPerItem', 'DepositPerChildTrieItem', 'CodeHashLockupDepositPercent', 'UnsafeUnstableInterface', 'AllowEVMBytecode', 'ChainId', 'NativeToEthRatio', 'MaxEthExtrinsicWeight', 'DebugEnabled', 'GasScale'];
     };
     viewFns: {};

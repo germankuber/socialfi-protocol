@@ -41,14 +41,14 @@ export type DigestItem = Enum<{
 }>;
 export declare const DigestItem: GetEnum<DigestItem>;
 export type I82jm9g7pufuel = [FixedSizeBinary<4>, Binary];
-export type Ibhm6cadnrj8ab = Array<{
+export type Ia6rhbckdti4r1 = Array<{
     "phase": Phase;
     "event": Enum<{
-        "System": Anonymize<Ic975tau6ptl1n>;
+        "System": Anonymize<I468n84ssf3c4k>;
         "ParachainSystem": Anonymize<Icbsekf57miplo>;
         "Balances": Anonymize<I6pikrrn79qkf8>;
         "TransactionPayment": TransactionPaymentEvent;
-        "Sudo": Anonymize<I26ommcnpjss9e>;
+        "Sudo": Anonymize<I275ososhrlp57>;
         "CollatorSelection": Anonymize<I4srakrmf0fspo>;
         "Session": Anonymize<I6ue0ck5fc3u44>;
         "XcmpQueue": Anonymize<Idsqc7mhp6nnle>;
@@ -57,7 +57,11 @@ export type Ibhm6cadnrj8ab = Array<{
         "MessageQueue": Anonymize<I2kosejppk3jon>;
         "Statement": Anonymize<Ic1vdi0e9te2la>;
         "TemplatePallet": Anonymize<Ibs185ts04asdp>;
-        "Revive": Anonymize<I4is17cttqhh1t>;
+        "SocialAppRegistry": Anonymize<Ib2p229gqicrud>;
+        "SocialProfiles": Anonymize<I93ue0l4duq2c4>;
+        "SocialGraph": Anonymize<I7khj3ufuthda8>;
+        "SocialFeeds": Anonymize<I606ks6n8do9gq>;
+        "Revive": Anonymize<Ich96970u9pf96>;
     }>;
     "topics": Anonymize<Ic5m5lp1oioo8r>;
 }>;
@@ -67,7 +71,7 @@ export type Phase = Enum<{
     "Initialization": undefined;
 }>;
 export declare const Phase: GetEnum<Phase>;
-export type Ic975tau6ptl1n = AnonymousEnum<{
+export type I468n84ssf3c4k = AnonymousEnum<{
     /**
      * An extrinsic completed successfully.
      */
@@ -75,7 +79,7 @@ export type Ic975tau6ptl1n = AnonymousEnum<{
     /**
      * An extrinsic failed.
      */
-    "ExtrinsicFailed": Anonymize<I9hbqhk6otgba2>;
+    "ExtrinsicFailed": Anonymize<I6ineo41al8gfu>;
     /**
      * `:code` was updated.
      */
@@ -99,7 +103,7 @@ export type Ic975tau6ptl1n = AnonymousEnum<{
     /**
      * An invalid authorized upgrade was rejected while trying to apply it.
      */
-    "RejectedInvalidAuthorizedUpgrade": Anonymize<I268r55594blt6>;
+    "RejectedInvalidAuthorizedUpgrade": Anonymize<I4b1m85hn1p2d5>;
 }>;
 export type Ia82mnkmeo2rhc = {
     "dispatch_info": Anonymize<Ic9s8f85vjtncc>;
@@ -119,11 +123,11 @@ export type Iehg04bj71rkd = AnonymousEnum<{
     "Yes": undefined;
     "No": undefined;
 }>;
-export type I9hbqhk6otgba2 = {
-    "dispatch_error": Anonymize<Ielmcggkdu2qj>;
+export type I6ineo41al8gfu = {
+    "dispatch_error": Anonymize<Ibe33ik7mmlcqh>;
     "dispatch_info": Anonymize<Ic9s8f85vjtncc>;
 };
-export type Ielmcggkdu2qj = AnonymousEnum<{
+export type Ibe33ik7mmlcqh = AnonymousEnum<{
     "Other": undefined;
     "CannotLookup": undefined;
     "BadOrigin": undefined;
@@ -147,6 +151,10 @@ export type Ielmcggkdu2qj = AnonymousEnum<{
         "MessageQueue": Anonymize<I5iupade5ag2dp>;
         "Statement": undefined;
         "TemplatePallet": Anonymize<I92b4r5k2dd3v9>;
+        "SocialAppRegistry": Anonymize<Ico8vg2oh7sl6s>;
+        "SocialProfiles": Anonymize<Ibgupio6oknchd>;
+        "SocialGraph": Anonymize<I2pj5sgnni00u8>;
+        "SocialFeeds": Anonymize<I3hmdc12j82k0i>;
         "Revive": Anonymize<I54rjnlnsa98ib>;
     }>;
     "ConsumerRemaining": undefined;
@@ -622,6 +630,110 @@ export type I92b4r5k2dd3v9 = AnonymousEnum<{
      */
     "ClaimNotFound": undefined;
 }>;
+export type Ico8vg2oh7sl6s = AnonymousEnum<{
+    /**
+     * The caller does not have enough balance to cover the registration bond.
+     */
+    "InsufficientBond": undefined;
+    /**
+     * No app exists with the given ID.
+     */
+    "AppNotFound": undefined;
+    /**
+     * The caller is not the owner of this app.
+     */
+    "NotAppOwner": undefined;
+    /**
+     * The app is already inactive.
+     */
+    "AppAlreadyInactive": undefined;
+    /**
+     * The owner has reached the maximum number of registered apps.
+     */
+    "TooManyApps": undefined;
+    /**
+     * The provided metadata exceeds the maximum allowed length.
+     */
+    "MetadataTooLong": undefined;
+    /**
+     * The app ID counter has overflowed — no more apps can be registered.
+     */
+    "AppIdOverflow": undefined;
+}>;
+export type Ibgupio6oknchd = AnonymousEnum<{
+    /**
+     * A profile already exists for this account.
+     */
+    "ProfileAlreadyExists": undefined;
+    /**
+     * No profile found for this account.
+     */
+    "ProfileNotFound": undefined;
+    /**
+     * The caller does not have enough balance to cover the profile bond.
+     */
+    "InsufficientBond": undefined;
+    /**
+     * The provided metadata exceeds the maximum allowed length.
+     */
+    "MetadataTooLong": undefined;
+}>;
+export type I2pj5sgnni00u8 = AnonymousEnum<{
+    /**
+     * One or both accounts do not have a profile.
+     */
+    "ProfileNotFound": undefined;
+    /**
+     * A user cannot follow themselves.
+     */
+    "CannotFollowSelf": undefined;
+    /**
+     * The follow relationship already exists.
+     */
+    "AlreadyFollowing": undefined;
+    /**
+     * The follow relationship does not exist.
+     */
+    "NotFollowing": undefined;
+    /**
+     * The follower does not have enough balance to pay the follow fee.
+     */
+    "InsufficientBalance": undefined;
+}>;
+export type I3hmdc12j82k0i = AnonymousEnum<{
+    /**
+     * The caller does not have a profile.
+     */
+    "ProfileNotFound": undefined;
+    /**
+     * The specified app does not exist or is inactive.
+     */
+    "AppNotFound": undefined;
+    /**
+     * The parent post does not exist.
+     */
+    "ParentPostNotFound": undefined;
+    /**
+     * The caller does not have enough balance to pay the fee.
+     */
+    "InsufficientBalance": undefined;
+    /**
+     * The provided content exceeds the maximum allowed length.
+     */
+    "ContentTooLong": undefined;
+    /**
+     * The author has reached the maximum number of posts.
+     */
+    "TooManyPosts": undefined;
+    /**
+     * The parent post has reached the maximum number of replies.
+     */
+    "TooManyReplies": undefined;
+    /**
+     * The post ID counter has overflowed.
+     */
+    "PostIdOverflow": undefined;
+}>;
 export type I54rjnlnsa98ib = AnonymousEnum<{
     /**
      * Invalid schedule supplied, e.g. with zero weight of a basic operation.
@@ -928,9 +1040,9 @@ export type Ibgl04rn6nbfm6 = {
     "code_hash": FixedSizeBinary<32>;
     "check_version": boolean;
 };
-export type I268r55594blt6 = {
+export type I4b1m85hn1p2d5 = {
     "code_hash": FixedSizeBinary<32>;
-    "error": Anonymize<Ielmcggkdu2qj>;
+    "error": Anonymize<Ibe33ik7mmlcqh>;
 };
 export type Icbsekf57miplo = AnonymousEnum<{
     /**
@@ -1187,11 +1299,11 @@ export type Ier2cke86dqbr2 = {
     "actual_fee": bigint;
     "tip": bigint;
 };
-export type I26ommcnpjss9e = AnonymousEnum<{
+export type I275ososhrlp57 = AnonymousEnum<{
     /**
      * A sudo call just took place.
      */
-    "Sudid": Anonymize<I3t2db5s2bmfa8>;
+    "Sudid": Anonymize<I2fbu70gmdbj2v>;
     /**
      * The sudo key has been updated.
      */
@@ -1203,15 +1315,15 @@ export type I26ommcnpjss9e = AnonymousEnum<{
     /**
      * A [sudo_as](Pallet::sudo_as) call just took place.
      */
-    "SudoAsDone": Anonymize<I3t2db5s2bmfa8>;
+    "SudoAsDone": Anonymize<I2fbu70gmdbj2v>;
 }>;
-export type I3t2db5s2bmfa8 = {
+export type I2fbu70gmdbj2v = {
     /**
      * The result of the call made by the sudo user.
      */
-    "sudo_result": Anonymize<I20ill9s2nm9n0>;
+    "sudo_result": Anonymize<I4hsalrh4horau>;
 };
-export type I20ill9s2nm9n0 = ResultPayload<undefined, Anonymize<Ielmcggkdu2qj>>;
+export type I4hsalrh4horau = ResultPayload<undefined, Anonymize<Ibe33ik7mmlcqh>>;
 export type I5rtkmhm2dng4u = {
     /**
      * The old sudo key (if one was previously set).
@@ -2247,7 +2359,70 @@ export type I9p6tgcfbrrlod = {
      */
     "hash": FixedSizeBinary<32>;
 };
-export type I4is17cttqhh1t = AnonymousEnum<{
+export type Ib2p229gqicrud = AnonymousEnum<{
+    /**
+     * A new app was registered.
+     */
+    "AppRegistered": Anonymize<Ibh7279nftp2hh>;
+    /**
+     * An app was deregistered (set to inactive, bond returned).
+     */
+    "AppDeregistered": Anonymize<Ibh7279nftp2hh>;
+}>;
+export type Ibh7279nftp2hh = {
+    "app_id": number;
+    "owner": SS58String;
+};
+export type I93ue0l4duq2c4 = AnonymousEnum<{
+    /**
+     * A new profile was created.
+     */
+    "ProfileCreated": Anonymize<Icbccs0ug47ilf>;
+    /**
+     * Profile metadata was updated.
+     */
+    "ProfileUpdated": Anonymize<Icbccs0ug47ilf>;
+    /**
+     * A profile was deleted and bond returned.
+     */
+    "ProfileDeleted": Anonymize<Icbccs0ug47ilf>;
+}>;
+export type I7khj3ufuthda8 = AnonymousEnum<{
+    /**
+     * A user followed another user.
+     */
+    "Followed": Anonymize<I7uibdp0qbpf1m>;
+    /**
+     * A user unfollowed another user.
+     */
+    "Unfollowed": Anonymize<I7uibdp0qbpf1m>;
+}>;
+export type I7uibdp0qbpf1m = {
+    "follower": SS58String;
+    "followed": SS58String;
+};
+export type I606ks6n8do9gq = AnonymousEnum<{
+    /**
+     * A new post was created.
+     */
+    "PostCreated": Anonymize<Ieqg84amin6koq>;
+    /**
+     * A reply was created.
+     */
+    "ReplyCreated": Anonymize<I9o8g4g69f34ol>;
+}>;
+export type Ieqg84amin6koq = {
+    "post_id": bigint;
+    "author": SS58String;
+    "app_id"?: Anonymize<I4arjljr6dpflb>;
+};
+export type I9o8g4g69f34ol = {
+    "post_id": bigint;
+    "parent_post_id": bigint;
+    "author": SS58String;
+    "app_id"?: Anonymize<I4arjljr6dpflb>;
+};
+export type Ich96970u9pf96 = AnonymousEnum<{
     /**
      * A custom event emitted by the contract.
      */
@@ -2264,7 +2439,7 @@ export type I4is17cttqhh1t = AnonymousEnum<{
      * To distinguish reverted calls from successful ones, this event is emitted
      * for failed Ethereum transactions.
      */
-    "EthExtrinsicRevert": Anonymize<Ia246gkb4f2soh>;
+    "EthExtrinsicRevert": Anonymize<I7eehfnacpufeh>;
 }>;
 export type I7svbvm6hg57aj = {
     /**
@@ -2287,8 +2462,8 @@ export type I8jhsbaiultviu = {
     "deployer": FixedSizeBinary<20>;
     "contract": FixedSizeBinary<20>;
 };
-export type Ia246gkb4f2soh = {
-    "dispatch_error": Anonymize<Ielmcggkdu2qj>;
+export type I7eehfnacpufeh = {
+    "dispatch_error": Anonymize<Ibe33ik7mmlcqh>;
 };
 export type I95g6i7ilua7lq = Array<FixedSizeArray<2, number>>;
 export type Ieniouoqkq4icf = {
@@ -2563,6 +2738,29 @@ export type I7offqqltf3agj = {
     "owner": SS58String;
     "block_number": number;
 };
+export type I2v6cmdi4roc90 = {
+    "owner": SS58String;
+    "metadata": Binary;
+    "created_at": number;
+    "status": Enum<{
+        "Active": undefined;
+        "Inactive": undefined;
+    }>;
+};
+export type I4snhroajmv06f = {
+    "metadata": Binary;
+    "created_at": number;
+};
+export type I2na29tt2afp0j = FixedSizeArray<2, SS58String>;
+export type I4or7tso9unufp = {
+    "author": SS58String;
+    "content": Binary;
+    "app_id"?: Anonymize<I4arjljr6dpflb>;
+    "parent_post"?: Anonymize<I35p85j063s0il>;
+    "reply_fee": bigint;
+    "created_at": number;
+};
+export type Iafqnechp3omqg = Array<bigint>;
 export type I834nfrf667ag1 = {
     "owner": SS58String;
     "deposit": bigint;
@@ -3134,11 +3332,11 @@ export type I5utcetro501ir = {
     "value": bigint;
     "keep_alive": boolean;
 };
-export type I5vk97cs5kgutj = AnonymousEnum<{
+export type I7k5lop612bdbn = AnonymousEnum<{
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      */
-    "sudo": Anonymize<I20qifse1k61t0>;
+    "sudo": Anonymize<Icjfp9imiskso9>;
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      * This function does not check the weight of the call, and instead allows the
@@ -3146,7 +3344,7 @@ export type I5vk97cs5kgutj = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_unchecked_weight": Anonymize<Ifk1h9oo3rkqf3>;
+    "sudo_unchecked_weight": Anonymize<I4klguonbal4sc>;
     /**
      * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
      * key.
@@ -3158,7 +3356,7 @@ export type I5vk97cs5kgutj = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_as": Anonymize<I6siaqgb2u9dl9>;
+    "sudo_as": Anonymize<Idrsbkcloj2qre>;
     /**
      * Permanently removes the sudo key.
      *
@@ -3166,17 +3364,17 @@ export type I5vk97cs5kgutj = AnonymousEnum<{
      */
     "remove_key": undefined;
 }>;
-export type I20qifse1k61t0 = {
+export type Icjfp9imiskso9 = {
     "call": TxCallData;
 };
-export type Ifk1h9oo3rkqf3 = {
+export type I4klguonbal4sc = {
     "call": TxCallData;
     "weight": Anonymize<I4q39t5hn830vp>;
 };
 export type I8k3rnvpeeh4hv = {
     "new": MultiAddress;
 };
-export type I6siaqgb2u9dl9 = {
+export type Idrsbkcloj2qre = {
     "who": MultiAddress;
     "call": TxCallData;
 };
@@ -4028,7 +4226,103 @@ export type Ib9g9h9vhma17r = AnonymousEnum<{
 export type I1jm8m1rh9e20v = {
     "hash": FixedSizeBinary<32>;
 };
-export type I1hfrs45n6rp75 = AnonymousEnum<{
+export type Ie5u9ivafhla2m = AnonymousEnum<{
+    /**
+     * Register a new social app.
+     *
+     * Validates capacity and balance before making any state changes.
+     * Reserves `T::AppBond`, assigns the next available AppId, stores the
+     * app record, and updates the owner's app list.
+     */
+    "register_app": Anonymize<I70vuebkld5nba>;
+    /**
+     * Deregister an existing app.
+     *
+     * Sets the app status to `Inactive`, unreserves the bond, and removes
+     * the app from the owner's index. The app record is kept for history.
+     */
+    "deregister_app": Anonymize<I7uphs141r660c>;
+}>;
+export type I70vuebkld5nba = {
+    "metadata": Binary;
+};
+export type I7uphs141r660c = {
+    "app_id": number;
+};
+export type Icq91kc5oevstt = AnonymousEnum<{
+    /**
+     * Create a new profile for the caller.
+     *
+     * Reserves `T::ProfileBond`, stores profile info, and increments the
+     * global profile counter.
+     */
+    "create_profile": Anonymize<I70vuebkld5nba>;
+    /**
+     * Update the metadata CID of an existing profile.
+     *
+     * Only the profile owner (the caller) can update their metadata.
+     */
+    "update_metadata": Anonymize<I5vanth86cd3mt>;
+    /**
+     * Delete the caller's profile.
+     *
+     * Removes the profile from storage, unreserves the bond, and decrements
+     * the global profile counter.
+     */
+    "delete_profile": undefined;
+}>;
+export type I5vanth86cd3mt = {
+    "new_metadata": Binary;
+};
+export type I5lcpnc4e0dlj4 = AnonymousEnum<{
+    /**
+     * Follow another user.
+     *
+     * Both accounts must have profiles. Transfers `T::FollowFee` from the
+     * caller to the target. The fee is non-refundable. Storage writes happen
+     * before the transfer to ensure atomicity.
+     */
+    "follow": Anonymize<I14p0q0qs0fqbj>;
+    /**
+     * Unfollow a user.
+     *
+     * Removes the follow relationship. No refund of the follow fee.
+     * Does not require profiles to exist — allows cleanup after profile
+     * deletion.
+     */
+    "unfollow": Anonymize<I14p0q0qs0fqbj>;
+}>;
+export type I14p0q0qs0fqbj = {
+    "target": SS58String;
+};
+export type I5f7gefsd9rija = AnonymousEnum<{
+    /**
+     * Create a new original post.
+     *
+     * All validation and capacity checks happen first. The fee transfer is
+     * the last fallible operation to ensure storage consistency.
+     */
+    "create_post": Anonymize<I17lfb3aso87av>;
+    /**
+     * Create a reply to an existing post.
+     *
+     * Pays both the post creation fee (to app owner / treasury) and the
+     * parent post's reply fee (to the parent author). Reply fee of 0 means
+     * no transfer to the parent author.
+     */
+    "create_reply": Anonymize<I9lv278elt0l38>;
+}>;
+export type I17lfb3aso87av = {
+    "content": Binary;
+    "app_id"?: Anonymize<I4arjljr6dpflb>;
+    "reply_fee": bigint;
+};
+export type I9lv278elt0l38 = {
+    "parent_post_id": bigint;
+    "content": Binary;
+    "app_id"?: Anonymize<I4arjljr6dpflb>;
+};
+export type Iepe72g1nu594t = AnonymousEnum<{
     /**
      * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
      *
@@ -4156,7 +4450,7 @@ export type I1hfrs45n6rp75 = AnonymousEnum<{
      * * `call`: The Substrate runtime call to execute.
      * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
      */
-    "eth_substrate_call": Anonymize<I83l866hlqq38g>;
+    "eth_substrate_call": Anonymize<I1som7l55td62u>;
     /**
      * Upload new `code` without instantiating a contract from it.
      *
@@ -4215,7 +4509,7 @@ export type I1hfrs45n6rp75 = AnonymousEnum<{
      * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
      * recovery function in case an `AccountId20` was used without creating a mapping first.
      */
-    "dispatch_as_fallback_account": Anonymize<I20qifse1k61t0>;
+    "dispatch_as_fallback_account": Anonymize<Icjfp9imiskso9>;
 }>;
 export type Ida37oe44osb06 = {
     "payload": Binary;
@@ -4263,7 +4557,7 @@ export type Iav55bcqlrqn51 = {
     "effective_gas_price": Anonymize<I4totqt881mlti>;
     "encoded_len": number;
 };
-export type I83l866hlqq38g = {
+export type I1som7l55td62u = {
     "call": TxCallData;
     "transaction_encoded": Binary;
 };
@@ -4292,7 +4586,7 @@ export type I7u915mvkdsb08 = ResultPayload<Binary, Enum<{
     "NotFound": Anonymize<I4gil44d08grh>;
     "Codec": undefined;
 }>>;
-export type I205hi2ig012m3 = ResultPayload<Anonymize<I20ill9s2nm9n0>, Anonymize<I5nrjkj9qumobs>>;
+export type Idkmc7u8uph6vd = ResultPayload<Anonymize<I4hsalrh4horau>, Anonymize<I5nrjkj9qumobs>>;
 export type I5nrjkj9qumobs = AnonymousEnum<{
     "Invalid": Enum<{
         "Call": undefined;
@@ -4350,13 +4644,13 @@ export type Iei2mvq0mjvt81 = {
     }) | undefined;
     "tip": bigint;
 };
-export type Ibednls348smbh = AnonymousEnum<{
+export type Idc4u13jqebe1u = AnonymousEnum<{
     "System": Anonymize<Iekve0i6djpd9f>;
     "ParachainSystem": Anonymize<I3u72uvpuo4qrt>;
     "Timestamp": Anonymize<I7d75gqfg6jh9c>;
     "ParachainInfo": undefined;
     "Balances": Anonymize<I9svldsp29mh87>;
-    "Sudo": Anonymize<I5vk97cs5kgutj>;
+    "Sudo": Anonymize<I7k5lop612bdbn>;
     "CollatorSelection": Anonymize<I9dpq5287dur8b>;
     "Session": Anonymize<I77dda7hps0u37>;
     "XcmpQueue": Anonymize<Ib7tahn20bvsep>;
@@ -4364,7 +4658,11 @@ export type Ibednls348smbh = AnonymousEnum<{
     "CumulusXcm": undefined;
     "MessageQueue": Anonymize<Ic2uoe7jdksosp>;
     "TemplatePallet": Anonymize<Ib9g9h9vhma17r>;
-    "Revive": Anonymize<I1hfrs45n6rp75>;
+    "SocialAppRegistry": Anonymize<Ie5u9ivafhla2m>;
+    "SocialProfiles": Anonymize<Icq91kc5oevstt>;
+    "SocialGraph": Anonymize<I5lcpnc4e0dlj4>;
+    "SocialFeeds": Anonymize<I5f7gefsd9rija>;
+    "Revive": Anonymize<Iepe72g1nu594t>;
 }>;
 export type Ic1d4u2opv3fst = {
     "upward_messages": Anonymize<Itom7fk49o0c9>;
@@ -4390,13 +4688,13 @@ export type I3ju6ot8lfmk90 = ResultPayload<{
 export type Ie9sr1iqcg3cgm = ResultPayload<undefined, string>;
 export type I1mqgk2tmnn9i2 = (string) | undefined;
 export type I6lr8sctk0bi4e = Array<string>;
-export type I8aq8rmkjo25um = {
+export type I3onh9h94giqoe = {
     "weight_consumed": Anonymize<I4q39t5hn830vp>;
     "weight_required": Anonymize<I4q39t5hn830vp>;
     "storage_deposit": Anonymize<If7bmpttbdmqu4>;
     "max_storage_deposit": Anonymize<If7bmpttbdmqu4>;
     "gas_consumed": bigint;
-    "result": ResultPayload<Anonymize<I620n7irgfspm4>, Anonymize<Ielmcggkdu2qj>>;
+    "result": ResultPayload<Anonymize<I620n7irgfspm4>, Anonymize<Ibe33ik7mmlcqh>>;
 };
 export type If7bmpttbdmqu4 = AnonymousEnum<{
     "Refund": bigint;
@@ -4410,7 +4708,7 @@ export type I9sijb8gfrns29 = AnonymousEnum<{
     "Upload": Binary;
     "Existing": FixedSizeBinary<32>;
 }>;
-export type Icskkb9gddueej = {
+export type Iah988lm0lrbji = {
     "weight_consumed": Anonymize<I4q39t5hn830vp>;
     "weight_required": Anonymize<I4q39t5hn830vp>;
     "storage_deposit": Anonymize<If7bmpttbdmqu4>;
@@ -4419,7 +4717,7 @@ export type Icskkb9gddueej = {
     "result": ResultPayload<{
         "result": Anonymize<I620n7irgfspm4>;
         "addr": FixedSizeBinary<20>;
-    }, Anonymize<Ielmcggkdu2qj>>;
+    }, Anonymize<Ibe33ik7mmlcqh>>;
 };
 export type I6f9v7emp7t5ba = {
     "access_list"?: (Anonymize<Ieap15h2pjii9u>) | undefined;
@@ -4457,14 +4755,14 @@ export type Idmrtv8jbbitnu = {
     "timestamp_override"?: Anonymize<I35p85j063s0il>;
     "reserved": boolean;
 };
-export type Idurem13iqg682 = ResultPayload<{
+export type I4gdt8emptengv = ResultPayload<{
     "code_hash": FixedSizeBinary<32>;
     "deposit": bigint;
-}, Anonymize<Ielmcggkdu2qj>>;
-export type I295j1d7noqo25 = ResultPayload<Anonymize<Iabpgqcjikia83>, Enum<{
+}, Anonymize<Ibe33ik7mmlcqh>>;
+export type Ie12qropkfd0i4 = ResultPayload<Anonymize<Iabpgqcjikia83>, Enum<{
     "DoesntExist": undefined;
     "KeyDecodingFailed": undefined;
-    "StorageWriteFailed": Anonymize<Ielmcggkdu2qj>;
+    "StorageWriteFailed": Anonymize<Ibe33ik7mmlcqh>;
 }>>;
 export type I63nhnkgg114n5 = AnonymousEnum<{
     "CallTracer"?: ({
