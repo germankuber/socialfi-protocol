@@ -13,6 +13,13 @@ import TxToast from "../../components/social/TxToast";
 type Visibility = "Public" | "Obfuscated" | "Private";
 const MAX_CHARS = 400;
 
+interface AppMeta {
+	name?: string;
+	description?: string;
+	icon?: string;
+	website?: string;
+}
+
 interface AppData {
 	id: number;
 	owner: string;
@@ -55,8 +62,9 @@ export default function AppDetailPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
 	const tracker = useTxTracker();
-	const { uploadPostContent, fetchPostContent } = useIpfs();
+	const { uploadPostContent, fetchPostContent, fetchProfileMetadata, ipfsUrl } = useIpfs();
 	const [app, setApp] = useState<AppData | null>(null);
+	const [appMeta, setAppMeta] = useState<AppMeta | null>(null);
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [replies, setReplies] = useState<Record<number, ReplyData[]>>({});
 	const [unlocked, setUnlocked] = useState<Set<number>>(new Set());
@@ -87,12 +95,18 @@ export default function AppDetailPage() {
 
 			const appData = await api.query.SocialAppRegistry.Apps.getValue(numericId);
 			if (appData) {
+				const metaCid = appData.metadata.asText();
 				setApp({
 					id: numericId,
 					owner: appData.owner.toString(),
-					metadata: appData.metadata.asText(),
+					metadata: metaCid,
 					createdAt: Number(appData.created_at),
 					status: appData.status.type,
+				});
+
+				// Resolve app metadata from IPFS
+				fetchProfileMetadata(metaCid).then((meta) => {
+					if (meta) setAppMeta(meta as unknown as AppMeta);
 				});
 			}
 
@@ -266,24 +280,41 @@ export default function AppDetailPage() {
 					</svg>
 					Back
 				</Link>
-				<div className="flex items-center gap-4">
-					<div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-lg font-bold shrink-0`}>
-						{app.id}
-					</div>
+				<div className="flex items-start gap-4">
+					{/* Icon */}
+					{appMeta?.icon ? (
+						<img src={ipfsUrl(appMeta.icon)} alt={appMeta.name || ""} className="w-14 h-14 rounded-xl object-cover bg-surface-800 shrink-0" />
+					) : (
+						<div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shrink-0`}>
+							{app.id}
+						</div>
+					)}
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2">
-							<h1 className="heading-2">App #{app.id}</h1>
+							<h1 className="heading-2">{appMeta?.name || `App #${app.id}`}</h1>
 							<span className={app.status === "Active" ? "badge-success" : "badge-danger"}>{app.status}</span>
 						</div>
-						<div className="flex items-center gap-3 mt-1 text-xs text-secondary">
-							<span className="font-mono truncate" title={app.metadata}>{app.metadata}</span>
-							<span>·</span>
+						{appMeta?.description && (
+							<p className="text-sm text-secondary mt-1">{appMeta.description}</p>
+						)}
+						<div className="flex items-center gap-3 mt-2 text-xs text-secondary">
 							<AddressDisplay address={app.owner} chars={6} />
 							<span>·</span>
 							<span>{posts.length} posts</span>
+							<span>·</span>
+							<span className="font-mono">Block #{app.createdAt}</span>
+							{appMeta?.website && (
+								<>
+									<span>·</span>
+									<a href={appMeta.website} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
+										{appMeta.website.replace(/^https?:\/\//, "")}
+									</a>
+								</>
+							)}
 						</div>
 					</div>
 				</div>
+				<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 			</div>
 
 			{/* Compose — app_id is automatic */}
