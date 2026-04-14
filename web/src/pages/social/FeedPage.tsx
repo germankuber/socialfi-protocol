@@ -85,6 +85,9 @@ export default function FeedPage() {
 			}
 			setReplies(rMap);
 
+			// Auto-expand posts that have replies
+			setExpanded(new Set(originals.filter((p) => (rMap[p.id]?.length || 0) > 0).map((p) => p.id)));
+
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
 				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
