@@ -11,6 +11,7 @@ const ProfilePage = lazy(() => import("./pages/social/ProfilePage"));
 const AppsPage = lazy(() => import("./pages/social/AppsPage"));
 const FeedPage = lazy(() => import("./pages/social/FeedPage"));
 const GraphPage = lazy(() => import("./pages/social/GraphPage"));
+const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 
 const routeFallback = (
 	<div className="flex items-center justify-center py-20">
@@ -76,6 +77,14 @@ createRoot(document.getElementById("root")!).render(
 							element={
 								<Suspense fallback={routeFallback}>
 									<GraphPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="accounts"
+							element={
+								<Suspense fallback={routeFallback}>
+									<AccountsPage />
 								</Suspense>
 							}
 						/>

@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { getClient } from "../useChain";
 import { stack_template } from "@polkadot-api/descriptors";
 import { useChainStore } from "../../store/chainStore";
@@ -6,9 +7,10 @@ import { useChainStore } from "../../store/chainStore";
 export function useSocialApi() {
 	const wsUrl = useChainStore((s) => s.wsUrl);
 
-	function getApi() {
-		return getClient(wsUrl).getTypedApi(stack_template);
-	}
+	const getApi = useCallback(
+		() => getClient(wsUrl).getTypedApi(stack_template),
+		[wsUrl],
+	);
 
 	return { getApi, wsUrl };
 }

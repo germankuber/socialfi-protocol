@@ -22,18 +22,27 @@ export default function GraphPage() {
 	const [loading, setLoading] = useState(true);
 	const [target, setTarget] = useState("");
 
+	const accountAddress = account?.address ?? null;
+
 	const loadGraph = useCallback(async () => {
+		if (!accountAddress) {
+			setFollowing([]);
+			setFollowerCount(0);
+			setFollowingCount(0);
+			setLoading(false);
+			return;
+		}
 		try {
 			setLoading(true);
 			const api = getApi();
-			const entries = await api.query.SocialGraph.Follows.getEntries(account.address);
+			const entries = await api.query.SocialGraph.Follows.getEntries(accountAddress);
 			setFollowing(entries.map((e) => ({
 				followed: e.keyArgs[1].toString(),
 				createdAt: Number(e.value),
 			})));
 			const [fc, fgc] = await Promise.all([
-				api.query.SocialGraph.FollowerCount.getValue(account.address),
-				api.query.SocialGraph.FollowingCount.getValue(account.address),
+				api.query.SocialGraph.FollowerCount.getValue(accountAddress),
+				api.query.SocialGraph.FollowingCount.getValue(accountAddress),
 			]);
 			setFollowerCount(Number(fc));
 			setFollowingCount(Number(fgc));
@@ -42,12 +51,13 @@ export default function GraphPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [account.address, getApi]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [accountAddress]);
 
 	useEffect(() => { loadGraph(); }, [loadGraph]);
 
 	async function followUser() {
-		if (!target.trim()) return;
+		if (!account || !target.trim()) return;
 		try {
 			tx.setStatus("Following...");
 			const api = getApi();
@@ -60,6 +70,7 @@ export default function GraphPage() {
 	}
 
 	async function unfollowUser(addr: string) {
+		if (!account) return;
 		try {
 			tx.setStatus("Unfollowing...");
 			const api = getApi();

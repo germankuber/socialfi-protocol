@@ -43,12 +43,13 @@ export default function AppsPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [getApi]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	useEffect(() => { loadApps(); }, [loadApps]);
 
 	async function registerApp() {
-		if (!metadataInput.trim()) return;
+		if (!account || !metadataInput.trim()) return;
 		try {
 			tx.setStatus("Registering app...");
 			const api = getApi();
@@ -63,6 +64,7 @@ export default function AppsPage() {
 	}
 
 	async function deregisterApp(appId: number) {
+		if (!account) return;
 		try {
 			tx.setStatus("Deregistering app...");
 			const api = getApi();
@@ -121,7 +123,7 @@ export default function AppsPage() {
 											{app.status}
 										</span>
 									</div>
-									{app.status === "Active" && app.owner === account.address && (
+									{app.status === "Active" && account && app.owner === account.address && (
 										<button onClick={() => deregisterApp(app.id)} className="btn-danger btn-sm">
 											Deregister
 										</button>

@@ -61,7 +61,8 @@ export default function FeedPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [getApi]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	useEffect(() => { loadPosts(); }, [loadPosts]);
 
@@ -74,7 +75,7 @@ export default function FeedPage() {
 	}
 
 	async function createPost() {
-		if (!content.trim()) return;
+		if (!account || !content.trim()) return;
 		try {
 			tx.setStatus("Creating post...");
 			const api = getApi();
@@ -91,7 +92,7 @@ export default function FeedPage() {
 	}
 
 	async function createReply(parentId: number) {
-		if (!replyContent.trim()) return;
+		if (!account || !replyContent.trim()) return;
 		try {
 			tx.setStatus("Creating reply...");
 			const api = getApi();
