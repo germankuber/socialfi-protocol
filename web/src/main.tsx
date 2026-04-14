@@ -11,6 +11,7 @@ const ProfilePage = lazy(() => import("./pages/social/ProfilePage"));
 const AppsPage = lazy(() => import("./pages/social/AppsPage"));
 const FeedPage = lazy(() => import("./pages/social/FeedPage"));
 const GraphPage = lazy(() => import("./pages/social/GraphPage"));
+const TransactionsPage = lazy(() => import("./pages/social/TransactionsPage"));
 const AppDetailPage = lazy(() => import("./pages/social/AppDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/social/PostDetailPage"));
 const PublicProfilePage = lazy(() => import("./pages/social/PublicProfilePage"));
@@ -81,6 +82,14 @@ createRoot(document.getElementById("root")!).render(
 							element={
 								<Suspense fallback={routeFallback}>
 									<GraphPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="transactions"
+							element={
+								<Suspense fallback={routeFallback}>
+									<TransactionsPage />
 								</Suspense>
 							}
 						/>

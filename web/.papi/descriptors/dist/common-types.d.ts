@@ -41,7 +41,7 @@ export type DigestItem = Enum<{
 }>;
 export declare const DigestItem: GetEnum<DigestItem>;
 export type I82jm9g7pufuel = [FixedSizeBinary<4>, Binary];
-export type Iedp53eo43enmo = Array<{
+export type Ied261m7ri6uir = Array<{
     "phase": Phase;
     "event": Enum<{
         "System": Anonymize<Ia43aa1a0e31uc>;
@@ -60,7 +60,7 @@ export type Iedp53eo43enmo = Array<{
         "SocialAppRegistry": Anonymize<Ib2p229gqicrud>;
         "SocialProfiles": Anonymize<I21lslh1sksejv>;
         "SocialGraph": Anonymize<Idqf7jqq12gtuq>;
-        "SocialFeeds": Anonymize<If2likd1r46lhs>;
+        "SocialFeeds": Anonymize<Iec4dv291p34lo>;
         "Revive": Anonymize<I7r2d90v8n3cgn>;
     }>;
     "topics": Anonymize<Ic5m5lp1oioo8r>;
@@ -2426,40 +2426,47 @@ export type I7uibdp0qbpf1m = {
     "follower": SS58String;
     "followed": SS58String;
 };
-export type If2likd1r46lhs = AnonymousEnum<{
+export type Iec4dv291p34lo = AnonymousEnum<{
     /**
      * A new post was created.
      */
-    "PostCreated": Anonymize<Id4dvb6rr3bmdr>;
+    "PostCreated": Anonymize<I2crm4j70329fs>;
     /**
      * A reply was created.
      */
-    "ReplyCreated": Anonymize<I9o8g4g69f34ol>;
+    "ReplyCreated": Anonymize<Ich1gn08cdvajd>;
     /**
      * A post was unlocked by a viewer (fee paid to author).
      */
-    "PostUnlocked": Anonymize<Iasujbk3dgeapn>;
+    "PostUnlocked": Anonymize<I8pdmes4qb1slv>;
 }>;
-export type Id4dvb6rr3bmdr = {
+export type I2crm4j70329fs = {
     "post_id": bigint;
     "author": SS58String;
     "app_id"?: Anonymize<I4arjljr6dpflb>;
     "visibility": Anonymize<I4pbd8ok1f85f3>;
+    "post_fee": bigint;
+    "fee_recipient": SS58String;
 };
 export type I4pbd8ok1f85f3 = AnonymousEnum<{
     "Public": undefined;
     "Obfuscated": undefined;
     "Private": undefined;
 }>;
-export type I9o8g4g69f34ol = {
+export type Ich1gn08cdvajd = {
     "post_id": bigint;
     "parent_post_id": bigint;
     "author": SS58String;
+    "parent_author": SS58String;
     "app_id"?: Anonymize<I4arjljr6dpflb>;
+    "reply_fee_paid": bigint;
+    "post_fee_paid": bigint;
+    "fee_recipient": SS58String;
 };
-export type Iasujbk3dgeapn = {
+export type I8pdmes4qb1slv = {
     "post_id": bigint;
     "viewer": SS58String;
+    "author": SS58String;
     "fee_paid": bigint;
 };
 export type I7r2d90v8n3cgn = AnonymousEnum<{

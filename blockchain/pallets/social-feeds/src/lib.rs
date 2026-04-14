@@ -143,16 +143,27 @@ pub mod pallet {
 			author: T::AccountId,
 			app_id: Option<T::AppId>,
 			visibility: PostVisibility,
+			post_fee: BalanceOf<T>,
+			fee_recipient: T::AccountId,
 		},
 		/// A reply was created.
 		ReplyCreated {
 			post_id: T::PostId,
 			parent_post_id: T::PostId,
 			author: T::AccountId,
+			parent_author: T::AccountId,
 			app_id: Option<T::AppId>,
+			reply_fee_paid: BalanceOf<T>,
+			post_fee_paid: BalanceOf<T>,
+			fee_recipient: T::AccountId,
 		},
 		/// A post was unlocked by a viewer (fee paid to author).
-		PostUnlocked { post_id: T::PostId, viewer: T::AccountId, fee_paid: BalanceOf<T> },
+		PostUnlocked {
+			post_id: T::PostId,
+			viewer: T::AccountId,
+			author: T::AccountId,
+			fee_paid: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -248,7 +259,14 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::InsufficientBalance)?;
 
-			Self::deposit_event(Event::PostCreated { post_id, author: who, app_id, visibility });
+			Self::deposit_event(Event::PostCreated {
+				post_id,
+				author: who,
+				app_id,
+				visibility,
+				post_fee: T::PostFee::get(),
+				fee_recipient,
+			});
 			Ok(())
 		}
 
@@ -320,7 +338,11 @@ pub mod pallet {
 				post_id,
 				parent_post_id,
 				author: who,
+				parent_author: parent.author,
 				app_id,
+				reply_fee_paid: parent.reply_fee,
+				post_fee_paid: T::PostFee::get(),
+				fee_recipient,
 			});
 			Ok(())
 		}
@@ -344,6 +366,7 @@ pub mod pallet {
 				Self::deposit_event(Event::PostUnlocked {
 					post_id,
 					viewer: who,
+					author: post.author,
 					fee_paid: Zero::zero(),
 				});
 				return Ok(());
@@ -367,6 +390,7 @@ pub mod pallet {
 			Self::deposit_event(Event::PostUnlocked {
 				post_id,
 				viewer: who,
+				author: post.author,
 				fee_paid: post.unlock_fee,
 			});
 			Ok(())
