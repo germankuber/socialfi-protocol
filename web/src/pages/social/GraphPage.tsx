@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
-import { useTxStatus } from "../../hooks/social/useTxStatus";
-import { formatDispatchError } from "../../utils/format";
+import { useTxTracker } from "../../hooks/social/useTxTracker";
 import AccountSelector from "../../components/social/AccountSelector";
-import TxStatusBanner from "../../components/social/TxStatusBanner";
+import TxToast from "../../components/social/TxToast";
 import AddressDisplay from "../../components/social/AddressDisplay";
 
 interface FollowData {
@@ -15,11 +14,11 @@ interface FollowData {
 export default function GraphPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
-	const tx = useTxStatus();
+	const tracker = useTxTracker();
 	const [following, setFollowing] = useState<FollowData[]>([]);
 	const [followerCount, setFollowerCount] = useState(0);
 	const [followingCount, setFollowingCount] = useState(0);
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false);
 	const [target, setTarget] = useState("");
 
 	const accountAddress = account?.address ?? null;
@@ -29,7 +28,6 @@ export default function GraphPage() {
 			setFollowing([]);
 			setFollowerCount(0);
 			setFollowingCount(0);
-			setLoading(false);
 			return;
 		}
 		try {
@@ -51,42 +49,33 @@ export default function GraphPage() {
 		} finally {
 			setLoading(false);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
 	useEffect(() => { loadGraph(); }, [loadGraph]);
 
+	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+
 	async function followUser() {
 		if (!account || !target.trim()) return;
-		try {
-			tx.setStatus("Following...");
-			const api = getApi();
-			const result = await api.tx.SocialGraph.follow({ target: target.trim() }).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("Followed!");
-			setTarget("");
-			loadGraph();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialGraph.follow({ target: target.trim() });
+		const ok = await tracker.submit(tx, account.signer, "Follow");
+		if (ok) { setTarget(""); loadGraph(); }
 	}
 
 	async function unfollowUser(addr: string) {
 		if (!account) return;
-		try {
-			tx.setStatus("Unfollowing...");
-			const api = getApi();
-			const result = await api.tx.SocialGraph.unfollow({ target: addr }).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("Unfollowed!");
-			loadGraph();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialGraph.unfollow({ target: addr });
+		const ok = await tracker.submit(tx, account.signer, "Unfollow");
+		if (ok) loadGraph();
 	}
 
 	return (
 		<div className="space-y-4">
 			<AccountSelector />
-			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
-			{/* Follow form */}
 			<div className="panel space-y-3">
 				<h2 className="heading-2">Follow User</h2>
 				<div className="flex gap-2">
@@ -97,13 +86,12 @@ export default function GraphPage() {
 						placeholder="SS58 address..."
 						className="input flex-1"
 					/>
-					<button onClick={followUser} disabled={!target.trim()} className="btn-brand shrink-0">
+					<button onClick={followUser} disabled={!target.trim() || !account || busy} className="btn-brand shrink-0">
 						Follow
 					</button>
 				</div>
 			</div>
 
-			{/* Stats */}
 			<div className="grid grid-cols-2 gap-3">
 				<div className="panel text-center py-4">
 					<p className="text-3xl font-bold font-mono">{followerCount}</p>
@@ -115,7 +103,6 @@ export default function GraphPage() {
 				</div>
 			</div>
 
-			{/* Following list */}
 			<div className="panel space-y-4">
 				<div className="flex items-center justify-between">
 					<h2 className="heading-2">Following</h2>
@@ -132,11 +119,9 @@ export default function GraphPage() {
 							<div key={f.followed} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
 								<div>
 									<AddressDisplay address={f.followed} />
-									<p className="text-[11px] text-surface-500 font-mono mt-0.5">
-										Since block #{f.createdAt}
-									</p>
+									<p className="text-[11px] text-surface-500 font-mono mt-0.5">Since block #{f.createdAt}</p>
 								</div>
-								<button onClick={() => unfollowUser(f.followed)} className="btn-danger btn-sm">
+								<button onClick={() => unfollowUser(f.followed)} disabled={busy} className="btn-danger btn-sm">
 									Unfollow
 								</button>
 							</div>
@@ -145,6 +130,8 @@ export default function GraphPage() {
 					</div>
 				)}
 			</div>
+
+			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>
 	);
 }

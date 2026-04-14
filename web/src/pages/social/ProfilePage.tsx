@@ -2,10 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
-import { useTxStatus } from "../../hooks/social/useTxStatus";
-import { formatDispatchError } from "../../utils/format";
+import { useTxTracker } from "../../hooks/social/useTxTracker";
 import AccountSelector from "../../components/social/AccountSelector";
-import TxStatusBanner from "../../components/social/TxStatusBanner";
+import TxToast from "../../components/social/TxToast";
 
 interface ProfileData {
 	metadata: string;
@@ -15,7 +14,7 @@ interface ProfileData {
 export default function ProfilePage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
-	const tx = useTxStatus();
+	const tracker = useTxTracker();
 	const [profile, setProfile] = useState<ProfileData | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [metadataInput, setMetadataInput] = useState("");
@@ -34,57 +33,38 @@ export default function ProfilePage() {
 		} finally {
 			setLoading(false);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
 	useEffect(() => { loadProfile(); }, [loadProfile]);
 
 	async function createProfile() {
 		if (!account || !metadataInput.trim()) return;
-		try {
-			tx.setStatus("Creating profile...");
-			const api = getApi();
-			const result = await api.tx.SocialProfiles.create_profile({
-				metadata: Binary.fromText(metadataInput),
-			}).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("Profile created!");
-			setMetadataInput("");
-			loadProfile();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(metadataInput) });
+		const ok = await tracker.submit(tx, account.signer, "Create Profile");
+		if (ok) { setMetadataInput(""); loadProfile(); }
 	}
 
 	async function updateMetadata() {
 		if (!account || !metadataInput.trim()) return;
-		try {
-			tx.setStatus("Updating metadata...");
-			const api = getApi();
-			const result = await api.tx.SocialProfiles.update_metadata({
-				new_metadata: Binary.fromText(metadataInput),
-			}).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("Metadata updated!");
-			setMetadataInput("");
-			loadProfile();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialProfiles.update_metadata({ new_metadata: Binary.fromText(metadataInput) });
+		const ok = await tracker.submit(tx, account.signer, "Update Metadata");
+		if (ok) { setMetadataInput(""); loadProfile(); }
 	}
 
 	async function deleteProfile() {
 		if (!account) return;
-		try {
-			tx.setStatus("Deleting profile...");
-			const api = getApi();
-			const result = await api.tx.SocialProfiles.delete_profile().signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("Profile deleted. Bond returned.");
-			loadProfile();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialProfiles.delete_profile();
+		const ok = await tracker.submit(tx, account.signer, "Delete Profile");
+		if (ok) loadProfile();
 	}
 
 	return (
 		<div className="space-y-4">
 			<AccountSelector />
-			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
 			{account && (
 				<>
@@ -128,7 +108,7 @@ export default function ProfilePage() {
 						</div>
 						<button
 							onClick={profile ? updateMetadata : createProfile}
-							disabled={!metadataInput.trim()}
+							disabled={!metadataInput.trim() || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block"}
 							className="btn-brand"
 						>
 							{profile ? "Update Metadata" : "Create Profile"}
@@ -136,6 +116,8 @@ export default function ProfilePage() {
 					</div>
 				</>
 			)}
+
+			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>
 	);
 }

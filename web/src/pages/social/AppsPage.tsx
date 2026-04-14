@@ -2,10 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
-import { useTxStatus } from "../../hooks/social/useTxStatus";
-import { formatDispatchError } from "../../utils/format";
+import { useTxTracker } from "../../hooks/social/useTxTracker";
 import AccountSelector from "../../components/social/AccountSelector";
-import TxStatusBanner from "../../components/social/TxStatusBanner";
+import TxToast from "../../components/social/TxToast";
 import AddressDisplay from "../../components/social/AddressDisplay";
 
 interface AppData {
@@ -19,7 +18,7 @@ interface AppData {
 export default function AppsPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
-	const tx = useTxStatus();
+	const tracker = useTxTracker();
 	const [apps, setApps] = useState<AppData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [metadataInput, setMetadataInput] = useState("");
@@ -43,46 +42,33 @@ export default function AppsPage() {
 		} finally {
 			setLoading(false);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => { loadApps(); }, [loadApps]);
 
+	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+
 	async function registerApp() {
 		if (!account || !metadataInput.trim()) return;
-		try {
-			tx.setStatus("Registering app...");
-			const api = getApi();
-			const result = await api.tx.SocialAppRegistry.register_app({
-				metadata: Binary.fromText(metadataInput),
-			}).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("App registered!");
-			setMetadataInput("");
-			loadApps();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialAppRegistry.register_app({ metadata: Binary.fromText(metadataInput) });
+		const ok = await tracker.submit(tx, account.signer, "Register App");
+		if (ok) { setMetadataInput(""); loadApps(); }
 	}
 
 	async function deregisterApp(appId: number) {
 		if (!account) return;
-		try {
-			tx.setStatus("Deregistering app...");
-			const api = getApi();
-			const result = await api.tx.SocialAppRegistry.deregister_app({
-				app_id: appId,
-			}).signAndSubmit(account.signer);
-			if (!result.ok) { tx.setError(formatDispatchError(result.dispatchError)); return; }
-			tx.setSuccess("App deregistered. Bond returned.");
-			loadApps();
-		} catch (e) { tx.setError(e instanceof Error ? e.message : String(e)); }
+		const api = getApi();
+		const tx = api.tx.SocialAppRegistry.deregister_app({ app_id: appId });
+		const ok = await tracker.submit(tx, account.signer, "Deregister App");
+		if (ok) loadApps();
 	}
 
 	return (
 		<div className="space-y-4">
 			<AccountSelector />
-			<TxStatusBanner status={tx.status} isError={tx.isError} />
 
-			{/* Register */}
 			<div className="panel space-y-4">
 				<h2 className="heading-2">Register App</h2>
 				<div>
@@ -96,12 +82,11 @@ export default function AppsPage() {
 						className="input"
 					/>
 				</div>
-				<button onClick={registerApp} disabled={!metadataInput.trim()} className="btn-brand">
+				<button onClick={registerApp} disabled={!metadataInput.trim() || !account || busy} className="btn-brand">
 					Register App
 				</button>
 			</div>
 
-			{/* List */}
 			<div className="panel space-y-4">
 				<div className="flex items-center justify-between">
 					<h2 className="heading-2">Apps ({apps.length})</h2>
@@ -124,7 +109,7 @@ export default function AppsPage() {
 										</span>
 									</div>
 									{app.status === "Active" && account && app.owner === account.address && (
-										<button onClick={() => deregisterApp(app.id)} className="btn-danger btn-sm">
+										<button onClick={() => deregisterApp(app.id)} disabled={busy} className="btn-danger btn-sm">
 											Deregister
 										</button>
 									)}
@@ -140,6 +125,8 @@ export default function AppsPage() {
 					</div>
 				)}
 			</div>
+
+			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>
 	);
 }
