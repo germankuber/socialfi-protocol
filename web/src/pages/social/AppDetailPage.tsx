@@ -352,19 +352,21 @@ export default function AppDetailPage() {
 				<style>{`html.light .border-surface-800 { border-color: #e4e4e7; }`}</style>
 
 				{(() => {
-					const filtered = feedTab === "mine" && accountAddress
+					const isMine = feedTab === "mine";
+					const filtered = isMine && accountAddress
 						? posts.filter((p) => p.author === accountAddress)
-						: posts;
+						: posts.filter((p) => p.visibility !== "Private");
 
 					return filtered.length === 0 ? (
 						<div className="panel text-center py-8 text-secondary text-sm">
-							{feedTab === "mine" ? "You haven't posted in this app yet." : "No posts in this app yet. Be the first!"}
+							{isMine ? "You haven't posted in this app yet." : "No posts in this app yet. Be the first!"}
 						</div>
 					) : (
 						filtered.map((post) => {
-						const visible = canSee(post);
-						const postReplies = replies[post.id] || [];
-						const isExpanded = expanded.has(post.id);
+						// In "My Posts" tab, author always sees their own content
+						const visible = isMine || canSee(post);
+						const postReplies = isMine ? [] : (replies[post.id] || []);
+						const isExpanded = isMine ? false : expanded.has(post.id);
 
 						return (
 							<div key={post.id} className="panel space-y-3">
@@ -409,17 +411,24 @@ export default function AppDetailPage() {
 
 								{/* Footer */}
 								<div className="flex items-center gap-4 pl-[52px] text-xs">
-									<span className="text-surface-500">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
-									{post.replyFee > 0n && <span className="text-surface-500">Reply fee: {post.replyFee.toString()}</span>}
-									{postReplies.length > 0 && visible && (
-										<button onClick={() => toggle(post.id)} className="text-info hover:underline">
-											{isExpanded ? "Hide" : "Show"}
-										</button>
+									{!isMine && (
+										<>
+											<span className="text-surface-500">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+											{post.replyFee > 0n && <span className="text-surface-500">Reply fee: {post.replyFee.toString()}</span>}
+											{postReplies.length > 0 && visible && (
+												<button onClick={() => toggle(post.id)} className="text-info hover:underline">
+													{isExpanded ? "Hide" : "Show"}
+												</button>
+											)}
+											{account && visible && (
+												<button onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)} className="text-brand-500 hover:underline">
+													Reply
+												</button>
+											)}
+										</>
 									)}
-									{account && visible && (
-										<button onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)} className="text-brand-500 hover:underline">
-											Reply
-										</button>
+									{isMine && (
+										<span className="text-surface-500">{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
 									)}
 								</div>
 
