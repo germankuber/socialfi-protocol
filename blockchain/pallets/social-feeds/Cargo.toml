@@ -1,0 +1,42 @@
+[package]
+name = "pallet-social-feeds"
+description = "Global feeds pallet for the SocialFi protocol — posts and replies with paid creation fees."
+version = "0.1.0"
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+codec = { features = ["derive"], workspace = true }
+frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
+pallet-social-app-registry = { workspace = true, default-features = false }
+pallet-social-profiles = { workspace = true, default-features = false }
+scale-info = { features = ["derive"], workspace = true }
+
+[dev-dependencies]
+frame = { workspace = true, features = ["std", "experimental", "runtime"] }
+polkadot-sdk = { workspace = true, default-features = true, features = ["pallet-balances", "std"] }
+sp-io = { workspace = true, features = ["std"] }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame/std",
+	"pallet-social-app-registry/std",
+	"pallet-social-profiles/std",
+	"scale-info/std",
+]
+runtime-benchmarks = [
+	"frame/runtime-benchmarks",
+	"pallet-social-app-registry/runtime-benchmarks",
+	"pallet-social-profiles/runtime-benchmarks",
+]
+try-runtime = [
+	"frame/try-runtime",
+	"pallet-social-app-registry/try-runtime",
+	"pallet-social-profiles/try-runtime",
+]

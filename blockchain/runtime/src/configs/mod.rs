@@ -33,8 +33,9 @@ use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
 	MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-	SocialProfiles, System, Timestamp, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT,
-	HOURS, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
+	SocialAppRegistry, SocialProfiles, System, Timestamp, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO,
+	EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO,
+	SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -330,6 +331,29 @@ impl pallet_social_graph::Config for Runtime {
 	type FollowFee = FollowFee;
 	type ProfileProvider = SocialProfiles;
 	type WeightInfo = pallet_social_graph::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const PostFee: Balance = EXISTENTIAL_DEPOSIT;
+	pub const MaxContentLen: u32 = 128;
+	pub const MaxPostsPerAuthor: u32 = 10_000;
+	pub const MaxRepliesPerPost: u32 = 10_000;
+	pub FeedsTreasuryAccount: AccountId = sp_runtime::AccountId32::new([0xffu8; 32]);
+}
+
+/// Configure the social feeds pallet.
+impl pallet_social_feeds::Config for Runtime {
+	type PostId = u64;
+	type AppId = u32;
+	type Currency = Balances;
+	type PostFee = PostFee;
+	type TreasuryAccount = FeedsTreasuryAccount;
+	type ProfileProvider = SocialProfiles;
+	type AppProvider = SocialAppRegistry;
+	type MaxContentLen = MaxContentLen;
+	type MaxPostsPerAuthor = MaxPostsPerAuthor;
+	type MaxRepliesPerPost = MaxRepliesPerPost;
+	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
 }
 
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────

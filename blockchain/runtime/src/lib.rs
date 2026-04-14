@@ -261,6 +261,9 @@ mod runtime {
 	#[runtime::pallet_index(53)]
 	pub type SocialGraph = pallet_social_graph;
 
+	#[runtime::pallet_index(54)]
+	pub type SocialFeeds = pallet_social_feeds;
+
 	// Smart contracts (EVM + PVM via pallet-revive)
 	#[runtime::pallet_index(90)]
 	pub type Revive = pallet_revive;

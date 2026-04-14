@@ -24,6 +24,12 @@ pub mod weights;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+/// Trait that other pallets use to query app information.
+pub trait AppProvider<AccountId, AppId> {
+	fn get_owner(app_id: &AppId) -> Option<AccountId>;
+	fn exists(app_id: &AppId) -> bool;
+}
+
 #[frame::pallet]
 pub mod pallet {
 	use crate::{
@@ -117,6 +123,18 @@ pub mod pallet {
 		MetadataTooLong,
 		/// The app ID counter has overflowed — no more apps can be registered.
 		AppIdOverflow,
+	}
+
+	impl<T: Config> crate::AppProvider<T::AccountId, T::AppId> for Pallet<T> {
+		fn get_owner(app_id: &T::AppId) -> Option<T::AccountId> {
+			Apps::<T>::get(app_id)
+				.filter(|app| app.status == AppStatus::Active)
+				.map(|app| app.owner)
+		}
+
+		fn exists(app_id: &T::AppId) -> bool {
+			Apps::<T>::get(app_id).is_some_and(|app| app.status == AppStatus::Active)
+		}
 	}
 
 	#[pallet::call]

@@ -12,4 +12,5 @@ polkadot_sdk::frame_benchmarking::define_benchmarks!(
 	[pallet_social_app_registry, SocialAppRegistry]
 	[pallet_social_profiles, SocialProfiles]
 	[pallet_social_graph, SocialGraph]
+	[pallet_social_feeds, SocialFeeds]
 );
