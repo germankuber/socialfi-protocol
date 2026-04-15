@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
+import VerifiedBadge from "./VerifiedBadge";
 
 interface AuthorDisplayProps {
 	address: string;
@@ -16,7 +17,6 @@ export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayPro
 
 	return (
 		<Link to={`/profile/${address}`} className="flex items-center gap-2 group" title={address}>
-			{/* Avatar */}
 			{profile?.avatar ? (
 				<img
 					src={profile.avatar}
@@ -29,9 +29,9 @@ export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayPro
 					{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
 				</div>
 			)}
-			{/* Name */}
-			<span className={`${textSize} text-secondary group-hover:text-brand-500 transition-colors`}>
+			<span className={`${textSize} text-secondary group-hover:text-brand-500 transition-colors flex items-center gap-1`}>
 				{profile?.name || truncated}
+				{profile?.verified && <VerifiedBadge size={size} />}
 			</span>
 		</Link>
 	);

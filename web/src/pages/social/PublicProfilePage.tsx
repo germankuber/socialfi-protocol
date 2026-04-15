@@ -4,7 +4,9 @@ import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
+import { useIdentity } from "../../hooks/social/useIdentity";
 import ConfirmModal from "../../components/social/ConfirmModal";
+import VerifiedBadge from "../../components/social/VerifiedBadge";
 import TxToast from "../../components/social/TxToast";
 
 interface ProfileData {
@@ -30,6 +32,7 @@ export default function PublicProfilePage() {
 
 	const targetAddress = address ?? "";
 	const isOwnProfile = account?.address === targetAddress;
+	const { identity } = useIdentity(targetAddress);
 
 	const loadProfile = useCallback(async () => {
 		if (!targetAddress) return;
@@ -133,8 +136,16 @@ export default function PublicProfilePage() {
 					)}
 
 					<div className="flex-1 min-w-0">
-						<h1 className="text-xl font-bold">{profile.name}</h1>
-						<p className="text-xs font-mono text-secondary mt-0.5" title={targetAddress}>{truncated}</p>
+						<h1 className="text-xl font-bold flex items-center gap-1.5">
+							{profile.name}
+							{identity?.verified && <VerifiedBadge size="md" />}
+						</h1>
+						<p className="text-xs font-mono text-secondary mt-0.5" title={targetAddress}>
+							{truncated}
+							{identity?.verified && (
+								<span className="ml-2 text-info">Verified by Registrar #{identity.registrarIndex}</span>
+							)}
+						</p>
 						{profile.bio && <p className="text-sm text-secondary mt-2">{profile.bio}</p>}
 
 						{/* Stats */}

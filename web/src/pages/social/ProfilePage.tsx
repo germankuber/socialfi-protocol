@@ -8,6 +8,7 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
+import IdentityPanel from "../../components/social/IdentityPanel";
 
 interface ProfileData {
 	cid: string;
@@ -180,6 +181,9 @@ export default function ProfilePage() {
 					)}
 				</>
 			)}
+
+			{/* On-chain Identity */}
+			{account && <IdentityPanel />}
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>

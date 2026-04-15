@@ -2,10 +2,12 @@ import { useState, useCallback, useRef } from "react";
 import { getClient } from "../useChain";
 import { stack_template } from "@polkadot-api/descriptors";
 import { useChainStore } from "../../store/chainStore";
+import { fetchIdentity } from "./useIdentity";
 
 export interface CachedProfile {
 	name: string;
 	avatar: string;
+	verified: boolean;
 }
 
 const IPFS_GATEWAYS = [
@@ -13,51 +15,70 @@ const IPFS_GATEWAYS = [
 	"https://dweb.link/ipfs",
 ];
 
-/** Global in-memory cache shared across all hook instances. */
 const profileCache = new Map<string, CachedProfile | null>();
 const pendingRequests = new Map<string, Promise<CachedProfile | null>>();
 
 async function resolveProfile(wsUrl: string, address: string): Promise<CachedProfile | null> {
 	try {
 		const api = getClient(wsUrl).getTypedApi(stack_template);
-		const data = await api.query.SocialProfiles.Profiles.getValue(address);
-		if (!data) return null;
 
-		const cid = data.metadata.asText();
+		// Fetch social profile + identity in parallel
+		const [profileData, identityData] = await Promise.all([
+			api.query.SocialProfiles.Profiles.getValue(address),
+			fetchIdentity(wsUrl, address),
+		]);
 
-		// Try to parse as JSON (for profiles stored via our IPFS upload)
+		if (!profileData) {
+			// No social profile — maybe has identity only
+			if (identityData?.hasIdentity && identityData.display) {
+				return {
+					name: identityData.display,
+					avatar: "",
+					verified: identityData.verified,
+				};
+			}
+			return null;
+		}
+
+		const cid = profileData.metadata.asText();
+		let name = "";
+		let avatar = "";
+
+		// Try IPFS
 		for (const gw of IPFS_GATEWAYS) {
 			try {
 				const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(6000) });
 				if (res.ok) {
 					const meta = await res.json();
-					return {
-						name: meta.name || meta.n || "",
-						avatar: meta.avatar ? `${IPFS_GATEWAYS[0]}/${meta.avatar}` : "",
-					};
+					name = meta.name || meta.n || "";
+					avatar = meta.avatar ? `${IPFS_GATEWAYS[0]}/${meta.avatar}` : "";
+					break;
 				}
 			} catch {
 				continue;
 			}
 		}
 
-		// Fallback: CID itself might be a compact JSON
-		try {
-			const parsed = JSON.parse(cid);
-			return { name: parsed.n || parsed.name || "", avatar: "" };
-		} catch {
-			// Plain text metadata
-			return { name: cid.slice(0, 20), avatar: "" };
+		// Fallback
+		if (!name) {
+			try {
+				const parsed = JSON.parse(cid);
+				name = parsed.n || parsed.name || "";
+			} catch {
+				name = cid.slice(0, 20);
+			}
 		}
+
+		return {
+			name,
+			avatar,
+			verified: identityData?.verified ?? false,
+		};
 	} catch {
 		return null;
 	}
 }
 
-/**
- * Hook that provides a function to get a cached profile by address.
- * Profiles are fetched once and cached globally in memory.
- */
 export function useProfileCache() {
 	const wsUrl = useChainStore((s) => s.wsUrl);
 	const [, setTick] = useState(0);
@@ -68,12 +89,10 @@ export function useProfileCache() {
 			return profileCache.get(address) ?? null;
 		}
 
-		// Start fetching if not already pending
 		if (!pendingRequests.has(address)) {
 			const promise = resolveProfile(wsUrl, address).then((profile) => {
 				profileCache.set(address, profile);
 				pendingRequests.delete(address);
-				// Trigger re-render in all components using this hook
 				tickRef.current++;
 				setTick(tickRef.current);
 				return profile;
@@ -81,7 +100,7 @@ export function useProfileCache() {
 			pendingRequests.set(address, promise);
 		}
 
-		return null; // Not yet loaded
+		return null;
 	}, [wsUrl]);
 
 	return { getProfile };
