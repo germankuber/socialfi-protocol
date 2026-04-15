@@ -75,8 +75,8 @@ export default function PostDetailPage() {
 			// Resolve content if allowed
 			const canSee = p.visibility === "Public" || p.author === accountAddress || unlockedNow;
 			if (canSee) {
-				const text = await fetchPostContent(p.contentCid);
-				if (text) setPost((prev) => prev ? { ...prev, resolvedText: text } : prev);
+				const result = await fetchPostContent(p.contentCid);
+				if (result) setPost((prev) => prev ? { ...prev, resolvedText: result.text } : prev);
 			}
 
 			// Load replies
@@ -104,8 +104,8 @@ export default function PostDetailPage() {
 
 			// Resolve reply content
 			for (const r of replyPosts) {
-				fetchPostContent(r.contentCid).then((text) => {
-					if (text) setReplies((prev) => prev.map((rr) => rr.id === r.id ? { ...rr, resolvedText: text } : rr));
+				fetchPostContent(r.contentCid).then((result) => {
+					if (result) setReplies((prev) => prev.map((rr) => rr.id === r.id ? { ...rr, resolvedText: result.text } : rr));
 				});
 			}
 		} catch {

@@ -397,9 +397,8 @@ export default function AppDetailPage() {
 					<div className="flex">
 						<button
 							onClick={() => setFeedTab("all")}
-							className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-								feedTab === "all" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
-							}`}
+							className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${feedTab === "all" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
+								}`}
 						>
 							All Posts
 							{feedTab === "all" && <span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />}
@@ -407,9 +406,8 @@ export default function AppDetailPage() {
 						{account && (
 							<button
 								onClick={() => setFeedTab("mine")}
-								className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-									feedTab === "mine" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
-								}`}
+								className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${feedTab === "mine" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
+									}`}
 							>
 								My Posts
 								{feedTab === "mine" && <span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />}
@@ -432,151 +430,150 @@ export default function AppDetailPage() {
 						</div>
 					) : (
 						filtered.map((post) => {
-						// In "My Posts" tab, author always sees their own content
-						const visible = isMine || canSee(post);
-						const postReplies = isMine ? [] : (replies[post.id] || []);
-						const isExpanded = isMine ? false : expanded.has(post.id);
+							// In "My Posts" tab, author always sees their own content
+							const visible = isMine || canSee(post);
+							const postReplies = isMine ? [] : (replies[post.id] || []);
+							const isExpanded = isMine ? false : expanded.has(post.id);
 
-						return (
-							<div key={post.id} className="panel space-y-3">
-								{/* Author */}
-								<div className="flex items-center gap-3">
-									<AuthorDisplay address={post.author} size="md" />
-									<div className="flex-1 min-w-0">
-										<p className="text-[11px] text-surface-500 font-mono">Block #{post.createdAt}</p>
-									</div>
-									<div className="flex items-center gap-2">
-										{post.visibility !== "Public" && (
-											<span className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
-												{post.visibility}
-											</span>
-										)}
-										<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
-									</div>
-								</div>
-
-								{/* Content */}
-								<div className={app.hasImages ? "" : "pl-[52px]"}>
-									{visible ? (
-										<div className="space-y-2">
-											{post.resolvedImage && (
-												<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
-											)}
-											{post.resolvedText ? (
-												<p className="text-sm whitespace-pre-wrap break-words">{post.resolvedText}</p>
-											) : (
-												<span className="text-surface-500 italic text-sm">Loading content...</span>
-											)}
+							return (
+								<div key={post.id} className="panel space-y-3">
+									{/* Author */}
+									<div className="flex items-center gap-3">
+										<AuthorDisplay address={post.author} size="md" />
+										<div className="flex-1 min-w-0">
+											<p className="text-[11px] text-surface-500 font-mono">Block #{post.createdAt}</p>
 										</div>
-									) : (
-										<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
-											<svg className="w-6 h-6 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-												<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-											</svg>
-											<p className="text-xs text-secondary">Content is {post.visibility.toLowerCase()}</p>
-											{account && (
-												<button onClick={() => unlockPost(post.id)} disabled={busy} className="btn-brand btn-sm">
-													Unlock for {post.unlockFee.toString()} units
-												</button>
+										<div className="flex items-center gap-2">
+											{post.visibility !== "Public" && (
+												<span className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
+													{post.visibility}
+												</span>
 											)}
-											<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
+											<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
 										</div>
-									)}
-								</div>
+									</div>
 
-								{/* Footer */}
-								<div className="flex items-center justify-between pl-[52px] pt-1 border-t border-surface-800/50 mt-2">
-									<div className="flex items-center gap-4">
-										{/* Reply count with icon */}
-										<button
-											onClick={() => !isMine && postReplies.length > 0 && visible && toggle(post.id)}
-											className={`flex items-center gap-1.5 text-xs transition-colors ${
-												!isMine && postReplies.length > 0 && visible
-													? "text-surface-400 hover:text-info cursor-pointer"
-													: "text-surface-500 cursor-default"
-											}`}
-										>
-											<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-												<path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
-											</svg>
-											{post.replyCount}
-										</button>
-
-										{/* Reply fee */}
-										{!isMine && post.replyFee > 0n && (
-											<span className="flex items-center gap-1 text-xs text-surface-500">
-												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-												</svg>
-												{post.replyFee.toString()}
-											</span>
-										)}
-
-										{/* Visibility badge */}
-										{post.visibility !== "Public" && post.unlockFee > 0n && (
-											<span className="flex items-center gap-1 text-xs text-surface-500">
-												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+									{/* Content */}
+									<div className={app.hasImages ? "" : "pl-[52px]"}>
+										{visible ? (
+											<div className="space-y-2">
+												{post.resolvedImage && (
+													<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
+												)}
+												{post.resolvedText ? (
+													<p className="text-sm whitespace-pre-wrap break-words">{post.resolvedText}</p>
+												) : (
+													<span className="text-surface-500 italic text-sm">Loading content...</span>
+												)}
+											</div>
+										) : (
+											<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
+												<svg className="w-6 h-6 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 													<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 												</svg>
-												{post.unlockFee.toString()}
-											</span>
+												<p className="text-xs text-secondary">Content is {post.visibility.toLowerCase()}</p>
+												{account && (
+													<button onClick={() => unlockPost(post.id)} disabled={busy} className="btn-brand btn-sm">
+														Unlock for {post.unlockFee.toString()} units
+													</button>
+												)}
+												<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
+											</div>
 										)}
 									</div>
 
-									{/* Reply button */}
-									{!isMine && account && visible && (
-										<button
-											onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-											className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
-										>
-											<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-												<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-											</svg>
-											Reply
-										</button>
-									)}
-								</div>
-								<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
-
-								{/* Reply compose */}
-								{replyingTo === post.id && (
-									<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
-										<textarea
-											value={replyContent}
-											onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value); }}
-											placeholder="Write a reply..."
-											rows={2}
-											className="input resize-none w-full"
-										/>
-										<div className="flex items-center justify-between">
-											<span className="text-[10px] text-surface-500">{MAX_CHARS - replyContent.length} chars left</span>
+									{/* Footer */}
+									<div className="flex items-center justify-between pl-[52px] pt-1 border-t border-surface-800/50 mt-2">
+										<div className="flex items-center gap-4">
+											{/* Reply count with icon */}
 											<button
-												onClick={() => setConfirmReplyTo(post.id)}
-												disabled={!replyContent.trim() || busy}
-												className="btn-brand btn-sm"
+												onClick={() => !isMine && postReplies.length > 0 && visible && toggle(post.id)}
+												className={`flex items-center gap-1.5 text-xs transition-colors ${!isMine && postReplies.length > 0 && visible
+													? "text-surface-400 hover:text-info cursor-pointer"
+													: "text-surface-500 cursor-default"
+													}`}
 											>
+												<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+												</svg>
+												{post.replyCount}
+											</button>
+
+											{/* Reply fee */}
+											{!isMine && post.replyFee > 0n && (
+												<span className="flex items-center gap-1 text-xs text-surface-500">
+													<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+														<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+													</svg>
+													{post.replyFee.toString()}
+												</span>
+											)}
+
+											{/* Visibility badge */}
+											{post.visibility !== "Public" && post.unlockFee > 0n && (
+												<span className="flex items-center gap-1 text-xs text-surface-500">
+													<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+														<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+													</svg>
+													{post.unlockFee.toString()}
+												</span>
+											)}
+										</div>
+
+										{/* Reply button */}
+										{!isMine && account && visible && (
+											<button
+												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+												className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
+											>
+												<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+												</svg>
 												Reply
 											</button>
-										</div>
+										)}
 									</div>
-								)}
+									<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
 
-								{/* Replies */}
-								{isExpanded && visible && postReplies.map((r) => (
-									<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
-										<div className="flex items-center gap-2 text-xs">
-											<AuthorDisplay address={r.author} size="sm" />
-											<span className="text-surface-600 font-mono">#{r.createdAt}</span>
+									{/* Reply compose */}
+									{replyingTo === post.id && (
+										<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
+											<textarea
+												value={replyContent}
+												onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value); }}
+												placeholder="Write a reply..."
+												rows={2}
+												className="input resize-none w-full"
+											/>
+											<div className="flex items-center justify-between">
+												<span className="text-[10px] text-surface-500">{MAX_CHARS - replyContent.length} chars left</span>
+												<button
+													onClick={() => setConfirmReplyTo(post.id)}
+													disabled={!replyContent.trim() || busy}
+													className="btn-brand btn-sm"
+												>
+													Reply
+												</button>
+											</div>
 										</div>
-										<p className="text-sm whitespace-pre-wrap break-words">
-											{r.resolvedText ?? <span className="text-surface-500 italic">Loading...</span>}
-										</p>
-									</div>
-								))}
-							</div>
-						);
-					})
-				);
+									)}
+
+									{/* Replies */}
+									{isExpanded && visible && postReplies.map((r) => (
+										<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
+											<div className="flex items-center gap-2 text-xs">
+												<AuthorDisplay address={r.author} size="sm" />
+												<span className="text-surface-600 font-mono">#{r.createdAt}</span>
+											</div>
+											<p className="text-sm whitespace-pre-wrap break-words">
+												{r.resolvedText ?? <span className="text-surface-500 italic">Loading...</span>}
+											</p>
+										</div>
+									))}
+								</div>
+							);
+						})
+					);
 				})()}
 			</div>
 

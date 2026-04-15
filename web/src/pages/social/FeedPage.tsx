@@ -99,9 +99,9 @@ export default function FeedPage() {
 			// Public: always. Non-public: if author or unlocked.
 			for (const p of originals) {
 				if (p.visibility === "Public" || p.author === accountAddress || unlockedSet.has(p.id)) {
-					fetchPostContent(p.contentCid).then((text) => {
-						if (text) {
-							setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: text } : pp));
+					fetchPostContent(p.contentCid).then((result) => {
+						if (result) {
+							setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: result.text } : pp));
 						}
 					});
 				}
@@ -109,12 +109,12 @@ export default function FeedPage() {
 			// Also resolve replies
 			for (const parentId of Object.keys(rMap)) {
 				for (const r of rMap[Number(parentId)]) {
-					fetchPostContent(r.contentCid).then((text) => {
-						if (text) {
+					fetchPostContent(r.contentCid).then((result) => {
+						if (result) {
 							setReplies((prev) => ({
 								...prev,
 								[Number(parentId)]: (prev[Number(parentId)] || []).map((rr) =>
-									rr.id === r.id ? { ...rr, resolvedText: text } : rr,
+									rr.id === r.id ? { ...rr, resolvedText: result.text } : rr,
 								),
 							}));
 						}

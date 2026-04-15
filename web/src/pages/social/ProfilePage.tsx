@@ -73,7 +73,7 @@ export default function ProfilePage() {
 
 			// 2. Store CID on-chain
 			const api = getApi();
-			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid) });
+			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid), follow_fee: 0n });
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (ok) { setShowForm(false); loadProfile(); }
 		} catch (e) {
