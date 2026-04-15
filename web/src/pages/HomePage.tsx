@@ -29,16 +29,42 @@ export default function HomePage() {
 	const { getApi } = useSocialApi();
 	const [apps, setApps] = useState<AppData[]>([]);
 	const [loadingApps, setLoadingApps] = useState(false);
+	const [protocolStats, setProtocolStats] = useState({ profiles: 0, apps: 0, activeApps: 0, posts: 0, totalLocked: 0n });
 
 	const loggedIn = !!account;
 	const canUse = connected && socialAvailable;
 
-	// Load apps when chain is connected
 	useEffect(() => {
 		if (!canUse) return;
 		loadApps();
+		loadProtocolStats();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [canUse]);
+
+	async function loadProtocolStats() {
+		try {
+			const api = getApi();
+			const [profileCount, nextAppId, nextPostId, appEntries] = await Promise.all([
+				api.query.SocialProfiles.ProfileCount.getValue(),
+				api.query.SocialAppRegistry.NextAppId.getValue(),
+				api.query.SocialFeeds.NextPostId.getValue(),
+				api.query.SocialAppRegistry.Apps.getEntries(),
+			]);
+			const activeApps = appEntries.filter((e) => e.value.status.type === "Active").length;
+			// AppBond = 10 * EXISTENTIAL_DEPOSIT = 10_000_000_000 (10 milli-UNIT)
+			// ProfileBond = 10 * EXISTENTIAL_DEPOSIT
+			const appBond = 10_000_000_000n;
+			const profileBond = 10_000_000_000n;
+			const totalLocked = BigInt(activeApps) * appBond + BigInt(Number(profileCount)) * profileBond;
+			setProtocolStats({
+				profiles: Number(profileCount),
+				apps: Number(nextAppId),
+				activeApps,
+				posts: Number(nextPostId),
+				totalLocked,
+			});
+		} catch { /* ignore */ }
+	}
 
 	async function loadApps() {
 		try {
@@ -63,6 +89,14 @@ export default function HomePage() {
 		}
 	}
 
+	function formatUnit(planck: bigint): string {
+		const whole = planck / 1_000_000_000_000n;
+		const frac = planck % 1_000_000_000_000n;
+		if (frac === 0n) return whole.toString();
+		const fracStr = frac.toString().padStart(12, "0").replace(/0+$/, "");
+		return `${whole}.${fracStr}`;
+	}
+
 	return (
 		<div className="space-y-8 animate-fade-in">
 			{/* Hero */}
@@ -79,6 +113,29 @@ export default function HomePage() {
 					primitives for decentralized social networks.
 				</p>
 			</div>
+
+			{/* Protocol stats */}
+			{canUse && (
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+					<div className="panel text-center py-3">
+						<p className="text-xl font-bold font-mono">{protocolStats.profiles}</p>
+						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Profiles</p>
+					</div>
+					<div className="panel text-center py-3">
+						<p className="text-xl font-bold font-mono">{protocolStats.apps}</p>
+						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Apps</p>
+					</div>
+					<div className="panel text-center py-3">
+						<p className="text-xl font-bold font-mono">{protocolStats.posts}</p>
+						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Posts</p>
+					</div>
+					<Link to="/protocol" className="panel-hover text-center py-3 block">
+						<p className="text-xl font-bold font-mono text-brand-500">{formatUnit(protocolStats.totalLocked)} <span className="text-xs font-normal text-secondary">UNIT</span></p>
+						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Total Locked</p>
+						<p className="text-[9px] text-surface-500 mt-1">{protocolStats.profiles} profiles + {protocolStats.activeApps} apps</p>
+					</Link>
+				</div>
+			)}
 
 			{/* Not connected */}
 			{!connected && (
