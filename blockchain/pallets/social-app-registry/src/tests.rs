@@ -286,3 +286,36 @@ fn app_record_preserved_after_deregistration() {
 		assert_eq!(app.metadata.as_slice(), b"QmTestCid12345");
 	});
 }
+
+// ── AppProvider trait ──────────────────────────────────────────────────
+
+#[test]
+fn app_provider_has_images_returns_false_for_inactive() {
+	new_test_ext().execute_with(|| {
+		use crate::AppProvider;
+		// Register with has_images = true
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), true));
+		assert!(<crate::pallet::Pallet<Test> as AppProvider<u64, u32>>::has_images(&0));
+
+		// Deregister — has_images should return false for inactive apps
+		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
+		assert!(!<crate::pallet::Pallet<Test> as AppProvider<u64, u32>>::has_images(&0));
+	});
+}
+
+#[test]
+fn app_provider_has_images_returns_false_for_nonexistent() {
+	new_test_ext().execute_with(|| {
+		use crate::AppProvider;
+		assert!(!<crate::pallet::Pallet<Test> as AppProvider<u64, u32>>::has_images(&999));
+	});
+}
+
+#[test]
+fn register_app_with_has_images() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), true));
+		let app = Apps::<Test>::get(0).unwrap();
+		assert!(app.has_images);
+	});
+}

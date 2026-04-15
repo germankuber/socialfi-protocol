@@ -352,7 +352,7 @@ pub mod pallet {
 		/// After unlocking, the viewer can see the content. The author of a post
 		/// always has access without needing to unlock.
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_post())]
+		#[pallet::weight(T::WeightInfo::unlock_post())]
 		pub fn unlock_post(origin: OriginFor<T>, post_id: T::PostId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -360,15 +360,8 @@ pub mod pallet {
 
 			ensure!(post.visibility != PostVisibility::Public, Error::<T>::PostIsPublic);
 
-			// Author always has access — no need to pay.
+			// Author always has implicit access — no storage write needed.
 			if who == post.author {
-				UnlockedPosts::<T>::insert(&who, post_id, true);
-				Self::deposit_event(Event::PostUnlocked {
-					post_id,
-					viewer: who,
-					author: post.author,
-					fee_paid: Zero::zero(),
-				});
 				return Ok(());
 			}
 

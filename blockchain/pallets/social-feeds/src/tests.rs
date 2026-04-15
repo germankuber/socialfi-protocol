@@ -339,9 +339,9 @@ fn unlock_post_author_gets_free_access() {
 		));
 		let balance_before = Balances::free_balance(1);
 		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0));
-		// Author pays nothing.
+		// Author pays nothing and no storage is written.
 		assert_eq!(Balances::free_balance(1), balance_before);
-		assert!(UnlockedPosts::<Test>::contains_key(1, 0));
+		assert!(!UnlockedPosts::<Test>::contains_key(1, 0));
 	});
 }
 
@@ -446,5 +446,22 @@ fn post_provider_get_author() {
 			0
 		));
 		assert_eq!(<SocialFeeds as PostProvider<u64, u64>>::get_author(&0), Some(1));
+	});
+}
+
+// ── author self-unlock ─────────────────────────────────────────────────
+
+#[test]
+fn unlock_post_author_does_not_write_storage() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1), test_content(), None, 0,
+			PostVisibility::Obfuscated, 50,
+		));
+		// Author calls unlock on own post.
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0));
+		// No entry in UnlockedPosts — author has implicit access.
+		assert!(!UnlockedPosts::<Test>::contains_key(1, 0));
 	});
 }

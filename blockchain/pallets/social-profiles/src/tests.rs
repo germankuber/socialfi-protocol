@@ -244,3 +244,44 @@ fn profile_provider_exists_returns_false_after_delete() {
 		assert!(!<SocialProfiles as ProfileProvider<u64, u64>>::exists(&1));
 	});
 }
+
+// ── set_follow_fee ─────────────────────────────────────────────────────
+
+#[test]
+fn set_follow_fee_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata(), 0));
+		assert_eq!(<SocialProfiles as ProfileProvider<u64, u64>>::follow_fee(&1), 0);
+
+		assert_ok!(SocialProfiles::set_follow_fee(RuntimeOrigin::signed(1), 500));
+		assert_eq!(<SocialProfiles as ProfileProvider<u64, u64>>::follow_fee(&1), 500);
+	});
+}
+
+#[test]
+fn set_follow_fee_fails_no_profile() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialProfiles::set_follow_fee(RuntimeOrigin::signed(1), 100),
+			Error::<Test>::ProfileNotFound,
+		);
+	});
+}
+
+#[test]
+fn set_follow_fee_emits_event() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata(), 0));
+		assert_ok!(SocialProfiles::set_follow_fee(RuntimeOrigin::signed(1), 300));
+		System::assert_last_event(crate::Event::FollowFeeUpdated { account: 1, fee: 300 }.into());
+	});
+}
+
+#[test]
+fn create_profile_with_follow_fee() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata(), 250));
+		assert_eq!(<SocialProfiles as ProfileProvider<u64, u64>>::follow_fee(&1), 250);
+	});
+}

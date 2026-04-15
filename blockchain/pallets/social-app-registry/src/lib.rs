@@ -138,7 +138,8 @@ pub mod pallet {
 		}
 
 		fn has_images(app_id: &T::AppId) -> bool {
-			Apps::<T>::get(app_id).map_or(false, |app| app.has_images)
+			Apps::<T>::get(app_id)
+				.is_some_and(|app| app.status == AppStatus::Active && app.has_images)
 		}
 	}
 

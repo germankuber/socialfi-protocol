@@ -149,27 +149,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set the follow fee for the caller's profile.
-		/// Anyone who wants to follow this account must pay this fee.
-		/// Set to 0 for free follows.
-		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::update_metadata())]
-		pub fn set_follow_fee(
-			origin: OriginFor<T>,
-			fee: BalanceOf<T>,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			Profiles::<T>::try_mutate(&who, |maybe_profile| -> DispatchResult {
-				let profile = maybe_profile.as_mut().ok_or(Error::<T>::ProfileNotFound)?;
-				profile.follow_fee = fee;
-				Ok(())
-			})?;
-
-			Self::deposit_event(Event::FollowFeeUpdated { account: who.clone(), fee });
-			Ok(())
-		}
-
 		/// Delete the caller's profile.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::delete_profile())]
@@ -183,6 +162,27 @@ pub mod pallet {
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_sub(1));
 
 			Self::deposit_event(Event::ProfileDeleted { account: who });
+			Ok(())
+		}
+
+		/// Set the follow fee for the caller's profile.
+		/// Anyone who wants to follow this account must pay this fee.
+		/// Set to 0 for free follows.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::set_follow_fee())]
+		pub fn set_follow_fee(
+			origin: OriginFor<T>,
+			fee: BalanceOf<T>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Profiles::<T>::try_mutate(&who, |maybe_profile| -> DispatchResult {
+				let profile = maybe_profile.as_mut().ok_or(Error::<T>::ProfileNotFound)?;
+				profile.follow_fee = fee;
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::FollowFeeUpdated { account: who.clone(), fee });
 			Ok(())
 		}
 	}
