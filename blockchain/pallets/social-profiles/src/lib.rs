@@ -109,6 +109,7 @@ pub mod pallet {
 		pub fn create_profile(
 			origin: OriginFor<T>,
 			metadata: BoundedVec<u8, T::MaxMetadataLen>,
+			follow_fee: BalanceOf<T>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -120,7 +121,7 @@ pub mod pallet {
 			let block_number = frame_system::Pallet::<T>::block_number();
 			Profiles::<T>::insert(
 				&who,
-				ProfileInfo { metadata, follow_fee: Zero::zero(), created_at: block_number },
+				ProfileInfo { metadata, follow_fee, created_at: block_number },
 			);
 
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_add(1));

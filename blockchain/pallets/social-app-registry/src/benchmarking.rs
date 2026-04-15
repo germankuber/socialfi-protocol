@@ -22,7 +22,7 @@ mod benchmarks {
 		T::Currency::make_free_balance_be(&caller, deposit);
 
 		#[extrinsic_call]
-		register_app(RawOrigin::Signed(caller.clone()), metadata);
+		register_app(RawOrigin::Signed(caller.clone()), metadata, false);
 
 		// First registration gets ID 0 (NextAppId starts at Default::default()).
 		assert!(Apps::<T>::contains_key(T::AppId::default()));

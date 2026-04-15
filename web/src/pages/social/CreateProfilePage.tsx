@@ -29,16 +29,10 @@ export default function CreateProfilePage() {
 			setUploading(false);
 
 			const api = getApi();
-			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid) });
+			const fee = BigInt(followFee || "0");
+			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid), follow_fee: fee });
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (!ok) return;
-
-			// Set follow fee if > 0
-			const fee = BigInt(followFee || "0");
-			if (fee > 0n) {
-				const feeTx = api.tx.SocialProfiles.set_follow_fee({ fee });
-				await tracker.submit(feeTx, account.signer, "Set Follow Fee");
-			}
 
 			navigate("/");
 		} catch (e) {

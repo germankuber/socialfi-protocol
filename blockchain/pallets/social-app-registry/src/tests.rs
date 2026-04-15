@@ -14,7 +14,7 @@ fn test_metadata() -> BoundedVec<u8, MaxMetadataLen> {
 #[test]
 fn register_app_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 
 		let app = Apps::<Test>::get(0).expect("app should exist");
 		assert_eq!(app.owner, 1);
@@ -26,8 +26,8 @@ fn register_app_works() {
 #[test]
 fn register_app_increments_id() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 
 		assert_eq!(NextAppId::<Test>::get(), 2);
 		assert!(Apps::<Test>::contains_key(0));
@@ -39,7 +39,7 @@ fn register_app_increments_id() {
 fn register_app_reserves_bond() {
 	new_test_ext().execute_with(|| {
 		let free_before = Balances::free_balance(1);
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		let free_after = Balances::free_balance(1);
 
 		assert_eq!(free_before - free_after, 100);
@@ -50,8 +50,8 @@ fn register_app_reserves_bond() {
 #[test]
 fn register_app_updates_owner_index() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 
 		let owned = AppsByOwner::<Test>::get(1);
 		assert_eq!(owned.as_slice(), &[0, 1]);
@@ -62,7 +62,7 @@ fn register_app_updates_owner_index() {
 fn register_app_emits_event() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(1);
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		System::assert_last_event(crate::Event::AppRegistered { app_id: 0, owner: 1 }.into());
 	});
 }
@@ -71,7 +71,7 @@ fn register_app_emits_event() {
 fn register_app_records_block_number() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(42);
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 
 		let app = Apps::<Test>::get(0).unwrap();
 		assert_eq!(app.created_at, 42);
@@ -83,7 +83,7 @@ fn register_app_fails_insufficient_bond() {
 	new_test_ext().execute_with(|| {
 		// Account 3 has only 50, bond is 100.
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::signed(3), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(3), test_metadata(), false),
 			Error::<Test>::InsufficientBond,
 		);
 	});
@@ -96,10 +96,10 @@ fn register_app_fails_too_many_apps() {
 		Balances::make_free_balance_be(&2, 2_000);
 
 		for _ in 0..10 {
-			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(),));
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false),
 			Error::<Test>::TooManyApps,
 		);
 	});
@@ -112,14 +112,14 @@ fn register_app_too_many_apps_does_not_lock_bond() {
 		Balances::make_free_balance_be(&2, 2_000);
 
 		for _ in 0..10 {
-			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(),));
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		let reserved_before = Balances::reserved_balance(2);
 		let free_before = Balances::free_balance(2);
 
 		// 11th fails.
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false),
 			Error::<Test>::TooManyApps,
 		);
 
@@ -135,7 +135,7 @@ fn register_app_insufficient_bond_does_not_mutate_storage() {
 		let next_id_before = NextAppId::<Test>::get();
 
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::signed(3), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(3), test_metadata(), false),
 			Error::<Test>::InsufficientBond,
 		);
 
@@ -149,7 +149,7 @@ fn register_app_insufficient_bond_does_not_mutate_storage() {
 fn register_app_unsigned_origin_rejected() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::none(), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::none(), test_metadata(), false),
 			DispatchError::BadOrigin,
 		);
 	});
@@ -160,7 +160,7 @@ fn register_app_unsigned_origin_rejected() {
 #[test]
 fn deregister_app_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
 
 		let app = Apps::<Test>::get(0).unwrap();
@@ -171,7 +171,7 @@ fn deregister_app_works() {
 #[test]
 fn deregister_app_unreserves_bond() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_eq!(Balances::reserved_balance(1), 100);
 
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
@@ -183,8 +183,8 @@ fn deregister_app_unreserves_bond() {
 #[test]
 fn deregister_app_removes_from_owner_index() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_eq!(AppsByOwner::<Test>::get(1).len(), 2);
 
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
@@ -201,11 +201,11 @@ fn deregister_app_frees_owner_slot() {
 		Balances::make_free_balance_be(&2, 2_000);
 
 		for _ in 0..10 {
-			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(),));
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		// At limit — cannot register more.
 		assert_noop!(
-			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()),
+			SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false),
 			Error::<Test>::TooManyApps,
 		);
 
@@ -213,7 +213,7 @@ fn deregister_app_frees_owner_slot() {
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(2), 0));
 
 		// Now can register again.
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 	});
 }
 
@@ -221,7 +221,7 @@ fn deregister_app_frees_owner_slot() {
 fn deregister_app_emits_event() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(1);
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
 		System::assert_last_event(crate::Event::AppDeregistered { app_id: 0, owner: 1 }.into());
 	});
@@ -240,7 +240,7 @@ fn deregister_app_fails_not_found() {
 #[test]
 fn deregister_app_fails_not_owner() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_noop!(
 			SocialAppRegistry::deregister_app(RuntimeOrigin::signed(2), 0),
 			Error::<Test>::NotAppOwner,
@@ -251,7 +251,7 @@ fn deregister_app_fails_not_owner() {
 #[test]
 fn deregister_app_fails_already_inactive() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
 
 		assert_noop!(
@@ -264,7 +264,7 @@ fn deregister_app_fails_already_inactive() {
 #[test]
 fn deregister_app_unsigned_origin_rejected() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_noop!(
 			SocialAppRegistry::deregister_app(RuntimeOrigin::none(), 0),
 			DispatchError::BadOrigin,
@@ -277,7 +277,7 @@ fn deregister_app_unsigned_origin_rejected() {
 #[test]
 fn app_record_preserved_after_deregistration() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata()));
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), false));
 		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
 
 		// The record still exists (not deleted).

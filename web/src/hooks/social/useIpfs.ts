@@ -65,20 +65,22 @@ export function useIpfs() {
 		return `${IPFS_GATEWAYS[0]}/${cid}`;
 	}, []);
 
-	/** Upload a text post to IPFS. Returns the CID. */
-	const uploadPostContent = useCallback(async (text: string): Promise<string> => {
-		const blob = new Blob([JSON.stringify({ text, ts: Date.now() })], { type: "application/json" });
+	/** Upload a post to IPFS. Optionally with an image CID. Returns the CID. */
+	const uploadPostContent = useCallback(async (text: string, imageCid?: string): Promise<string> => {
+		const payload: Record<string, unknown> = { text, ts: Date.now() };
+		if (imageCid) payload.image = imageCid;
+		const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
 		return uploadToIpfs(blob, "post.json");
 	}, []);
 
-	/** Fetch post content text from IPFS by CID. */
-	const fetchPostContent = useCallback(async (cid: string): Promise<string | null> => {
+	/** Fetch post content from IPFS. Returns { text, image? }. */
+	const fetchPostContent = useCallback(async (cid: string): Promise<{ text: string; image?: string } | null> => {
 		for (const gw of IPFS_GATEWAYS) {
 			try {
 				const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(10000) });
 				if (res.ok) {
 					const data = await res.json();
-					return data.text ?? JSON.stringify(data);
+					return { text: data.text ?? JSON.stringify(data), image: data.image };
 				}
 			} catch {
 				continue;

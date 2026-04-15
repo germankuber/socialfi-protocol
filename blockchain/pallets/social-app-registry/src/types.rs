@@ -17,6 +17,8 @@ pub struct AppInfo<T: Config> {
 	pub owner: T::AccountId,
 	/// IPFS CID pointing to app metadata JSON (name, description, logo, url, etc.).
 	pub metadata: BoundedVec<u8, T::MaxMetadataLen>,
+	/// Whether this app is image-focused (Instagram-style) or text-focused (Twitter-style).
+	pub has_images: bool,
 	/// Block number when the app was registered.
 	pub created_at: BlockNumberFor<T>,
 	/// Active or inactive.

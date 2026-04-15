@@ -71,6 +71,10 @@ impl AppProvider<u64, u32> for MockAppProvider {
 	fn exists(app_id: &u32) -> bool {
 		APPS.with(|v| v.borrow().iter().any(|(id, _)| id == app_id))
 	}
+
+	fn has_images(_app_id: &u32) -> bool {
+		false
+	}
 }
 
 // ── Runtime ────────────────────────────────────────────────────────────

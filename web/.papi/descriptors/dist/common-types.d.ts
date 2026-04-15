@@ -2785,9 +2785,10 @@ export type I7offqqltf3agj = {
     "owner": SS58String;
     "block_number": number;
 };
-export type I2v6cmdi4roc90 = {
+export type Iciucmpds8ms8l = {
     "owner": SS58String;
     "metadata": Binary;
+    "has_images": boolean;
     "created_at": number;
     "status": Enum<{
         "Active": undefined;
@@ -3383,11 +3384,11 @@ export type I5utcetro501ir = {
     "value": bigint;
     "keep_alive": boolean;
 };
-export type I8jsgbrdjan5vl = AnonymousEnum<{
+export type I1vet5rnec8o69 = AnonymousEnum<{
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      */
-    "sudo": Anonymize<Ib2jffuh5of2jt>;
+    "sudo": Anonymize<I8dbgs89s4a7d7>;
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      * This function does not check the weight of the call, and instead allows the
@@ -3395,7 +3396,7 @@ export type I8jsgbrdjan5vl = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_unchecked_weight": Anonymize<Ia5aagp7c7v9i5>;
+    "sudo_unchecked_weight": Anonymize<I9fo7efet255sj>;
     /**
      * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
      * key.
@@ -3407,7 +3408,7 @@ export type I8jsgbrdjan5vl = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_as": Anonymize<Iapfqf5ejv5sd1>;
+    "sudo_as": Anonymize<I6b25h7d8kidls>;
     /**
      * Permanently removes the sudo key.
      *
@@ -3415,17 +3416,17 @@ export type I8jsgbrdjan5vl = AnonymousEnum<{
      */
     "remove_key": undefined;
 }>;
-export type Ib2jffuh5of2jt = {
+export type I8dbgs89s4a7d7 = {
     "call": TxCallData;
 };
-export type Ia5aagp7c7v9i5 = {
+export type I9fo7efet255sj = {
     "call": TxCallData;
     "weight": Anonymize<I4q39t5hn830vp>;
 };
 export type I8k3rnvpeeh4hv = {
     "new": MultiAddress;
 };
-export type Iapfqf5ejv5sd1 = {
+export type I6b25h7d8kidls = {
     "who": MultiAddress;
     "call": TxCallData;
 };
@@ -4277,7 +4278,7 @@ export type Ib9g9h9vhma17r = AnonymousEnum<{
 export type I1jm8m1rh9e20v = {
     "hash": FixedSizeBinary<32>;
 };
-export type Ie5u9ivafhla2m = AnonymousEnum<{
+export type I5otvo5fsajrde = AnonymousEnum<{
     /**
      * Register a new social app.
      *
@@ -4285,7 +4286,7 @@ export type Ie5u9ivafhla2m = AnonymousEnum<{
      * Reserves `T::AppBond`, assigns the next available AppId, stores the
      * app record, and updates the owner's app list.
      */
-    "register_app": Anonymize<I70vuebkld5nba>;
+    "register_app": Anonymize<I7fv0kt52b21r5>;
     /**
      * Deregister an existing app.
      *
@@ -4294,17 +4295,18 @@ export type Ie5u9ivafhla2m = AnonymousEnum<{
      */
     "deregister_app": Anonymize<I7uphs141r660c>;
 }>;
-export type I70vuebkld5nba = {
+export type I7fv0kt52b21r5 = {
     "metadata": Binary;
+    "has_images": boolean;
 };
 export type I7uphs141r660c = {
     "app_id": number;
 };
-export type Iddui8npk7foj6 = AnonymousEnum<{
+export type I847f6f75mj572 = AnonymousEnum<{
     /**
      * Create a new profile for the caller.
      */
-    "create_profile": Anonymize<I70vuebkld5nba>;
+    "create_profile": Anonymize<I4k7i1bf6cpso8>;
     /**
      * Update the metadata CID of an existing profile.
      */
@@ -4320,6 +4322,10 @@ export type Iddui8npk7foj6 = AnonymousEnum<{
      */
     "delete_profile": undefined;
 }>;
+export type I4k7i1bf6cpso8 = {
+    "metadata": Binary;
+    "follow_fee": bigint;
+};
 export type I5vanth86cd3mt = {
     "new_metadata": Binary;
 };
@@ -4380,7 +4386,7 @@ export type I9lv278elt0l38 = {
 export type Ia6ds36j6alqgf = {
     "post_id": bigint;
 };
-export type I4gf5nkn6tce16 = AnonymousEnum<{
+export type Iehu8bhnb0cvrn = AnonymousEnum<{
     /**
      * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
      *
@@ -4508,7 +4514,7 @@ export type I4gf5nkn6tce16 = AnonymousEnum<{
      * * `call`: The Substrate runtime call to execute.
      * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
      */
-    "eth_substrate_call": Anonymize<I9caao9fuka35h>;
+    "eth_substrate_call": Anonymize<I6l2sjlbaf61lr>;
     /**
      * Upload new `code` without instantiating a contract from it.
      *
@@ -4567,7 +4573,7 @@ export type I4gf5nkn6tce16 = AnonymousEnum<{
      * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
      * recovery function in case an `AccountId20` was used without creating a mapping first.
      */
-    "dispatch_as_fallback_account": Anonymize<Ib2jffuh5of2jt>;
+    "dispatch_as_fallback_account": Anonymize<I8dbgs89s4a7d7>;
 }>;
 export type Ida37oe44osb06 = {
     "payload": Binary;
@@ -4615,7 +4621,7 @@ export type Iav55bcqlrqn51 = {
     "effective_gas_price": Anonymize<I4totqt881mlti>;
     "encoded_len": number;
 };
-export type I9caao9fuka35h = {
+export type I6l2sjlbaf61lr = {
     "call": TxCallData;
     "transaction_encoded": Binary;
 };
@@ -4702,13 +4708,13 @@ export type Iei2mvq0mjvt81 = {
     }) | undefined;
     "tip": bigint;
 };
-export type I6hu41sdl9pipg = AnonymousEnum<{
+export type I498te59hshj2b = AnonymousEnum<{
     "System": Anonymize<Iekve0i6djpd9f>;
     "ParachainSystem": Anonymize<I3u72uvpuo4qrt>;
     "Timestamp": Anonymize<I7d75gqfg6jh9c>;
     "ParachainInfo": undefined;
     "Balances": Anonymize<I9svldsp29mh87>;
-    "Sudo": Anonymize<I8jsgbrdjan5vl>;
+    "Sudo": Anonymize<I1vet5rnec8o69>;
     "CollatorSelection": Anonymize<I9dpq5287dur8b>;
     "Session": Anonymize<I77dda7hps0u37>;
     "XcmpQueue": Anonymize<Ib7tahn20bvsep>;
@@ -4716,11 +4722,11 @@ export type I6hu41sdl9pipg = AnonymousEnum<{
     "CumulusXcm": undefined;
     "MessageQueue": Anonymize<Ic2uoe7jdksosp>;
     "TemplatePallet": Anonymize<Ib9g9h9vhma17r>;
-    "SocialAppRegistry": Anonymize<Ie5u9ivafhla2m>;
-    "SocialProfiles": Anonymize<Iddui8npk7foj6>;
+    "SocialAppRegistry": Anonymize<I5otvo5fsajrde>;
+    "SocialProfiles": Anonymize<I847f6f75mj572>;
     "SocialGraph": Anonymize<I5lcpnc4e0dlj4>;
     "SocialFeeds": Anonymize<Iar9otj79ngq87>;
-    "Revive": Anonymize<I4gf5nkn6tce16>;
+    "Revive": Anonymize<Iehu8bhnb0cvrn>;
 }>;
 export type Ic1d4u2opv3fst = {
     "upward_messages": Anonymize<Itom7fk49o0c9>;

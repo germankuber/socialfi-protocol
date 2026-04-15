@@ -21,7 +21,7 @@ mod benchmarks {
 		T::Currency::make_free_balance_be(&caller, deposit);
 
 		#[extrinsic_call]
-		create_profile(RawOrigin::Signed(caller.clone()), metadata);
+		create_profile(RawOrigin::Signed(caller.clone()), metadata, 0u32.into());
 
 		assert!(Profiles::<T>::contains_key(&caller));
 	}

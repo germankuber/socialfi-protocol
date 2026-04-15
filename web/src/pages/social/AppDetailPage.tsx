@@ -24,6 +24,7 @@ interface AppData {
 	id: number;
 	owner: string;
 	metadata: string;
+	hasImages: boolean;
 	createdAt: number;
 	status: string;
 }
@@ -33,6 +34,7 @@ interface PostData {
 	author: string;
 	contentCid: string;
 	resolvedText: string | null;
+	resolvedImage: string | null;
 	replyFee: bigint;
 	visibility: Visibility;
 	unlockFee: bigint;
@@ -62,7 +64,7 @@ export default function AppDetailPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
 	const tracker = useTxTracker();
-	const { uploadPostContent, fetchPostContent, fetchProfileMetadata, ipfsUrl } = useIpfs();
+	const { uploadImage, uploadPostContent, fetchPostContent, fetchProfileMetadata, ipfsUrl } = useIpfs();
 	const [app, setApp] = useState<AppData | null>(null);
 	const [appMeta, setAppMeta] = useState<AppMeta | null>(null);
 	const [posts, setPosts] = useState<PostData[]>([]);
@@ -77,6 +79,8 @@ export default function AppDetailPage() {
 	const [replyFee, setReplyFee] = useState("0");
 	const [visibility, setVisibility] = useState<Visibility>("Public");
 	const [unlockFeeInput, setUnlockFeeInput] = useState("0");
+	const [postImageCid, setPostImageCid] = useState("");
+	const [uploadingImage, setUploadingImage] = useState(false);
 
 	// Reply
 	const [replyingTo, setReplyingTo] = useState<number | null>(null);
@@ -100,6 +104,7 @@ export default function AppDetailPage() {
 					id: numericId,
 					owner: appData.owner.toString(),
 					metadata: metaCid,
+					hasImages: !!appData.has_images,
 					createdAt: Number(appData.created_at),
 					status: appData.status.type,
 				});
@@ -144,6 +149,7 @@ export default function AppDetailPage() {
 					author: e.value.author.toString(),
 					contentCid: e.value.content.asText(),
 					resolvedText: null,
+					resolvedImage: null,
 					replyFee: e.value.reply_fee,
 					visibility: (e.value.visibility as { type: Visibility }).type,
 					unlockFee: e.value.unlock_fee,
@@ -172,17 +178,17 @@ export default function AppDetailPage() {
 					p.author === accountAddress ||
 					unlockedSet.has(p.id);
 				if (shouldResolve) {
-					fetchPostContent(p.contentCid).then((text) => {
-						if (text) setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: text } : pp));
+					fetchPostContent(p.contentCid).then((result) => {
+						if (result) setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: result.text, resolvedImage: result.image ? ipfsUrl(result.image) : null } : pp));
 					});
 				}
 			}
 			for (const pid of Object.keys(replyMap)) {
 				for (const r of replyMap[Number(pid)]) {
-					fetchPostContent(r.contentCid).then((text) => {
-						if (text) setReplies((prev) => ({
+					fetchPostContent(r.contentCid).then((result) => {
+						if (result) setReplies((prev) => ({
 							...prev,
-							[Number(pid)]: (prev[Number(pid)] || []).map((rr) => rr.id === r.id ? { ...rr, resolvedText: text } : rr),
+							[Number(pid)]: (prev[Number(pid)] || []).map((rr) => rr.id === r.id ? { ...rr, resolvedText: result.text } : rr),
 						}));
 					});
 				}
@@ -207,7 +213,7 @@ export default function AppDetailPage() {
 		if (!account || !content.trim()) return;
 		try {
 			setUploading(true);
-			const cid = await uploadPostContent(content.trim());
+			const cid = await uploadPostContent(content.trim(), postImageCid || undefined);
 			setUploading(false);
 			const api = getApi();
 			const tx = api.tx.SocialFeeds.create_post({
@@ -218,7 +224,7 @@ export default function AppDetailPage() {
 				unlock_fee: BigInt(unlockFeeInput || "0"),
 			});
 			const ok = await tracker.submit(tx, account.signer, "Create Post");
-			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); loadApp(); }
+			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); setPostImageCid(""); loadApp(); }
 		} catch { setUploading(false); }
 	}
 
@@ -340,6 +346,25 @@ export default function AppDetailPage() {
 							</div>
 						</div>
 					</div>
+					{/* Image upload for image apps */}
+					{app.hasImages && (
+						<div className="flex items-center gap-3">
+							{postImageCid && <img src={ipfsUrl(postImageCid)} alt="" className="w-20 h-20 rounded-xl object-cover bg-surface-800" />}
+							<div className="space-y-1">
+								<input type="file" accept="image/*" id="post-img" className="hidden" onChange={async (e) => {
+									const file = e.target.files?.[0]; if (!file) return;
+									setUploadingImage(true);
+									try { setPostImageCid(await uploadImage(file)); } catch { /* */ }
+									finally { setUploadingImage(false); e.target.value = ""; }
+								}} />
+								<label htmlFor="post-img" className="btn-outline btn-sm cursor-pointer inline-flex">
+									{uploadingImage ? "Uploading..." : postImageCid ? "Change" : "Add Image"}
+								</label>
+								{postImageCid && <button type="button" onClick={() => setPostImageCid("")} className="btn-ghost btn-sm text-danger">Remove</button>}
+							</div>
+							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+						</div>
+					)}
 					<div className="grid grid-cols-3 gap-3">
 						<div>
 							<label className="form-label">Visibility</label>
@@ -431,11 +456,18 @@ export default function AppDetailPage() {
 								</div>
 
 								{/* Content */}
-								<div className="pl-[52px]">
+								<div className={app.hasImages ? "" : "pl-[52px]"}>
 									{visible ? (
-										<p className="text-sm whitespace-pre-wrap break-words">
-											{post.resolvedText ?? <span className="text-surface-500 italic">Loading content...</span>}
-										</p>
+										<div className="space-y-2">
+											{post.resolvedImage && (
+												<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
+											)}
+											{post.resolvedText ? (
+												<p className="text-sm whitespace-pre-wrap break-words">{post.resolvedText}</p>
+											) : (
+												<span className="text-surface-500 italic text-sm">Loading content...</span>
+											)}
+										</div>
 									) : (
 										<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
 											<svg className="w-6 h-6 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

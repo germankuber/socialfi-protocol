@@ -70,10 +70,10 @@ export default function AppsPage() {
 
 	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
 
-	async function handleRegister(cid: string) {
+	async function handleRegister(cid: string, hasImages: boolean) {
 		if (!account) return;
 		const api = getApi();
-		const tx = api.tx.SocialAppRegistry.register_app({ metadata: Binary.fromText(cid) });
+		const tx = api.tx.SocialAppRegistry.register_app({ metadata: Binary.fromText(cid), has_images: hasImages });
 		const ok = await tracker.submit(tx, account.signer, "Register App");
 		if (ok) { setShowForm(false); loadApps(); }
 	}

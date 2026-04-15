@@ -9,7 +9,7 @@ export interface AppMetadata {
 }
 
 interface AppFormProps {
-	onSubmit: (cid: string) => void;
+	onSubmit: (cid: string, hasImages: boolean) => void;
 	disabled?: boolean;
 }
 
@@ -17,6 +17,7 @@ export default function AppForm({ onSubmit, disabled }: AppFormProps) {
 	const { uploadImage, uploadProfileMetadata, ipfsUrl } = useIpfs();
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
+	const [hasImages, setHasImages] = useState(false);
 	const [iconCid, setIconCid] = useState("");
 	const [website, setWebsite] = useState("");
 	const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -57,7 +58,7 @@ export default function AppForm({ onSubmit, disabled }: AppFormProps) {
 			};
 			// Reuse uploadProfileMetadata — it just uploads JSON to IPFS
 			const cid = await uploadProfileMetadata(metadata as never);
-			onSubmit(cid);
+			onSubmit(cid, hasImages);
 		} finally {
 			setUploadingMeta(false);
 		}
@@ -109,6 +110,14 @@ export default function AppForm({ onSubmit, disabled }: AppFormProps) {
 				<label className="form-label">Website</label>
 				<input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." className="input" />
 			</div>
+
+			<label className="flex items-center gap-3 cursor-pointer">
+				<input type="checkbox" checked={hasImages} onChange={(e) => setHasImages(e.target.checked)} className="w-4 h-4 rounded accent-brand-500" />
+				<div>
+					<span className="text-sm font-medium">Image-focused app</span>
+					<p className="text-[10px] text-surface-500">Enable Instagram-style grid layout for image posts</p>
+				</div>
+			</label>
 
 			<button type="submit" disabled={!name.trim() || busy} className="btn-brand w-full">
 				{uploadingMeta ? "Uploading to IPFS..." : "Register App"}

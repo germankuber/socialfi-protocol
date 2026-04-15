@@ -28,6 +28,7 @@ mod benchmarking;
 pub trait AppProvider<AccountId, AppId> {
 	fn get_owner(app_id: &AppId) -> Option<AccountId>;
 	fn exists(app_id: &AppId) -> bool;
+	fn has_images(app_id: &AppId) -> bool;
 }
 
 #[frame::pallet]
@@ -135,6 +136,10 @@ pub mod pallet {
 		fn exists(app_id: &T::AppId) -> bool {
 			Apps::<T>::get(app_id).is_some_and(|app| app.status == AppStatus::Active)
 		}
+
+		fn has_images(app_id: &T::AppId) -> bool {
+			Apps::<T>::get(app_id).map_or(false, |app| app.has_images)
+		}
 	}
 
 	#[pallet::call]
@@ -149,6 +154,7 @@ pub mod pallet {
 		pub fn register_app(
 			origin: OriginFor<T>,
 			metadata: BoundedVec<u8, T::MaxMetadataLen>,
+			has_images: bool,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -169,6 +175,7 @@ pub mod pallet {
 			let app = AppInfo {
 				owner: who.clone(),
 				metadata,
+				has_images,
 				created_at: block_number,
 				status: AppStatus::Active,
 			};
