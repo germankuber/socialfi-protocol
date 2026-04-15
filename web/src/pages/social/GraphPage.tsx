@@ -25,10 +25,17 @@ function UserRow({ address, children }: { address: string; children?: React.Reac
 				)}
 			</Link>
 			<div className="min-w-0">
-				<Link to={`/profile/${address}`} className="flex items-center gap-1 text-sm font-medium hover:text-brand-500 transition-colors">
-					{profile?.name || truncated}
-					{profile?.verified && <VerifiedBadge size="sm" />}
-				</Link>
+				<div className="flex items-center gap-1.5">
+					<Link to={`/profile/${address}`} className="text-sm font-medium hover:text-brand-500 transition-colors flex items-center gap-1">
+						{profile?.name || truncated}
+						{profile?.verified && <VerifiedBadge size="sm" />}
+					</Link>
+					{profile?.verified ? (
+						<span className="inline-flex items-center rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success shrink-0">Verified</span>
+					) : (
+						<span className="inline-flex items-center rounded-full bg-surface-700/30 px-1.5 py-0.5 text-[9px] font-semibold text-surface-400 shrink-0">Unverified</span>
+					)}
+				</div>
 				{children}
 			</div>
 		</div>

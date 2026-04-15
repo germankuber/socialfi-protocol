@@ -1,10 +1,30 @@
 import { createClient } from "polkadot-api";
 import { getWsProvider } from "@polkadot-api/ws-provider/node";
+import chalk from "chalk";
 import { setLastBlock, insertEvent, insertTx } from "./db.js";
 
 import { stack_template } from "../../web/.papi/descriptors/dist/index.mjs";
 
 const WS_URL = process.env.WS_URL || "ws://127.0.0.1:9944";
+
+function logEvent(pallet: string, event: string, block: number, data: Record<string, unknown>) {
+  const ts = new Date().toLocaleTimeString();
+  const prefix = chalk.gray(`[${ts}]`);
+  const palletTag = chalk.cyan.bold(pallet);
+  const eventTag = chalk.yellow.bold(event);
+  const blockTag = chalk.magenta(`#${block}`);
+  const dataStr = Object.entries(data)
+    .map(([k, v]) => `${chalk.gray(k)}=${chalk.white(String(v))}`)
+    .join(" ");
+  console.log(`${prefix} ${palletTag}.${eventTag} ${blockTag} ${dataStr}`);
+}
+
+function logTx(kind: string, from: string, to: string, amount: string) {
+  const prefix = chalk.gray(`[${new Date().toLocaleTimeString()}]`);
+  const arrow = to ? `${chalk.blue(from.slice(0, 8))} → ${chalk.green(to.slice(0, 8))}` : chalk.blue(from.slice(0, 8));
+  const amountStr = amount !== "0" ? chalk.bold.yellow(amount) : chalk.gray("0");
+  console.log(`  ${prefix} ${chalk.dim("tx")} ${chalk.white(kind)} ${arrow} ${amountStr}`);
+}
 
 function str(v: unknown): string {
   return v == null ? "" : String(v);
@@ -19,7 +39,10 @@ function watch(
   observable.watch().subscribe({
     next: async (ev: unknown) => {
       try {
-        await handler(ev as { meta: { block: { number: number; hash: string } }; payload: Record<string, unknown> });
+        const typed = ev as { meta: { block: { number: number; hash: string } }; payload: Record<string, unknown> };
+        await handler(typed);
+        // Only persist block number when we actually process an event
+        await setLastBlock(typed.meta.block.number);
       } catch (err) {
         console.error("[indexer] Event handler error:", err);
       }
@@ -29,16 +52,18 @@ function watch(
 }
 
 export async function startIndexer() {
-  console.log(`[indexer] Connecting to ${WS_URL}...`);
+  console.log(chalk.bold.cyan(`[indexer]`) + ` Connecting to ${chalk.underline(WS_URL)}...`);
   const client = createClient(getWsProvider(WS_URL));
   const api = client.getTypedApi(stack_template);
 
-  console.log("[indexer] Subscribing to events...");
+  console.log(chalk.bold.cyan("[indexer]") + " Subscribing to social pallet events...");
 
-  // Track finalized blocks
-  client.finalizedBlock$.subscribe(async (block) => {
-    await setLastBlock(block.number);
-    if (block.number % 100 === 0) console.log(`[indexer] Block #${block.number}`);
+  // Track finalized blocks — only log, don't write to disk every block.
+  // lastBlock is updated in db only when we actually process an event.
+  let latestBlock = 0;
+  client.finalizedBlock$.subscribe((block) => {
+    latestBlock = block.number;
+    if (block.number % 100 === 0) console.log(chalk.gray(`[indexer] Block #${block.number}`));
   });
 
   // ── SocialAppRegistry ──
@@ -48,7 +73,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialAppRegistry", eventName: "AppRegistered", data: { owner: str(d.owner), app_id: Number(d.app_id) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "AppRegistered", from: str(d.owner), to: "", amount: "0", postId: null, appId: Number(d.app_id), timestamp: ts });
-    console.log(`[event] AppRegistered #${d.app_id} by ${str(d.owner).slice(0, 10)}`);
+    logEvent("SocialAppRegistry", "AppRegistered", block.number, { owner: str(d.owner), app_id: Number(d.app_id) }); logTx("AppRegistered", str(d.owner), "", "0");
   });
 
   watch(api.event.SocialAppRegistry.AppDeregistered, async (ev) => {
@@ -57,6 +82,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialAppRegistry", eventName: "AppDeregistered", data: { owner: str(d.owner), app_id: Number(d.app_id) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "AppDeregistered", from: str(d.owner), to: "", amount: "0", postId: null, appId: Number(d.app_id), timestamp: ts });
+    logEvent("SocialAppRegistry", "AppDeregistered", block.number, { owner: str(d.owner), app_id: Number(d.app_id) });
   });
 
   // ── SocialProfiles ──
@@ -66,7 +92,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialProfiles", eventName: "ProfileCreated", data: { account: str(d.account) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "ProfileCreated", from: str(d.account), to: "", amount: "0", postId: null, appId: null, timestamp: ts });
-    console.log(`[event] ProfileCreated ${str(d.account).slice(0, 10)}`);
+    logEvent("SocialProfiles", "ProfileCreated", block.number, { account: str(d.account) }); logTx("ProfileCreated", str(d.account), "", "0");
   });
 
   watch(api.event.SocialProfiles.ProfileUpdated, async (ev) => {
@@ -75,6 +101,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialProfiles", eventName: "ProfileUpdated", data: { account: str(d.account) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "ProfileUpdated", from: str(d.account), to: "", amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("SocialProfiles", "ProfileUpdated", block.number, { account: str(d.account) });
   });
 
   watch(api.event.SocialProfiles.FollowFeeUpdated, async (ev) => {
@@ -83,6 +110,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialProfiles", eventName: "FollowFeeUpdated", data: { account: str(d.account), fee: str(d.fee) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "FollowFeeUpdated", from: str(d.account), to: "", amount: str(d.fee), postId: null, appId: null, timestamp: ts });
+    logEvent("SocialProfiles", "FollowFeeUpdated", block.number, { account: str(d.account), fee: str(d.fee) });
   });
 
   watch(api.event.SocialProfiles.ProfileDeleted, async (ev) => {
@@ -91,6 +119,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialProfiles", eventName: "ProfileDeleted", data: { account: str(d.account) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "ProfileDeleted", from: str(d.account), to: "", amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("SocialProfiles", "ProfileDeleted", block.number, { account: str(d.account) });
   });
 
   // ── SocialGraph ──
@@ -104,7 +133,7 @@ export async function startIndexer() {
     if (fee !== "0") {
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "FollowFeeEarned", from: str(d.followed), to: str(d.follower), amount: fee, postId: null, appId: null, timestamp: ts });
     }
-    console.log(`[event] Followed ${str(d.follower).slice(0, 8)} → ${str(d.followed).slice(0, 8)} fee=${fee}`);
+    logEvent("SocialGraph", "Followed", block.number, { follower: str(d.follower), followed: str(d.followed), fee }); logTx("FollowFeePaid", str(d.follower), str(d.followed), fee);
   });
 
   watch(api.event.SocialGraph.Unfollowed, async (ev) => {
@@ -113,6 +142,7 @@ export async function startIndexer() {
     const ts = Date.now();
     await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "SocialGraph", eventName: "Unfollowed", data: { follower: str(d.follower), followed: str(d.followed) }, timestamp: ts });
     await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "Unfollowed", from: str(d.follower), to: str(d.followed), amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("SocialGraph", "Unfollowed", block.number, { follower: str(d.follower), followed: str(d.followed) });
   });
 
   // ── SocialFeeds ──
@@ -131,7 +161,7 @@ export async function startIndexer() {
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PostFeePaid", from: str(d.author), to: feeRecipient, amount: postFee, postId, appId, timestamp: ts });
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PostFeeEarned", from: feeRecipient, to: str(d.author), amount: postFee, postId, appId, timestamp: ts });
     }
-    console.log(`[event] PostCreated #${postId} by ${str(d.author).slice(0, 10)} fee=${postFee}`);
+    logEvent("SocialFeeds", "PostCreated", block.number, { author: str(d.author), post_id: postId, fee: postFee }); logTx("PostFeePaid", str(d.author), feeRecipient, postFee);
   });
 
   watch(api.event.SocialFeeds.ReplyCreated, async (ev) => {
@@ -157,7 +187,7 @@ export async function startIndexer() {
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PostFeePaid", from: str(d.author), to: feeRecipient, amount: postFee, postId, appId, timestamp: ts });
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PostFeeEarned", from: feeRecipient, to: str(d.author), amount: postFee, postId, appId, timestamp: ts });
     }
-    console.log(`[event] ReplyCreated #${postId} → parent #${parentPostId} replyFee=${replyFee} postFee=${postFee}`);
+    logEvent("SocialFeeds", "ReplyCreated", block.number, { author: str(d.author), post_id: postId, parent: parentPostId, reply_fee: replyFee, post_fee: postFee }); logTx("ReplyCreated", str(d.author), parentAuthor, replyFee);
   });
 
   watch(api.event.SocialFeeds.PostUnlocked, async (ev) => {
@@ -173,8 +203,8 @@ export async function startIndexer() {
     if (fee !== "0") {
       await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "UnlockFeeEarned", from: author, to: viewer, amount: fee, postId, appId: null, timestamp: ts });
     }
-    console.log(`[event] PostUnlocked #${postId} by ${viewer.slice(0, 8)} fee=${fee}`);
+    logEvent("SocialFeeds", "PostUnlocked", block.number, { viewer, author, post_id: postId, fee }); logTx("UnlockFeePaid", viewer, author, fee);
   });
 
-  console.log("[indexer] Watching all social pallet events...");
+  console.log(chalk.bold.green("[indexer]") + " ✓ Watching all social pallet events");
 }

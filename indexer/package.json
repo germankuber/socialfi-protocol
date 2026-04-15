@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "chalk": "^5.4.0",
     "cors": "^2.8.5",
     "lowdb": "^7.0.1",
     "express": "^4.21.0",

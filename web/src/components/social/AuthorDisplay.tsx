@@ -5,9 +5,10 @@ import VerifiedBadge from "./VerifiedBadge";
 interface AuthorDisplayProps {
 	address: string;
 	size?: "sm" | "md";
+	showIdentityStatus?: boolean;
 }
 
-export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayProps) {
+export default function AuthorDisplay({ address, size = "sm", showIdentityStatus = true }: AuthorDisplayProps) {
 	const { getProfile } = useProfileCache();
 	const profile = getProfile(address);
 
@@ -33,6 +34,17 @@ export default function AuthorDisplay({ address, size = "sm" }: AuthorDisplayPro
 				{profile?.name || truncated}
 				{profile?.verified && <VerifiedBadge size={size} />}
 			</span>
+			{showIdentityStatus && profile && (
+				profile.verified ? (
+					<span className="inline-flex items-center gap-0.5 rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success shrink-0">
+						Verified
+					</span>
+				) : (
+					<span className="inline-flex items-center rounded-full bg-surface-700/30 px-1.5 py-0.5 text-[9px] font-semibold text-surface-400 shrink-0">
+						Unverified
+					</span>
+				)
+			)}
 		</Link>
 	);
 }
