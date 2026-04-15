@@ -1,5 +1,5 @@
 import { StorageDescriptor, PlainDescriptor, TxDescriptor, RuntimeDescriptor, Enum, ApisFromDef, QueryFromPalletsDef, TxFromPalletsDef, EventsFromPalletsDef, ErrorsFromPalletsDef, ConstFromPalletsDef, ViewFnsFromPalletsDef, SS58String, FixedSizeBinary, Binary, FixedSizeArray } from "polkadot-api";
-import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, Ied261m7ri6uir, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, Ia2qdl52g2tphb, Iafqnechp3omqg, I95l2k9b1re95f, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, I8dbgs89s4a7d7, I9fo7efet255sj, I8k3rnvpeeh4hv, I6b25h7d8kidls, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, I8f2k5et1bqqua, I9lv278elt0l38, Ia6ds36j6alqgf, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I6l2sjlbaf61lr, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I638rb1s2tcn70, Icbccs0ug47ilf, I855j4i3kr8ko1, I9v171aj6qpqqf, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, Ieqnrv88o3jdlh, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, I7svbvm6hg57aj, I8jhsbaiultviu, I1uoblj0319gf1, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, I9nq5hb0cji592, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, I498te59hshj2b, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I85og4bpkvh7hn, I9sijb8gfrns29, I652ijmplr27ee, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, I3jfeq4gvfjf42, I11h3qptfbahj6, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, I1u2c6vn27tfos } from "./common-types";
+import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, I6al636li82pui, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, Ia2qdl52g2tphb, Iafqnechp3omqg, I95l2k9b1re95f, I4ftk0glls7946, I910puuahutflf, I4nfjdef0ibh44, I74af64m08r6as, Ic8ann3kre6vdm, I1j72qfgdejqsv, I60biiepd74113, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, I6c7gbf58k7t8h, If7o08tfqisijq, I8k3rnvpeeh4hv, I6en421sp09r6o, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, I8f2k5et1bqqua, I9lv278elt0l38, Ia6ds36j6alqgf, Ic6cqd9g0t65v0, I2kds5jji7slh8, Ia9mkdf6l44shb, I9l2s4klu0831o, I2ctrt5nqb8o7c, I711qahikocb1c, I6o1er683vod1j, Id6gojh30v9ib2, Ide1bahhh47lj9, Id9uqtigc0il3v, Ic68lsi7chpv5k, Iek0boln8pgnko, I452bkd71b385t, Ie83f0p0ke1f4u, Ib9nmpn9ru9aeh, Ie5l999tf7t2te, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I61ku76hdq7csa, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I19atppes104dl, Icbccs0ug47ilf, I855j4i3kr8ko1, If21rqeg2djsj2, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I4tep38ti88rbp, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, Iep1lmt6q3s6r3, I1fac16213rie2, Ifjt77oc391o43, Itvt1jsipv0lc, Ick3mveut33f44, I719lqkkbtikbl, Ie4intrc3n8jfu, I2rg5btjrsqec0, Ibdqerrooruuq9, I8u2ba9jeiu6q0, I7ieadb293k6b4, I7svbvm6hg57aj, I8jhsbaiultviu, I7l09gg619a7i, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, I34ialglb7dln6, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, I4u06iraq7t5hd, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I6s4d3bdoj8egi, I9sijb8gfrns29, Iap8efojauov2f, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, Ibhufk297cqkf0, Iau3v6kacrdhku, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, I5tskj2cochug2 } from "./common-types";
 type AnonymousEnum<T extends {}> = T & {
     __anonymous: true;
 };
@@ -61,7 +61,7 @@ type IStorage = {
          * Events have a large in-memory size. Box the events to not go out-of-memory
          * just in case someone still reads them from within the runtime.
          */
-        Events: StorageDescriptor<[], Anonymize<Ied261m7ri6uir>, false, never>;
+        Events: StorageDescriptor<[], Anonymize<I6al636li82pui>, false, never>;
         /**
          * The number of events in the `Events<T>` list.
          */
@@ -703,6 +703,68 @@ type IStorage = {
          */
         UnlockedPosts: StorageDescriptor<Anonymize<I95l2k9b1re95f>, boolean, true, never>;
     };
+    Identity: {
+        /**
+         * Information that is pertinent to identify the entity behind an account. First item is the
+         * registration, second is the account's primary username.
+         *
+         * TWOX-NOTE: OK ― `AccountId` is a secure hash.
+         */
+        IdentityOf: StorageDescriptor<[Key: SS58String], Anonymize<I4ftk0glls7946>, true, never>;
+        /**
+         * Identifies the primary username of an account.
+         */
+        UsernameOf: StorageDescriptor<[Key: SS58String], Binary, true, never>;
+        /**
+         * The super-identity of an alternative "sub" identity together with its name, within that
+         * context. If the account is not some other account's sub-identity, then just `None`.
+         */
+        SuperOf: StorageDescriptor<[Key: SS58String], Anonymize<I910puuahutflf>, true, never>;
+        /**
+         * Alternative "sub" identities of this account.
+         *
+         * The first item is the deposit, the second is a vector of the accounts.
+         *
+         * TWOX-NOTE: OK ― `AccountId` is a secure hash.
+         */
+        SubsOf: StorageDescriptor<[Key: SS58String], Anonymize<I4nfjdef0ibh44>, false, never>;
+        /**
+         * The set of registrars. Not expected to get very big as can only be added through a
+         * special origin (likely a council motion).
+         *
+         * The index into this can be cast to `RegistrarIndex` to get a valid value.
+         */
+        Registrars: StorageDescriptor<[], Anonymize<I74af64m08r6as>, false, never>;
+        /**
+         * A map of the accounts who are authorized to grant usernames.
+         */
+        AuthorityOf: StorageDescriptor<[Key: Binary], Anonymize<Ic8ann3kre6vdm>, true, never>;
+        /**
+         * Reverse lookup from `username` to the `AccountId` that has registered it and the provider of
+         * the username. The `owner` value should be a key in the `UsernameOf` map, but it may not if
+         * the user has cleared their username or it has been removed.
+         *
+         * Multiple usernames may map to the same `AccountId`, but `UsernameOf` will only map to one
+         * primary username.
+         */
+        UsernameInfoOf: StorageDescriptor<[Key: Binary], Anonymize<I1j72qfgdejqsv>, true, never>;
+        /**
+         * Usernames that an authority has granted, but that the account controller has not confirmed
+         * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
+         * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
+         * [accept_username](`Call::accept_username`).
+         *
+         * First tuple item is the account and second is the acceptance deadline.
+         */
+        PendingUsernames: StorageDescriptor<[Key: Binary], Anonymize<I60biiepd74113>, true, never>;
+        /**
+         * Usernames for which the authority that granted them has started the removal process by
+         * unbinding them. Each unbinding username maps to its grace period expiry, which is the first
+         * block in which the username could be deleted through a
+         * [remove_username](`Call::remove_username`) call.
+         */
+        UnbindingUsernames: StorageDescriptor<[Key: Binary], number, true, never>;
+    };
     Revive: {
         /**
          * A mapping from a contract's code hash to its code.
@@ -991,7 +1053,7 @@ type ICalls = {
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          */
-        sudo: TxDescriptor<Anonymize<I8dbgs89s4a7d7>>;
+        sudo: TxDescriptor<Anonymize<I6c7gbf58k7t8h>>;
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          * This function does not check the weight of the call, and instead allows the
@@ -999,7 +1061,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_unchecked_weight: TxDescriptor<Anonymize<I9fo7efet255sj>>;
+        sudo_unchecked_weight: TxDescriptor<Anonymize<If7o08tfqisijq>>;
         /**
          * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
          * key.
@@ -1011,7 +1073,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_as: TxDescriptor<Anonymize<I6b25h7d8kidls>>;
+        sudo_as: TxDescriptor<Anonymize<I6en421sp09r6o>>;
         /**
          * Permanently removes the sudo key.
          *
@@ -1522,15 +1584,15 @@ type ICalls = {
          */
         update_metadata: TxDescriptor<Anonymize<I5vanth86cd3mt>>;
         /**
+         * Delete the caller's profile.
+         */
+        delete_profile: TxDescriptor<undefined>;
+        /**
          * Set the follow fee for the caller's profile.
          * Anyone who wants to follow this account must pay this fee.
          * Set to 0 for free follows.
          */
         set_follow_fee: TxDescriptor<Anonymize<Ib1ilbm5ipoh62>>;
-        /**
-         * Delete the caller's profile.
-         */
-        delete_profile: TxDescriptor<undefined>;
     };
     SocialGraph: {
         /**
@@ -1567,6 +1629,248 @@ type ICalls = {
          * always has access without needing to unlock.
          */
         unlock_post: TxDescriptor<Anonymize<Ia6ds36j6alqgf>>;
+    };
+    Identity: {
+        /**
+         * Add a registrar to the system.
+         *
+         * The dispatch origin for this call must be `T::RegistrarOrigin`.
+         *
+         * - `account`: the account of the registrar.
+         *
+         * Emits `RegistrarAdded` if successful.
+         */
+        add_registrar: TxDescriptor<Anonymize<Ic6cqd9g0t65v0>>;
+        /**
+         * Set an account's identity information and reserve the appropriate deposit.
+         *
+         * If the account already has identity information, the deposit is taken as part payment
+         * for the new deposit.
+         *
+         * The dispatch origin for this call must be _Signed_.
+         *
+         * - `info`: The identity information.
+         *
+         * Emits `IdentitySet` if successful.
+         */
+        set_identity: TxDescriptor<Anonymize<I2kds5jji7slh8>>;
+        /**
+         * Set the sub-accounts of the sender.
+         *
+         * Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned
+         * and an amount `SubAccountDeposit` will be reserved for each item in `subs`.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * identity.
+         *
+         * - `subs`: The identity's (new) sub-accounts.
+         */
+        set_subs: TxDescriptor<Anonymize<Ia9mkdf6l44shb>>;
+        /**
+         * Clear an account's identity info and all sub-accounts and return all deposits.
+         *
+         * Payment: All reserved balances on the account are returned.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * identity.
+         *
+         * Emits `IdentityCleared` if successful.
+         */
+        clear_identity: TxDescriptor<undefined>;
+        /**
+         * Request a judgement from a registrar.
+         *
+         * Payment: At most `max_fee` will be reserved for payment to the registrar if judgement
+         * given.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a
+         * registered identity.
+         *
+         * - `reg_index`: The index of the registrar whose judgement is requested.
+         * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
+         *
+         * ```nocompile
+         * Registrars::<T>::get().get(reg_index).unwrap().fee
+         * ```
+         *
+         * Emits `JudgementRequested` if successful.
+         */
+        request_judgement: TxDescriptor<Anonymize<I9l2s4klu0831o>>;
+        /**
+         * Cancel a previous request.
+         *
+         * Payment: A previously reserved deposit is returned on success.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a
+         * registered identity.
+         *
+         * - `reg_index`: The index of the registrar whose judgement is no longer requested.
+         *
+         * Emits `JudgementUnrequested` if successful.
+         */
+        cancel_request: TxDescriptor<Anonymize<I2ctrt5nqb8o7c>>;
+        /**
+         * Set the fee required for a judgement to be requested from a registrar.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must be the account
+         * of the registrar whose index is `index`.
+         *
+         * - `index`: the index of the registrar whose fee is to be set.
+         * - `fee`: the new fee.
+         */
+        set_fee: TxDescriptor<Anonymize<I711qahikocb1c>>;
+        /**
+         * Change the account associated with a registrar.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must be the account
+         * of the registrar whose index is `index`.
+         *
+         * - `index`: the index of the registrar whose fee is to be set.
+         * - `new`: the new account ID.
+         */
+        set_account_id: TxDescriptor<Anonymize<I6o1er683vod1j>>;
+        /**
+         * Set the field information for a registrar.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must be the account
+         * of the registrar whose index is `index`.
+         *
+         * - `index`: the index of the registrar whose fee is to be set.
+         * - `fields`: the fields that the registrar concerns themselves with.
+         */
+        set_fields: TxDescriptor<Anonymize<Id6gojh30v9ib2>>;
+        /**
+         * Provide a judgement for an account's identity.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must be the account
+         * of the registrar whose index is `reg_index`.
+         *
+         * - `reg_index`: the index of the registrar whose judgement is being made.
+         * - `target`: the account whose identity the judgement is upon. This must be an account
+         * with a registered identity.
+         * - `judgement`: the judgement of the registrar of index `reg_index` about `target`.
+         * - `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is
+         * provided.
+         *
+         * Note: Judgements do not apply to a username.
+         *
+         * Emits `JudgementGiven` if successful.
+         */
+        provide_judgement: TxDescriptor<Anonymize<Ide1bahhh47lj9>>;
+        /**
+         * Remove an account's identity and sub-account information and slash the deposits.
+         *
+         * Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by
+         * `Slash`. Verification request deposits are not returned; they should be cancelled
+         * manually using `cancel_request`.
+         *
+         * The dispatch origin for this call must match `T::ForceOrigin`.
+         *
+         * - `target`: the account whose identity the judgement is upon. This must be an account
+         * with a registered identity.
+         *
+         * Emits `IdentityKilled` if successful.
+         */
+        kill_identity: TxDescriptor<Anonymize<Id9uqtigc0il3v>>;
+        /**
+         * Add the given account to the sender's subs.
+         *
+         * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+         * to the sender.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * sub identity of `sub`.
+         */
+        add_sub: TxDescriptor<Anonymize<Ic68lsi7chpv5k>>;
+        /**
+         * Alter the associated name of the given sub-account.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * sub identity of `sub`.
+         */
+        rename_sub: TxDescriptor<Anonymize<Ic68lsi7chpv5k>>;
+        /**
+         * Remove the given account from the sender's subs.
+         *
+         * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+         * to the sender.
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * sub identity of `sub`.
+         */
+        remove_sub: TxDescriptor<Anonymize<Iek0boln8pgnko>>;
+        /**
+         * Remove the sender as a sub-account.
+         *
+         * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+         * to the sender (*not* the original depositor).
+         *
+         * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+         * super-identity.
+         *
+         * NOTE: This should not normally be used, but is provided in the case that the non-
+         * controller of an account is maliciously registered as a sub-account.
+         */
+        quit_sub: TxDescriptor<undefined>;
+        /**
+         * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
+         *
+         * The authority can grant up to `allocation` usernames. To top up the allocation or
+         * change the account used to grant usernames, this call can be used with the updated
+         * parameters to overwrite the existing configuration.
+         */
+        add_username_authority: TxDescriptor<Anonymize<I452bkd71b385t>>;
+        /**
+         * Remove `authority` from the username authorities.
+         */
+        remove_username_authority: TxDescriptor<Anonymize<Ie83f0p0ke1f4u>>;
+        /**
+         * Set the username for `who`. Must be called by a username authority.
+         *
+         * If `use_allocation` is set, the authority must have a username allocation available to
+         * spend. Otherwise, the authority will need to put up a deposit for registering the
+         * username.
+         *
+         * Users can either pre-sign their usernames or
+         * accept them later.
+         *
+         * Usernames must:
+         * - Only contain lowercase ASCII characters or digits.
+         * - When combined with the suffix of the issuing authority be _less than_ the
+         * `MaxUsernameLength`.
+         */
+        set_username_for: TxDescriptor<Anonymize<Ib9nmpn9ru9aeh>>;
+        /**
+         * Accept a given username that an `authority` granted. The call must include the full
+         * username, as in `username.suffix`.
+         */
+        accept_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * Remove an expired username approval. The username was approved by an authority but never
+         * accepted by the user and must now be beyond its expiration. The call must include the
+         * full username, as in `username.suffix`.
+         */
+        remove_expired_approval: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * Set a given username as the primary. The username should include the suffix.
+         */
+        set_primary_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * Start the process of removing a username by placing it in the unbinding usernames map.
+         * Once the grace period has passed, the username can be deleted by calling
+         * [remove_username](crate::Call::remove_username).
+         */
+        unbind_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * Permanently delete a username which has been unbinding for longer than the grace period.
+         * Caller is refunded the fee if the username expired and the removal was successful.
+         */
+        remove_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+         * and slashes any deposit associated with it.
+         */
+        kill_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
     };
     Revive: {
         /**
@@ -1696,7 +2000,7 @@ type ICalls = {
          * * `call`: The Substrate runtime call to execute.
          * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
          */
-        eth_substrate_call: TxDescriptor<Anonymize<I6l2sjlbaf61lr>>;
+        eth_substrate_call: TxDescriptor<Anonymize<I61ku76hdq7csa>>;
         /**
          * Upload new `code` without instantiating a contract from it.
          *
@@ -1755,7 +2059,7 @@ type ICalls = {
          * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
          * recovery function in case an `AccountId20` was used without creating a mapping first.
          */
-        dispatch_as_fallback_account: TxDescriptor<Anonymize<I8dbgs89s4a7d7>>;
+        dispatch_as_fallback_account: TxDescriptor<Anonymize<I6c7gbf58k7t8h>>;
     };
 };
 type IEvent = {
@@ -1767,7 +2071,7 @@ type IEvent = {
         /**
          * An extrinsic failed.
          */
-        ExtrinsicFailed: PlainDescriptor<Anonymize<I638rb1s2tcn70>>;
+        ExtrinsicFailed: PlainDescriptor<Anonymize<I19atppes104dl>>;
         /**
          * `:code` was updated.
          */
@@ -1791,7 +2095,7 @@ type IEvent = {
         /**
          * An invalid authorized upgrade was rejected while trying to apply it.
          */
-        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<I9v171aj6qpqqf>>;
+        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<If21rqeg2djsj2>>;
     };
     ParachainSystem: {
         /**
@@ -1954,7 +2258,7 @@ type IEvent = {
         /**
          * A sudo call just took place.
          */
-        Sudid: PlainDescriptor<Anonymize<Ieqnrv88o3jdlh>>;
+        Sudid: PlainDescriptor<Anonymize<I4tep38ti88rbp>>;
         /**
          * The sudo key has been updated.
          */
@@ -1966,7 +2270,7 @@ type IEvent = {
         /**
          * A [sudo_as](Pallet::sudo_as) call just took place.
          */
-        SudoAsDone: PlainDescriptor<Anonymize<Ieqnrv88o3jdlh>>;
+        SudoAsDone: PlainDescriptor<Anonymize<I4tep38ti88rbp>>;
     };
     CollatorSelection: {
         /**
@@ -2291,6 +2595,98 @@ type IEvent = {
          */
         PostUnlocked: PlainDescriptor<Anonymize<I8pdmes4qb1slv>>;
     };
+    Identity: {
+        /**
+         * A name was set or reset (which will remove all judgements).
+         */
+        IdentitySet: PlainDescriptor<Anonymize<I4cbvqmqadhrea>>;
+        /**
+         * A name was cleared, and the given balance returned.
+         */
+        IdentityCleared: PlainDescriptor<Anonymize<Iep1lmt6q3s6r3>>;
+        /**
+         * A name was removed and the given balance slashed.
+         */
+        IdentityKilled: PlainDescriptor<Anonymize<Iep1lmt6q3s6r3>>;
+        /**
+         * A judgement was asked from a registrar.
+         */
+        JudgementRequested: PlainDescriptor<Anonymize<I1fac16213rie2>>;
+        /**
+         * A judgement request was retracted.
+         */
+        JudgementUnrequested: PlainDescriptor<Anonymize<I1fac16213rie2>>;
+        /**
+         * A judgement was given by a registrar.
+         */
+        JudgementGiven: PlainDescriptor<Anonymize<Ifjt77oc391o43>>;
+        /**
+         * A registrar was added.
+         */
+        RegistrarAdded: PlainDescriptor<Anonymize<Itvt1jsipv0lc>>;
+        /**
+         * A sub-identity was added to an identity and the deposit paid.
+         */
+        SubIdentityAdded: PlainDescriptor<Anonymize<Ick3mveut33f44>>;
+        /**
+         * An account's sub-identities were set (in bulk).
+         */
+        SubIdentitiesSet: PlainDescriptor<Anonymize<I719lqkkbtikbl>>;
+        /**
+         * A given sub-account's associated name was changed by its super-identity.
+         */
+        SubIdentityRenamed: PlainDescriptor<Anonymize<Ie4intrc3n8jfu>>;
+        /**
+         * A sub-identity was removed from an identity and the deposit freed.
+         */
+        SubIdentityRemoved: PlainDescriptor<Anonymize<Ick3mveut33f44>>;
+        /**
+         * A sub-identity was cleared, and the given deposit repatriated from the
+         * main identity account to the sub-identity account.
+         */
+        SubIdentityRevoked: PlainDescriptor<Anonymize<Ick3mveut33f44>>;
+        /**
+         * A username authority was added.
+         */
+        AuthorityAdded: PlainDescriptor<Anonymize<I2rg5btjrsqec0>>;
+        /**
+         * A username authority was removed.
+         */
+        AuthorityRemoved: PlainDescriptor<Anonymize<I2rg5btjrsqec0>>;
+        /**
+         * A username was set for `who`.
+         */
+        UsernameSet: PlainDescriptor<Anonymize<Ibdqerrooruuq9>>;
+        /**
+         * A username was queued, but `who` must accept it prior to `expiration`.
+         */
+        UsernameQueued: PlainDescriptor<Anonymize<I8u2ba9jeiu6q0>>;
+        /**
+         * A queued username passed its expiration without being claimed and was removed.
+         */
+        PreapprovalExpired: PlainDescriptor<Anonymize<I7ieadb293k6b4>>;
+        /**
+         * A username was set as a primary and can be looked up from `who`.
+         */
+        PrimaryUsernameSet: PlainDescriptor<Anonymize<Ibdqerrooruuq9>>;
+        /**
+         * A dangling username (as in, a username corresponding to an account that has removed its
+         * identity) has been removed.
+         */
+        DanglingUsernameRemoved: PlainDescriptor<Anonymize<Ibdqerrooruuq9>>;
+        /**
+         * A username has been unbound.
+         */
+        UsernameUnbound: PlainDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * A username has been removed.
+         */
+        UsernameRemoved: PlainDescriptor<Anonymize<Ie5l999tf7t2te>>;
+        /**
+         * A username has been killed.
+         */
+        UsernameKilled: PlainDescriptor<Anonymize<Ie5l999tf7t2te>>;
+    };
     Revive: {
         /**
          * A custom event emitted by the contract.
@@ -2308,7 +2704,7 @@ type IEvent = {
          * To distinguish reverted calls from successful ones, this event is emitted
          * for failed Ethereum transactions.
          */
-        EthExtrinsicRevert: PlainDescriptor<Anonymize<I1uoblj0319gf1>>;
+        EthExtrinsicRevert: PlainDescriptor<Anonymize<I7l09gg619a7i>>;
     };
 };
 type IError = {
@@ -2842,6 +3238,129 @@ type IError = {
          * The post is public and does not need unlocking.
          */
         PostIsPublic: PlainDescriptor<undefined>;
+    };
+    Identity: {
+        /**
+         * Too many subs-accounts.
+         */
+        TooManySubAccounts: PlainDescriptor<undefined>;
+        /**
+         * Account isn't found.
+         */
+        NotFound: PlainDescriptor<undefined>;
+        /**
+         * Account isn't named.
+         */
+        NotNamed: PlainDescriptor<undefined>;
+        /**
+         * Empty index.
+         */
+        EmptyIndex: PlainDescriptor<undefined>;
+        /**
+         * Fee is changed.
+         */
+        FeeChanged: PlainDescriptor<undefined>;
+        /**
+         * No identity found.
+         */
+        NoIdentity: PlainDescriptor<undefined>;
+        /**
+         * Sticky judgement.
+         */
+        StickyJudgement: PlainDescriptor<undefined>;
+        /**
+         * Judgement given.
+         */
+        JudgementGiven: PlainDescriptor<undefined>;
+        /**
+         * Invalid judgement.
+         */
+        InvalidJudgement: PlainDescriptor<undefined>;
+        /**
+         * The index is invalid.
+         */
+        InvalidIndex: PlainDescriptor<undefined>;
+        /**
+         * The target is invalid.
+         */
+        InvalidTarget: PlainDescriptor<undefined>;
+        /**
+         * Maximum amount of registrars reached. Cannot add any more.
+         */
+        TooManyRegistrars: PlainDescriptor<undefined>;
+        /**
+         * Account ID is already named.
+         */
+        AlreadyClaimed: PlainDescriptor<undefined>;
+        /**
+         * Sender is not a sub-account.
+         */
+        NotSub: PlainDescriptor<undefined>;
+        /**
+         * Sub-account isn't owned by sender.
+         */
+        NotOwned: PlainDescriptor<undefined>;
+        /**
+         * The provided judgement was for a different identity.
+         */
+        JudgementForDifferentIdentity: PlainDescriptor<undefined>;
+        /**
+         * Error that occurs when there is an issue paying for judgement.
+         */
+        JudgementPaymentFailed: PlainDescriptor<undefined>;
+        /**
+         * The provided suffix is too long.
+         */
+        InvalidSuffix: PlainDescriptor<undefined>;
+        /**
+         * The sender does not have permission to issue a username.
+         */
+        NotUsernameAuthority: PlainDescriptor<undefined>;
+        /**
+         * The authority cannot allocate any more usernames.
+         */
+        NoAllocation: PlainDescriptor<undefined>;
+        /**
+         * The signature on a username was not valid.
+         */
+        InvalidSignature: PlainDescriptor<undefined>;
+        /**
+         * Setting this username requires a signature, but none was provided.
+         */
+        RequiresSignature: PlainDescriptor<undefined>;
+        /**
+         * The username does not meet the requirements.
+         */
+        InvalidUsername: PlainDescriptor<undefined>;
+        /**
+         * The username is already taken.
+         */
+        UsernameTaken: PlainDescriptor<undefined>;
+        /**
+         * The requested username does not exist.
+         */
+        NoUsername: PlainDescriptor<undefined>;
+        /**
+         * The username cannot be forcefully removed because it can still be accepted.
+         */
+        NotExpired: PlainDescriptor<undefined>;
+        /**
+         * The username cannot be removed because it's still in the grace period.
+         */
+        TooEarly: PlainDescriptor<undefined>;
+        /**
+         * The username cannot be removed because it is not unbinding.
+         */
+        NotUnbinding: PlainDescriptor<undefined>;
+        /**
+         * The username cannot be unbound because it is already unbinding.
+         */
+        AlreadyUnbinding: PlainDescriptor<undefined>;
+        /**
+         * The action cannot be performed because of insufficient privileges (e.g. authority
+         * trying to unbind a username provided by the system).
+         */
+        InsufficientPrivileges: PlainDescriptor<undefined>;
     };
     Revive: {
         /**
@@ -3397,6 +3916,53 @@ type IConstants = {
          */
         MaxRepliesPerPost: PlainDescriptor<number>;
     };
+    Identity: {
+        /**
+         * The amount held on deposit for a registered identity.
+         */
+        BasicDeposit: PlainDescriptor<bigint>;
+        /**
+         * The amount held on deposit per encoded byte for a registered identity.
+         */
+        ByteDeposit: PlainDescriptor<bigint>;
+        /**
+         * The amount held on deposit per registered username. This value should change only in
+         * runtime upgrades with proper migration of existing deposits.
+         */
+        UsernameDeposit: PlainDescriptor<bigint>;
+        /**
+         * The amount held on deposit for a registered subaccount. This should account for the fact
+         * that one storage item's value will increase by the size of an account ID, and there will
+         * be another trie item whose value is the size of an account ID plus 32 bytes.
+         */
+        SubAccountDeposit: PlainDescriptor<bigint>;
+        /**
+         * The maximum number of sub-accounts allowed per identified account.
+         */
+        MaxSubAccounts: PlainDescriptor<number>;
+        /**
+         * Maximum number of registrars allowed in the system. Needed to bound the complexity
+         * of, e.g., updating judgements.
+         */
+        MaxRegistrars: PlainDescriptor<number>;
+        /**
+         * The number of blocks within which a username grant must be accepted.
+         */
+        PendingUsernameExpiration: PlainDescriptor<number>;
+        /**
+         * The number of blocks that must pass to enable the permanent deletion of a username by
+         * its respective authority.
+         */
+        UsernameGracePeriod: PlainDescriptor<number>;
+        /**
+         * The maximum length of a suffix.
+         */
+        MaxSuffixLength: PlainDescriptor<number>;
+        /**
+         * The maximum length of a username, including its suffix and any system-added delimiters.
+         */
+        MaxUsernameLength: PlainDescriptor<number>;
+    };
     Revive: {
         /**
          * The amount of balance a caller has to pay for each byte of storage.
@@ -3605,7 +4171,7 @@ type IRuntimeCalls = {
          * Returns an inclusion outcome which specifies if this extrinsic is included in
          * this block or not.
          */
-        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<I9nq5hb0cji592>>;
+        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<I34ialglb7dln6>>;
         /**
          * Finish the current block.
          */
@@ -3703,11 +4269,11 @@ type IRuntimeCalls = {
         /**
          * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
          */
-        query_call_info: RuntimeDescriptor<[call: Anonymize<I498te59hshj2b>, len: number], Anonymize<I6spmpef2c7svf>>;
+        query_call_info: RuntimeDescriptor<[call: Anonymize<I4u06iraq7t5hd>, len: number], Anonymize<I6spmpef2c7svf>>;
         /**
          * Query fee details of a given encoded `Call`.
          */
-        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<I498te59hshj2b>, len: number], Anonymize<Iei2mvq0mjvt81>>;
+        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<I4u06iraq7t5hd>, len: number], Anonymize<Iei2mvq0mjvt81>>;
         /**
          * Query the output of the current `WeightToFee` given some input.
          */
@@ -3827,13 +4393,13 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_call`].
          */
-        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I85og4bpkvh7hn>>;
+        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I6s4d3bdoj8egi>>;
         /**
          * Instantiate a new contract.
          *
          * See `[crate::Pallet::bare_instantiate]`.
          */
-        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<I652ijmplr27ee>>;
+        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<Iap8efojauov2f>>;
         /**
          * Perform an Ethereum call.
          *
@@ -3852,7 +4418,7 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_upload_code`].
          */
-        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<I3jfeq4gvfjf42>>;
+        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<Ibhufk297cqkf0>>;
         /**
          * Query a given storage key in a given contract.
          *
@@ -3860,7 +4426,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<I11h3qptfbahj6>>;
+        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<Iau3v6kacrdhku>>;
         /**
          * Query a given variable-sized storage key in a given contract.
          *
@@ -3868,7 +4434,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<I11h3qptfbahj6>>;
+        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<Iau3v6kacrdhku>>;
         /**
          * Traces the execution of an entire block and returns call traces.
          *
@@ -3919,7 +4485,7 @@ type IRuntimeCalls = {
         new_balance_with_dust: RuntimeDescriptor<[balance: Anonymize<I4totqt881mlti>], Anonymize<I512dtcl0pn07c>>;
     };
 };
-export type Stack_templateDispatchError = Anonymize<I1u2c6vn27tfos>;
+export type Stack_templateDispatchError = Anonymize<I5tskj2cochug2>;
 type IAsset = PlainDescriptor<void>;
 export type Stack_templateExtensions = {};
 type PalletsTypedef = {
@@ -3950,7 +4516,7 @@ export type Stack_templateEvents = EventsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateErrors = ErrorsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateConstants = ConstFromPalletsDef<PalletsTypedef>;
 export type Stack_templateViewFns = ViewFnsFromPalletsDef<PalletsTypedef>;
-export type Stack_templateCallData = Anonymize<I498te59hshj2b> & {
+export type Stack_templateCallData = Anonymize<I4u06iraq7t5hd> & {
     value: {
         type: string;
     };
@@ -3977,6 +4543,7 @@ type AllInteractions = {
         SocialProfiles: ['ProfileCount', 'Profiles'];
         SocialGraph: ['Follows', 'FollowerCount', 'FollowingCount'];
         SocialFeeds: ['NextPostId', 'Posts', 'PostsByAuthor', 'Replies', 'UnlockedPosts'];
+        Identity: ['IdentityOf', 'UsernameOf', 'SuperOf', 'SubsOf', 'Registrars', 'AuthorityOf', 'UsernameInfoOf', 'PendingUsernames', 'UnbindingUsernames'];
         Revive: ['PristineCode', 'CodeInfoOf', 'AccountInfoOf', 'ImmutableDataOf', 'DeletionQueue', 'DeletionQueueCounter', 'OriginalAccount', 'EthereumBlock', 'BlockHash', 'ReceiptInfoData', 'EthBlockBuilderIR', 'EthBlockBuilderFirstValues', 'DebugSettingsOf'];
     };
     tx: {
@@ -3992,9 +4559,10 @@ type AllInteractions = {
         MessageQueue: ['reap_page', 'execute_overweight'];
         TemplatePallet: ['create_claim', 'revoke_claim'];
         SocialAppRegistry: ['register_app', 'deregister_app'];
-        SocialProfiles: ['create_profile', 'update_metadata', 'set_follow_fee', 'delete_profile'];
+        SocialProfiles: ['create_profile', 'update_metadata', 'delete_profile', 'set_follow_fee'];
         SocialGraph: ['follow', 'unfollow'];
         SocialFeeds: ['create_post', 'create_reply', 'unlock_post'];
+        Identity: ['add_registrar', 'set_identity', 'set_subs', 'clear_identity', 'request_judgement', 'cancel_request', 'set_fee', 'set_account_id', 'set_fields', 'provide_judgement', 'kill_identity', 'add_sub', 'rename_sub', 'remove_sub', 'quit_sub', 'add_username_authority', 'remove_username_authority', 'set_username_for', 'accept_username', 'remove_expired_approval', 'set_primary_username', 'unbind_username', 'remove_username', 'kill_username'];
         Revive: ['eth_transact', 'call', 'instantiate', 'instantiate_with_code', 'eth_instantiate_with_code', 'eth_call', 'eth_substrate_call', 'upload_code', 'remove_code', 'set_code', 'map_account', 'unmap_account', 'dispatch_as_fallback_account'];
     };
     events: {
@@ -4015,6 +4583,7 @@ type AllInteractions = {
         SocialProfiles: ['ProfileCreated', 'ProfileUpdated', 'FollowFeeUpdated', 'ProfileDeleted'];
         SocialGraph: ['Followed', 'Unfollowed'];
         SocialFeeds: ['PostCreated', 'ReplyCreated', 'PostUnlocked'];
+        Identity: ['IdentitySet', 'IdentityCleared', 'IdentityKilled', 'JudgementRequested', 'JudgementUnrequested', 'JudgementGiven', 'RegistrarAdded', 'SubIdentityAdded', 'SubIdentitiesSet', 'SubIdentityRenamed', 'SubIdentityRemoved', 'SubIdentityRevoked', 'AuthorityAdded', 'AuthorityRemoved', 'UsernameSet', 'UsernameQueued', 'PreapprovalExpired', 'PrimaryUsernameSet', 'DanglingUsernameRemoved', 'UsernameUnbound', 'UsernameRemoved', 'UsernameKilled'];
         Revive: ['ContractEmitted', 'Instantiated', 'EthExtrinsicRevert'];
     };
     errors: {
@@ -4032,6 +4601,7 @@ type AllInteractions = {
         SocialProfiles: ['ProfileAlreadyExists', 'ProfileNotFound', 'InsufficientBond', 'MetadataTooLong'];
         SocialGraph: ['ProfileNotFound', 'CannotFollowSelf', 'AlreadyFollowing', 'NotFollowing', 'InsufficientBalance'];
         SocialFeeds: ['ProfileNotFound', 'AppNotFound', 'ParentPostNotFound', 'InsufficientBalance', 'ContentTooLong', 'TooManyPosts', 'TooManyReplies', 'PostIdOverflow', 'PostNotFound', 'AlreadyUnlocked', 'PostIsPublic'];
+        Identity: ['TooManySubAccounts', 'NotFound', 'NotNamed', 'EmptyIndex', 'FeeChanged', 'NoIdentity', 'StickyJudgement', 'JudgementGiven', 'InvalidJudgement', 'InvalidIndex', 'InvalidTarget', 'TooManyRegistrars', 'AlreadyClaimed', 'NotSub', 'NotOwned', 'JudgementForDifferentIdentity', 'JudgementPaymentFailed', 'InvalidSuffix', 'NotUsernameAuthority', 'NoAllocation', 'InvalidSignature', 'RequiresSignature', 'InvalidUsername', 'UsernameTaken', 'NoUsername', 'NotExpired', 'TooEarly', 'NotUnbinding', 'AlreadyUnbinding', 'InsufficientPrivileges'];
         Revive: ['InvalidSchedule', 'InvalidCallFlags', 'OutOfGas', 'TransferFailed', 'MaxCallDepthReached', 'ContractNotFound', 'CodeNotFound', 'CodeInfoNotFound', 'OutOfBounds', 'DecodingFailed', 'ContractTrapped', 'ValueTooLarge', 'TerminatedWhileReentrant', 'InputForwarded', 'TooManyTopics', 'DuplicateContract', 'TerminatedInConstructor', 'ReentranceDenied', 'ReenteredPallet', 'StateChangeDenied', 'StorageDepositNotEnoughFunds', 'StorageDepositLimitExhausted', 'CodeInUse', 'ContractReverted', 'CodeRejected', 'BlobTooLarge', 'StaticMemoryTooLarge', 'BasicBlockTooLarge', 'InvalidInstruction', 'MaxDelegateDependenciesReached', 'DelegateDependencyNotFound', 'DelegateDependencyAlreadyExists', 'CannotAddSelfAsDelegateDependency', 'OutOfTransientStorage', 'InvalidSyscall', 'InvalidStorageFlags', 'ExecutionFailed', 'BalanceConversionFailed', 'InvalidImmutableAccess', 'AccountUnmapped', 'AccountAlreadyMapped', 'InvalidGenericTransaction', 'RefcountOverOrUnderflow', 'UnsupportedPrecompileAddress', 'CallDataTooLarge', 'ReturnDataTooLarge', 'InvalidJump', 'StackUnderflow', 'StackOverflow', 'TxFeeOverdraw', 'EvmConstructorNonEmptyData', 'EvmConstructedFromHash', 'StorageRefundNotEnoughFunds', 'StorageRefundLocked', 'PrecompileDelegateDenied', 'EcdsaRecoveryFailed'];
     };
     constants: {
@@ -4050,6 +4620,7 @@ type AllInteractions = {
         SocialAppRegistry: ['AppBond', 'MaxMetadataLen', 'MaxAppsPerOwner'];
         SocialProfiles: ['ProfileBond', 'MaxMetadataLen'];
         SocialFeeds: ['PostFee', 'MaxContentLen', 'MaxPostsPerAuthor', 'MaxRepliesPerPost'];
+        Identity: ['BasicDeposit', 'ByteDeposit', 'UsernameDeposit', 'SubAccountDeposit', 'MaxSubAccounts', 'MaxRegistrars', 'PendingUsernameExpiration', 'UsernameGracePeriod', 'MaxSuffixLength', 'MaxUsernameLength'];
         Revive: ['DepositPerByte', 'DepositPerItem', 'DepositPerChildTrieItem', 'CodeHashLockupDepositPercent', 'UnsafeUnstableInterface', 'AllowEVMBytecode', 'ChainId', 'NativeToEthRatio', 'MaxEthExtrinsicWeight', 'DebugEnabled', 'GasScale'];
     };
     viewFns: {};

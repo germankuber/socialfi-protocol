@@ -33,9 +33,9 @@ use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
 	MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-	SocialAppRegistry, SocialProfiles, System, Timestamp, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO,
-	EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION, VERSION,
+	Signature, SocialAppRegistry, SocialProfiles, System, Timestamp, XcmpQueue,
+	AVERAGE_ON_INITIALIZE_RATIO, DAYS, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -350,6 +350,45 @@ impl pallet_social_feeds::Config for Runtime {
 	type MaxPostsPerAuthor = MaxPostsPerAuthor;
 	type MaxRepliesPerPost = MaxRepliesPerPost;
 	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
+}
+
+// ── pallet-identity (on-chain identity + verification) ─────────────────
+
+parameter_types! {
+	pub const IdentityBasicDeposit: Balance = 10 * EXISTENTIAL_DEPOSIT;
+	pub const IdentityByteDeposit: Balance = EXISTENTIAL_DEPOSIT / 100;
+	pub const IdentityUsernameDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const IdentitySubAccountDeposit: Balance = 5 * EXISTENTIAL_DEPOSIT;
+	pub const MaxSubAccounts: u32 = 100;
+	pub const MaxAdditionalFields: u32 = 25;
+	pub const MaxRegistrars: u32 = 20;
+	pub const IdentityPendingUsernameExpiration: BlockNumber = 7 * DAYS;
+	pub const IdentityUsernameGracePeriod: BlockNumber = 30 * DAYS;
+}
+
+impl pallet_identity::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type BasicDeposit = IdentityBasicDeposit;
+	type ByteDeposit = IdentityByteDeposit;
+	type UsernameDeposit = IdentityUsernameDeposit;
+	type SubAccountDeposit = IdentitySubAccountDeposit;
+	type MaxSubAccounts = MaxSubAccounts;
+	type IdentityInformation = pallet_identity::legacy::IdentityInfo<MaxAdditionalFields>;
+	type MaxRegistrars = MaxRegistrars;
+	type Slashed = ();
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type RegistrarOrigin = EnsureRoot<AccountId>;
+	type UsernameAuthorityOrigin = EnsureRoot<AccountId>;
+	type OffchainSignature = Signature;
+	type SigningPublicKey = <Signature as sp_runtime::traits::Verify>::Signer;
+	type PendingUsernameExpiration = IdentityPendingUsernameExpiration;
+	type UsernameGracePeriod = IdentityUsernameGracePeriod;
+	type MaxSuffixLength = ConstU32<7>;
+	type MaxUsernameLength = ConstU32<32>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────
