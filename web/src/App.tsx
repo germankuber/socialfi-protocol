@@ -38,6 +38,7 @@ export default function App() {
 
 					<nav className="flex gap-1">
 						<NavLink to="/" label="Home" current={location.pathname === "/"} />
+						<NavLink to="/people" label="People" current={location.pathname === "/people"} />
 						{showSocialNav && (
 							<NavLink to="/social" label="Social" current={location.pathname.startsWith("/social")} />
 						)}

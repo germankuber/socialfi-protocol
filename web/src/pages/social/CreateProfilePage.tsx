@@ -9,6 +9,16 @@ import RequireWallet from "../../components/social/RequireWallet";
 import ProfileForm from "../../components/social/ProfileForm";
 import TxToast from "../../components/social/TxToast";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function identityDataValue(text: string): any {
+	if (!text) return { type: "None", value: undefined };
+	const bytes = new TextEncoder().encode(text.slice(0, 32));
+	const n = bytes.length;
+	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function noneData(): any { return { type: "None", value: undefined }; }
+
 export default function CreateProfilePage() {
 	const navigate = useNavigate();
 	const { getApi } = useSocialApi();
@@ -30,9 +40,31 @@ export default function CreateProfilePage() {
 
 			const api = getApi();
 			const fee = BigInt(followFee || "0");
+
+			// 1. Create social profile
 			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid), follow_fee: fee });
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (!ok) return;
+
+			// 2. Set on-chain identity with the same data (automatic)
+			try {
+				const identityTx = api.tx.Identity.set_identity({
+					info: {
+						display: identityDataValue(metadata.name),
+						twitter: identityDataValue(metadata.links?.twitter || ""),
+						web: identityDataValue(metadata.links?.website || ""),
+						email: noneData(),
+						additional: [],
+						legal: noneData(),
+						riot: noneData(),
+						image: noneData(),
+						pgp_fingerprint: undefined,
+					},
+				});
+				await tracker.submit(identityTx, account.signer, "Set Identity");
+			} catch {
+				// Identity set is best-effort — don't block profile creation
+			}
 
 			navigate("/");
 		} catch (e) {

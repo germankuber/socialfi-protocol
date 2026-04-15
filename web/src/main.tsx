@@ -5,6 +5,7 @@ import App from "./App";
 import "./index.css";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
+const PeoplePage = lazy(() => import("./pages/PeoplePage"));
 const SocialLayout = lazy(() => import("./pages/social/SocialLayout"));
 const SocialDashboard = lazy(() => import("./pages/social/SocialDashboard"));
 const ProfilePage = lazy(() => import("./pages/social/ProfilePage"));
@@ -34,6 +35,14 @@ createRoot(document.getElementById("root")!).render(
 						element={
 							<Suspense fallback={routeFallback}>
 								<HomePage />
+							</Suspense>
+						}
+					/>
+					<Route
+						path="people"
+						element={
+							<Suspense fallback={routeFallback}>
+								<PeoplePage />
 							</Suspense>
 						}
 					/>

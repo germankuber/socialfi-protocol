@@ -8,7 +8,16 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
-import IdentityPanel from "../../components/social/IdentityPanel";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function identityDataValue(text: string): any {
+	if (!text) return { type: "None", value: undefined };
+	const bytes = new TextEncoder().encode(text.slice(0, 32));
+	const n = bytes.length;
+	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function noneData(): any { return { type: "None", value: undefined }; }
 
 interface ProfileData {
 	cid: string;
@@ -96,12 +105,30 @@ export default function ProfilePage() {
 			const ok = await tracker.submit(tx, account.signer, "Update Profile");
 			if (!ok) return;
 
-			// Update follow fee
+			// Update follow fee if changed
 			const fee = BigInt(followFee || "0");
 			if (profile && fee !== profile.followFee) {
 				const feeTx = api.tx.SocialProfiles.set_follow_fee({ fee });
 				await tracker.submit(feeTx, account.signer, "Set Follow Fee");
 			}
+
+			// Sync on-chain identity with updated profile data
+			try {
+				const identityTx = api.tx.Identity.set_identity({
+					info: {
+						display: identityDataValue(metadata.name),
+						twitter: identityDataValue(metadata.links?.twitter || ""),
+						web: identityDataValue(metadata.links?.website || ""),
+						email: noneData(),
+						additional: [],
+						legal: noneData(),
+						riot: noneData(),
+						image: noneData(),
+						pgp_fingerprint: undefined,
+					},
+				});
+				await tracker.submit(identityTx, account.signer, "Sync Identity");
+			} catch { /* best-effort */ }
 
 			setShowForm(false);
 			loadProfile();
@@ -181,9 +208,6 @@ export default function ProfilePage() {
 					)}
 				</>
 			)}
-
-			{/* On-chain Identity */}
-			{account && <IdentityPanel />}
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>

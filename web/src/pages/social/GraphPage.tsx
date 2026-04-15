@@ -4,7 +4,36 @@ import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
-import AuthorDisplay from "../../components/social/AuthorDisplay";
+import { Link } from "react-router-dom";
+import { useProfileCache } from "../../hooks/social/useProfileCache";
+import VerifiedBadge from "../../components/social/VerifiedBadge";
+
+function UserRow({ address, children }: { address: string; children?: React.ReactNode }) {
+	const { getProfile } = useProfileCache();
+	const profile = getProfile(address);
+	const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+	return (
+		<div className="flex items-center gap-3 flex-1 min-w-0">
+			<Link to={`/profile/${address}`} className="shrink-0">
+				{profile?.avatar ? (
+					<img src={profile.avatar} alt={profile.name} className="w-12 h-12 rounded-full object-cover bg-surface-800" />
+				) : (
+					<div className="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-sm font-bold">
+						{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
+					</div>
+				)}
+			</Link>
+			<div className="min-w-0">
+				<Link to={`/profile/${address}`} className="flex items-center gap-1 text-sm font-medium hover:text-brand-500 transition-colors">
+					{profile?.name || truncated}
+					{profile?.verified && <VerifiedBadge size="sm" />}
+				</Link>
+				{children}
+			</div>
+		</div>
+	);
+}
 
 interface FollowData {
 	followed: string;
@@ -144,8 +173,10 @@ export default function GraphPage() {
 						<div className="divide-y divide-surface-800">
 							{following.map((f) => (
 								<div key={f.followed} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-									<AuthorDisplay address={f.followed} size="md" />
-									<button onClick={() => unfollowUser(f.followed)} disabled={busy} className="btn-danger btn-sm">
+									<UserRow address={f.followed}>
+										<p className="text-[10px] text-surface-500 font-mono mt-0.5">Since block #{f.createdAt}</p>
+									</UserRow>
+									<button onClick={() => unfollowUser(f.followed)} disabled={busy} className="btn-danger btn-sm shrink-0">
 										Unfollow
 									</button>
 								</div>
@@ -161,8 +192,10 @@ export default function GraphPage() {
 					) : (
 						<div className="divide-y divide-surface-800">
 							{followers.map((f) => (
-								<div key={f.followed} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-									<AuthorDisplay address={f.followed} size="md" />
+								<div key={f.followed} className="py-3 first:pt-0 last:pb-0">
+									<UserRow address={f.followed}>
+										<p className="text-[10px] text-surface-500 font-mono mt-0.5">Since block #{f.createdAt}</p>
+									</UserRow>
 								</div>
 							))}
 							<style>{`html.light .divide-surface-800 { --tw-divide-opacity: 1; --tw-divide-color: #e4e4e7; }`}</style>
