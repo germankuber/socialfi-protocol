@@ -2,11 +2,8 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 
 const tabs = [
 	{ path: "/social", label: "Overview", exact: true },
-	{ path: "/social/profile", label: "Profile" },
 	{ path: "/social/apps", label: "Apps" },
 	{ path: "/social/feed", label: "Feed" },
-	{ path: "/social/graph", label: "Graph" },
-	{ path: "/social/transactions", label: "Transactions" },
 ];
 
 export default function SocialLayout() {

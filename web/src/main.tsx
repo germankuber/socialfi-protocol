@@ -17,6 +17,7 @@ const TransactionsPage = lazy(() => import("./pages/social/TransactionsPage"));
 const AppDetailPage = lazy(() => import("./pages/social/AppDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/social/PostDetailPage"));
 const PublicProfilePage = lazy(() => import("./pages/social/PublicProfilePage"));
+const EditProfilePage = lazy(() => import("./pages/social/EditProfilePage"));
 const CreateProfilePage = lazy(() => import("./pages/social/CreateProfilePage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 
@@ -144,6 +145,15 @@ createRoot(document.getElementById("root")!).render(
 						element={
 							<Suspense fallback={routeFallback}>
 								<PublicProfilePage />
+							</Suspense>
+						}
+					/>
+					{/* Edit profile — standalone */}
+					<Route
+						path="profile/edit"
+						element={
+							<Suspense fallback={routeFallback}>
+								<EditProfilePage />
 							</Suspense>
 						}
 					/>

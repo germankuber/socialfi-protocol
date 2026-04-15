@@ -4,6 +4,7 @@ import { useChainStore } from "../store/chainStore";
 import { useSelectedAccount } from "../hooks/social/useSelectedAccount";
 import { useProfileGate } from "../hooks/social/useProfileGate";
 import { useSocialApi } from "../hooks/social/useSocialApi";
+import { useIpfs } from "../hooks/social/useIpfs";
 import AddressDisplay from "../components/social/AddressDisplay";
 
 interface AppData {
@@ -11,6 +12,9 @@ interface AppData {
 	owner: string;
 	metadata: string;
 	status: string;
+	resolvedName?: string;
+	resolvedIcon?: string;
+	resolvedDescription?: string;
 }
 
 const APP_COLORS = [
@@ -26,6 +30,7 @@ export default function HomePage() {
 	const { connected, socialAvailable } = useChainStore();
 	const { account } = useSelectedAccount();
 	const { hasProfile } = useProfileGate();
+	const { fetchProfileMetadata, ipfsUrl } = useIpfs();
 	const { getApi } = useSocialApi();
 	const [apps, setApps] = useState<AppData[]>([]);
 	const [loadingApps, setLoadingApps] = useState(false);
@@ -71,17 +76,30 @@ export default function HomePage() {
 			setLoadingApps(true);
 			const api = getApi();
 			const entries = await api.query.SocialAppRegistry.Apps.getEntries();
-			setApps(
-				entries
-					.map((e) => ({
-						id: Number(e.keyArgs[0]),
-						owner: e.value.owner.toString(),
-						metadata: e.value.metadata.asText(),
-						status: e.value.status.type,
-					}))
-					.filter((a) => a.status === "Active")
-					.sort((a, b) => b.id - a.id),
-			);
+			const appList = entries
+				.map((e) => ({
+					id: Number(e.keyArgs[0]),
+					owner: e.value.owner.toString(),
+					metadata: e.value.metadata.asText(),
+					status: e.value.status.type,
+				}))
+				.filter((a) => a.status === "Active")
+				.sort((a, b) => b.id - a.id);
+			setApps(appList);
+
+			// Resolve IPFS metadata (name, icon, description) in background
+			for (const app of appList) {
+				fetchProfileMetadata(app.metadata).then((meta) => {
+					if (meta) {
+						setApps((prev) => prev.map((a) => a.id === app.id ? {
+							...a,
+							resolvedName: (meta as { name?: string }).name,
+							resolvedIcon: (meta as { icon?: string }).icon,
+							resolvedDescription: (meta as { description?: string }).description,
+						} : a));
+					}
+				});
+			}
 		} catch {
 			setApps([]);
 		} finally {
@@ -223,17 +241,21 @@ export default function HomePage() {
 									className="panel-hover block"
 								>
 									<div className="flex items-center gap-3">
-										<div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${APP_COLORS[app.id % APP_COLORS.length]} flex items-center justify-center text-white text-lg font-bold shrink-0`}>
-											{app.id}
-										</div>
+										{app.resolvedIcon ? (
+											<img src={ipfsUrl(app.resolvedIcon)} alt="" className="w-12 h-12 rounded-xl object-cover bg-surface-800 shrink-0" />
+										) : (
+											<div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${APP_COLORS[app.id % APP_COLORS.length]} flex items-center justify-center text-white text-lg font-bold shrink-0`}>
+												{app.id}
+											</div>
+										)}
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2">
-												<p className="font-semibold">App #{app.id}</p>
+												<p className="font-semibold">{app.resolvedName || `App #${app.id}`}</p>
 												<span className="badge-success">Active</span>
 											</div>
-											<p className="text-xs font-mono text-surface-500 truncate mt-0.5" title={app.metadata}>
-												{app.metadata}
-											</p>
+											{app.resolvedDescription && (
+												<p className="text-xs text-secondary mt-0.5 line-clamp-1">{app.resolvedDescription}</p>
+											)}
 											<div className="text-[11px] text-secondary mt-1">
 												Owner: <AddressDisplay address={app.owner} chars={6} />
 											</div>

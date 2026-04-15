@@ -346,23 +346,42 @@ export default function AppDetailPage() {
 							</div>
 						</div>
 					</div>
-					{/* Image upload for image apps */}
+					{/* Image upload for image apps — mandatory */}
 					{app.hasImages && (
-						<div className="flex items-center gap-3">
-							{postImageCid && <img src={ipfsUrl(postImageCid)} alt="" className="w-20 h-20 rounded-xl object-cover bg-surface-800" />}
-							<div className="space-y-1">
-								<input type="file" accept="image/*" id="post-img" className="hidden" onChange={async (e) => {
-									const file = e.target.files?.[0]; if (!file) return;
-									setUploadingImage(true);
-									try { setPostImageCid(await uploadImage(file)); } catch { /* */ }
-									finally { setUploadingImage(false); e.target.value = ""; }
-								}} />
-								<label htmlFor="post-img" className="btn-outline btn-sm cursor-pointer inline-flex">
-									{uploadingImage ? "Uploading..." : postImageCid ? "Change" : "Add Image"}
+						<div className="space-y-3">
+							{postImageCid ? (
+								<div className="relative">
+									<img src={ipfsUrl(postImageCid)} alt="" className="w-full rounded-xl object-cover max-h-80 bg-surface-800" />
+									<button
+										type="button"
+										onClick={() => setPostImageCid("")}
+										className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+									>
+										<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+											<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								</div>
+							) : (
+								<label htmlFor="post-img" className="block cursor-pointer">
+									<div className="border-2 border-dashed border-surface-700 rounded-xl p-8 text-center hover:border-brand-500/50 transition-colors">
+										<svg className="w-10 h-10 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+											<path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a2.25 2.25 0 002.25-2.25V5.25a2.25 2.25 0 00-2.25-2.25H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+										</svg>
+										<p className="text-sm text-secondary mt-2">
+											{uploadingImage ? "Uploading to IPFS..." : "Click to upload an image"}
+										</p>
+										<p className="text-[10px] text-surface-500 mt-1">Required for this app</p>
+									</div>
 								</label>
-								{postImageCid && <button type="button" onClick={() => setPostImageCid("")} className="btn-ghost btn-sm text-danger">Remove</button>}
-							</div>
-							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+							)}
+							<input type="file" accept="image/*" id="post-img" className="hidden" onChange={async (e) => {
+								const file = e.target.files?.[0]; if (!file) return;
+								setUploadingImage(true);
+								try { setPostImageCid(await uploadImage(file)); } catch { /* */ }
+								finally { setUploadingImage(false); e.target.value = ""; }
+							}} />
+							<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
 						</div>
 					)}
 					<div className="grid grid-cols-3 gap-3">
@@ -385,7 +404,7 @@ export default function AppDetailPage() {
 							</div>
 						)}
 					</div>
-					<button onClick={createPost} disabled={!content.trim() || busy} className="btn-brand w-full">
+					<button onClick={createPost} disabled={!content.trim() || busy || (app.hasImages && !postImageCid)} className="btn-brand w-full">
 						{uploading ? "Uploading to IPFS..." : "Post"}
 					</button>
 				</div>

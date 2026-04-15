@@ -321,9 +321,19 @@ function WalletButton() {
 						))}
 					</div>
 
-					{/* Footer actions */}
-					<div className="border-t border-surface-800 p-2 space-y-1">
-						{wallet.connectedWallet && (
+					{/* Menu actions */}
+					<div className="border-t border-surface-800 p-2 space-y-0.5">
+						<WalletMenuItem icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" label="My Profile"
+							onClick={() => { navigate(`/profile/${account.address}`); setOpen(false); }} />
+						<WalletMenuItem icon="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" label="Edit Profile"
+							onClick={() => { navigate("/profile/edit"); setOpen(false); }} />
+						<WalletMenuItem icon="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" label="Transactions"
+							onClick={() => { navigate("/social/transactions"); setOpen(false); }} />
+						<WalletMenuItem icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" label="Social Graph"
+							onClick={() => { navigate("/social/graph"); setOpen(false); }} />
+					</div>
+					{wallet.connectedWallet && (
+						<div className="border-t border-surface-800 p-2">
 							<button
 								onClick={() => { wallet.disconnectWallet(); setOpen(false); }}
 								className="w-full text-left px-3 py-2 text-xs text-danger hover:bg-danger/5 rounded-lg transition-colors flex items-center gap-2"
@@ -331,20 +341,10 @@ function WalletButton() {
 								<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 									<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
 								</svg>
-								Disconnect {WALLET_NAMES[wallet.connectedWallet] || wallet.connectedWallet}
+								Disconnect
 							</button>
-						)}
-						<button
-							onClick={() => { navigate("/social/accounts"); setOpen(false); }}
-							className="w-full text-left px-3 py-2 text-xs text-secondary hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors flex items-center gap-2"
-						>
-							<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-								<path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-							</svg>
-							Manage wallets
-						</button>
-					</div>
+						</div>
+					)}
 
 					<style>{`
 						html.light .bg-surface-900 { background: white; }
@@ -354,5 +354,16 @@ function WalletButton() {
 				</div>
 			)}
 		</div>
+	);
+}
+
+function WalletMenuItem({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+	return (
+		<button onClick={onClick} className="w-full text-left px-3 py-2 text-xs text-secondary hover:text-surface-100 hover:bg-surface-800 rounded-lg transition-colors flex items-center gap-2">
+			<svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+				<path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+			</svg>
+			{label}
+		</button>
 	);
 }
