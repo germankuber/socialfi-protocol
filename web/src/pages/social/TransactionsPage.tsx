@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
+import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useChainStore } from "../../store/chainStore";
 import RequireWallet from "../../components/social/RequireWallet";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
@@ -58,10 +59,22 @@ const KIND_CONFIG: Record<string, { label: string; color: string; icon: string; 
 
 export default function TransactionsPage() {
 	const { account } = useSelectedAccount();
+	const { getApi } = useSocialApi();
 	const wsUrl = useChainStore((s) => s.wsUrl);
 	const [txs, setTxs] = useState<TxRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [balance, setBalance] = useState<{ free: bigint; reserved: bigint; frozen: bigint } | null>(null);
+
+	useEffect(() => {
+		if (!account) { setBalance(null); return; }
+		let cancelled = false;
+		const api = getApi();
+		api.query.System.Account.getValue(account.address).then((info) => {
+			if (!cancelled) setBalance({ free: info.data.free, reserved: info.data.reserved, frozen: info.data.frozen });
+		});
+		return () => { cancelled = true; };
+	}, [account, getApi]);
 
 	useEffect(() => {
 		if (!account) { setTxs([]); setLoading(false); return; }
@@ -94,6 +107,20 @@ export default function TransactionsPage() {
 	return (
 		<RequireWallet>
 			<div className="space-y-4">
+				{/* On-chain balance */}
+				{balance && (
+					<div className="panel text-center py-5">
+						<p className="text-3xl font-bold font-mono">{formatAmount(balance.free.toString())}</p>
+						<p className="text-xs text-secondary uppercase tracking-wider mt-1">Total Balance</p>
+						{(balance.reserved > 0n || balance.frozen > 0n) && (
+							<div className="flex justify-center gap-4 mt-2 text-xs text-secondary font-mono">
+								{balance.reserved > 0n && <span>Reserved: {formatAmount(balance.reserved.toString())}</span>}
+								{balance.frozen > 0n && <span>Frozen: {formatAmount(balance.frozen.toString())}</span>}
+							</div>
+						)}
+					</div>
+				)}
+
 				{/* Totals */}
 				<div className="grid grid-cols-2 gap-3">
 					<div className="panel text-center py-4">

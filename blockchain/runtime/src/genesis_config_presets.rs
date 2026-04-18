@@ -89,6 +89,13 @@ fn development_config_genesis() -> Value {
 		Sr25519Keyring::well_known().map(|k| k.to_account_id()).collect();
 	endowed.extend(eth_dev_accounts());
 
+	// External account: 5G1aK2V7kWbpiikhcj4G8eGFXyJKuwr4qZ67SA1LS1gnxxBy
+	endowed.push(
+		sp_core::crypto::AccountId32::from(hex_literal::hex!(
+			"ae8dcc076817fa8242467f97d4bc29b5b7f2a0263e4f6739d9e928b231536b5b"
+		)),
+	);
+
 	testnet_genesis(
 		vec![
 			(Sr25519Keyring::Alice.to_account_id(), Sr25519Keyring::Alice.public().into()),

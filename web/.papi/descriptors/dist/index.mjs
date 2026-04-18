@@ -20,10 +20,10 @@ var metadataTypes = import("./metadataTypes-ON5W3GVG.mjs").then(
 );
 var asset = {};
 var extensions = {};
-var getMetadata = () => import("./stack_template_metadata-TL7VYMA2.mjs").then(
+var getMetadata = () => import("./stack_template_metadata-PHNIVVTQ.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
-var genesis = "0xdc6df9fa7aa108741193e54c0b15ba647ba09e165e59f801459e6519997bee03";
+var genesis = "0x7d1ff3a973334c1ace33fe353b7d130e2163eb81825befdbf35a2fe6cc3f825a";
 var _allDescriptors = { descriptors: descriptorValues, metadataTypes, asset, extensions, getMetadata, genesis };
 var stack_template_default = _allDescriptors;
 
@@ -97,7 +97,7 @@ var XcmVersionedAsset = _Enum;
 
 // .papi/descriptors/src/index.ts
 var metadatas = {
-  ["0x3745a41218e1866614cb1d5ac411efdfd4289af4788661037684b88a10d2c24f"]: stack_template_default,
+  ["0x446901597280b460ab963d2cb25e829b1af405bcca211855b1e8a7d999b288d6"]: stack_template_default,
   ["0x1a82e5143be3211ded412b0368b486ce83bd41a80ec95eb267f6c204adda8365"]: bulletin_default
 };
 var getMetadata3 = async (codeHash) => {
