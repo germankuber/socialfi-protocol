@@ -4670,11 +4670,7 @@ type IRuntimeCalls = {
 };
 export type Stack_templateDispatchError = Anonymize<Icgp3s0mc1ff3s>;
 type IAsset = PlainDescriptor<void>;
-export type Stack_templateExtensions = {
-    "ChargeSponsored": {
-        value: boolean;
-    };
-};
+export type Stack_templateExtensions = {};
 type PalletsTypedef = {
     __storage: IStorage;
     __tx: ICalls;

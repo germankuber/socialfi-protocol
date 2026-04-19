@@ -43,33 +43,41 @@ pub mod errors {
 	pub const POT_INSUFFICIENT: u8 = 100;
 }
 
-/// Transaction extension that opts a transaction into sponsorship.
+/// Transaction extension that opportunistically routes fee payment through
+/// the community pot.
 ///
-/// Carried inline in the extrinsic's signed payload, so the signer has to
-/// actively set `sponsor = true` to trigger the code path. When false (the
-/// default), this extension is a no-op and the following
-/// `ChargeTransactionPayment` behaves identically to a non-sponsored chain.
+/// The extension is deliberately **zero-sized** — it carries no fields in
+/// the SCALE-encoded extrinsic payload. Two consequences:
+///
+/// 1. Wallets that do not recognise `ChargeSponsored` (notably
+///    Polkadot.js extension, which accepts unknown extensions only when
+///    both `value` and `additionalSigned` encode to empty bytes) stay
+///    happy and can still sign ordinary transactions.
+/// 2. Sponsorship becomes an *opt-out of the pallet*, not a per-tx flag:
+///    if the pot has at least `info.call_weight` of free balance, the
+///    extension pays; otherwise the signer pays. A user that does NOT
+///    want their fee covered simply never tops up the pot they rely on.
+///
+/// This is a pragmatic compromise for the hackathon demo. A production
+/// implementation would take the opt-in back with a richer signed
+/// payload (see `pallet-verify-signature` for the `Enum { Disabled |
+/// Signed {..} }` pattern) at the cost of dropping PJS compatibility —
+/// Talisman / SubWallet support arbitrary extensions natively.
 #[derive(
 	Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, Default, TypeInfo,
 )]
 #[scale_info(skip_type_params(T))]
-pub struct ChargeSponsored<T: Config> {
-	/// `true` means the signer is requesting that the pot cover this
-	/// transaction's fee.
-	pub sponsor: bool,
-	_phantom: core::marker::PhantomData<T>,
-}
+pub struct ChargeSponsored<T: Config>(core::marker::PhantomData<T>);
 
 impl<T: Config> ChargeSponsored<T> {
-	pub fn new(sponsor: bool) -> Self {
-		Self { sponsor, _phantom: Default::default() }
+	pub fn new() -> Self {
+		Self(core::marker::PhantomData)
 	}
 }
 
-// SCALE `Debug` is skipped for brevity — we only print the single flag.
 impl<T: Config> core::fmt::Debug for ChargeSponsored<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-		write!(f, "ChargeSponsored({})", self.sponsor)
+		write!(f, "ChargeSponsored")
 	}
 }
 
@@ -119,31 +127,30 @@ where
 		_inherited: &impl Implication,
 		_source: TransactionSource,
 	) -> ValidateResult<Self::Val, <T as frame_system::Config>::RuntimeCall> {
-		if !self.sponsor {
-			return Ok((ValidTransaction::default(), Val::Skip, origin));
-		}
-
-		// We use the call's declared weight as the fee estimate. This is a
-		// conservative upper bound that the pallet-transaction-payment
-		// fee-multiplier will refine at dispatch time — for the minimal
-		// version we accept a small over-reservation.
+		// Conservative upper bound for the fee: we use the call's declared
+		// weight and treat each unit of ref_time as one planck. The
+		// fee-multiplier from pallet-transaction-payment will refine the
+		// actual charge at dispatch time — the minimal extension accepts a
+		// small over-reservation and does not refund the difference.
 		let fee: BalanceOf<T> = info.call_weight.ref_time().saturated_into();
 
+		// The pot is opportunistic: if it cannot cover the full estimated
+		// fee we step aside and let ChargeTransactionPayment bill the
+		// signer normally. This keeps the chain functional when the pot
+		// runs out without requiring users to change their wallet flow.
 		if Pallet::<T>::pot_balance() < fee {
-			return Err(InvalidTransaction::Custom(errors::POT_INSUFFICIENT).into());
+			return Ok((ValidTransaction::default(), Val::Skip, origin));
 		}
 
 		let who = {
 			let system = match origin.as_system_ref() {
 				Some(raw) => raw.clone(),
-				// Non-system origin cannot be sponsored.
 				None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
 			};
 			match system.as_signed() {
 				Some(acc) => acc.clone(),
-				// Unsigned txs cannot be sponsored — they have no user to
-				// credit. Silently fall through to Skip so the rest of the
-				// pipeline runs unchanged.
+				// Unsigned / root origins cannot be sponsored — they have
+				// no signer account to credit.
 				None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
 			}
 		};

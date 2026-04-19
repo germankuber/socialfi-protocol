@@ -44,9 +44,9 @@ export default function SponsorshipPanel() {
 					<div className="flex-1 min-w-0">
 						<h2 className="text-base font-semibold">Sponsorship pot</h2>
 						<p className="text-[11px] text-secondary mt-0.5">
-							Donations here pay the fees of transactions flagged with the
-							ChargeSponsored extension — a custom TransactionExtension
-							wired into the runtime pipeline.
+							Every transaction sent while this pot has funds is automatically
+							gasless — the ChargeSponsored TransactionExtension redirects
+							the fee from the signer to the pot inside the runtime pipeline.
 						</p>
 					</div>
 				</div>

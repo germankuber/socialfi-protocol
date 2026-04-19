@@ -59,26 +59,5 @@ export function useSponsorship() {
 		[getApi, tracker, refresh],
 	);
 
-	/**
-	 * Sign and submit `tx` with the `ChargeSponsored` extension set to
-	 * `true`. The pot pays the fee; the signer pays the tip (if any).
-	 * Returns the boolean outcome exactly like `tracker.submit`.
-	 */
-	const submitSponsored = useCallback(
-		async (
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			tx: any,
-			signer: PolkadotSigner,
-			label: string,
-		) => {
-			return tracker.submitWithOptions(tx, signer, label, {
-				customSignedExtensions: {
-					ChargeSponsored: { value: true },
-				},
-			});
-		},
-		[tracker],
-	);
-
-	return { potBalance, potAccount, topUp, submitSponsored, tracker, refresh };
+	return { potBalance, potAccount, topUp, tracker, refresh };
 }
