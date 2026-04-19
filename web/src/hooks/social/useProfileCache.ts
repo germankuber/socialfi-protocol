@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getClient } from "../useChain";
 import { stack_template } from "@polkadot-api/descriptors";
 import { useChainStore } from "../../store/chainStore";
@@ -17,6 +17,16 @@ const IPFS_GATEWAYS = [
 
 const profileCache = new Map<string, CachedProfile | null>();
 const pendingRequests = new Map<string, Promise<CachedProfile | null>>();
+
+// Pub/sub so every consumer of `useProfileCache` re-renders when any profile
+// resolves — not only the consumer that first triggered the fetch. Without
+// this, a second component that calls `getProfile(addr)` after the fetch was
+// kicked off by another component would be stuck rendering the fallback.
+const subscribers = new Set<() => void>();
+
+function notifyProfileResolved() {
+	for (const cb of subscribers) cb();
+}
 
 async function resolveProfile(wsUrl: string, address: string): Promise<CachedProfile | null> {
 	try {
@@ -82,26 +92,38 @@ async function resolveProfile(wsUrl: string, address: string): Promise<CachedPro
 export function useProfileCache() {
 	const wsUrl = useChainStore((s) => s.wsUrl);
 	const [, setTick] = useState(0);
-	const tickRef = useRef(0);
 
-	const getProfile = useCallback((address: string): CachedProfile | null => {
-		if (profileCache.has(address)) {
-			return profileCache.get(address) ?? null;
-		}
+	// Subscribe this consumer to global cache resolutions so avatar/name
+	// surfaces in EVERY component that displayed a placeholder, not just the
+	// one that kicked off the fetch.
+	useEffect(() => {
+		const rerender = () => setTick((t) => t + 1);
+		subscribers.add(rerender);
+		return () => {
+			subscribers.delete(rerender);
+		};
+	}, []);
 
-		if (!pendingRequests.has(address)) {
-			const promise = resolveProfile(wsUrl, address).then((profile) => {
-				profileCache.set(address, profile);
-				pendingRequests.delete(address);
-				tickRef.current++;
-				setTick(tickRef.current);
-				return profile;
-			});
-			pendingRequests.set(address, promise);
-		}
+	const getProfile = useCallback(
+		(address: string): CachedProfile | null => {
+			if (profileCache.has(address)) {
+				return profileCache.get(address) ?? null;
+			}
 
-		return null;
-	}, [wsUrl]);
+			if (!pendingRequests.has(address)) {
+				const promise = resolveProfile(wsUrl, address).then((profile) => {
+					profileCache.set(address, profile);
+					pendingRequests.delete(address);
+					notifyProfileResolved();
+					return profile;
+				});
+				pendingRequests.set(address, promise);
+			}
+
+			return null;
+		},
+		[wsUrl],
+	);
 
 	return { getProfile };
 }
