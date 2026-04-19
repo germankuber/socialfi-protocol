@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSponsorship } from "../../hooks/social/useSponsorship";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
+import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
 import RequireWallet from "../../components/social/RequireWallet";
 import VerifiedBadge from "../../components/social/VerifiedBadge";
@@ -56,6 +57,7 @@ export default function SponsorshipPage() {
 				</header>
 
 				<SponsorPanel
+					ownAddress={address}
 					myPot={s.myPot}
 					beneficiaries={s.myBeneficiaries}
 					disabled={s.tracker.state.stage !== "idle"}
@@ -85,6 +87,7 @@ export default function SponsorshipPage() {
 /* ── Sponsor side ──────────────────────────────────────────────────── */
 
 interface SponsorPanelProps {
+	ownAddress: string | null;
 	myPot: bigint;
 	beneficiaries: string[];
 	disabled: boolean;
@@ -95,6 +98,7 @@ interface SponsorPanelProps {
 }
 
 function SponsorPanel({
+	ownAddress,
 	myPot,
 	beneficiaries,
 	disabled,
@@ -105,7 +109,13 @@ function SponsorPanel({
 }: SponsorPanelProps) {
 	const [topUpAmount, setTopUpAmount] = useState("5");
 	const [withdrawAmount, setWithdrawAmount] = useState("1");
-	const [newBeneficiary, setNewBeneficiary] = useState("");
+	const [pickerOpen, setPickerOpen] = useState(false);
+
+	const excluded = useMemo(() => {
+		const set = new Set(beneficiaries);
+		if (ownAddress) set.add(ownAddress);
+		return set;
+	}, [beneficiaries, ownAddress]);
 
 	const potUnits = useMemo(() => (Number(myPot) / 1e9).toFixed(3), [myPot]);
 
@@ -209,28 +219,38 @@ function SponsorPanel({
 					</h3>
 				</div>
 
-				<div className="flex gap-2">
-					<input
-						type="text"
-						value={newBeneficiary}
-						onChange={(e) => setNewBeneficiary(e.target.value)}
-						placeholder="5F... address to sponsor"
+				{pickerOpen ? (
+					<ProfilePicker
+						excluded={excluded}
 						disabled={disabled}
-						className="input font-mono text-xs flex-1"
-					/>
-					<button
-						onClick={() => {
-							if (newBeneficiary.trim()) {
-								onRegister(newBeneficiary.trim());
-								setNewBeneficiary("");
-							}
+						onPick={(addr) => {
+							onRegister(addr);
+							setPickerOpen(false);
 						}}
-						disabled={disabled || !newBeneficiary.trim()}
-						className="btn-brand shrink-0"
+						onClose={() => setPickerOpen(false)}
+					/>
+				) : (
+					<button
+						onClick={() => setPickerOpen(true)}
+						disabled={disabled}
+						className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-surface-700 hover:border-brand-500/50 px-3 py-2.5 text-xs font-medium text-surface-400 hover:text-brand-500 transition-colors"
 					>
-						Add
+						<svg
+							className="w-4 h-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+						Add a beneficiary
 					</button>
-				</div>
+				)}
 
 				{beneficiaries.length === 0 ? (
 					<p className="text-xs text-secondary">
@@ -403,5 +423,152 @@ function BeneficiaryPanel({
 				</p>
 			)}
 		</section>
+	);
+}
+
+/* ── Profile picker ────────────────────────────────────────────────── */
+
+/**
+ * Visual account picker backed by the set of existing profiles on chain.
+ *
+ * Lists every `SocialProfiles::Profiles` entry as a clickable card with
+ * avatar + name (falling back to initials + truncated address). The
+ * `excluded` set hides the caller's own account and anyone already on
+ * their beneficiary list so a pick can't be a no-op or a self-delegation.
+ */
+function ProfilePicker({
+	excluded,
+	disabled,
+	onPick,
+	onClose,
+}: {
+	excluded: Set<string>;
+	disabled: boolean;
+	onPick: (address: string) => void;
+	onClose: () => void;
+}) {
+	const { getApi } = useSocialApi();
+	const [profiles, setProfiles] = useState<string[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				setLoading(true);
+				setError(null);
+				const entries =
+					await getApi().query.SocialProfiles.Profiles.getEntries();
+				if (cancelled) return;
+				setProfiles(entries.map((e) => e.keyArgs[0].toString()));
+			} catch (e) {
+				if (!cancelled)
+					setError(e instanceof Error ? e.message : "Failed to load profiles");
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [getApi]);
+
+	const pickable = useMemo(
+		() => profiles.filter((a) => !excluded.has(a)),
+		[profiles, excluded],
+	);
+
+	return (
+		<div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-3 space-y-2">
+			<div className="flex items-center justify-between">
+				<span className="text-[11px] uppercase tracking-wider font-semibold text-brand-500">
+					Pick an account to sponsor
+				</span>
+				<button
+					type="button"
+					onClick={onClose}
+					className="text-[11px] text-surface-400 hover:text-surface-100"
+				>
+					Close
+				</button>
+			</div>
+
+			{loading ? (
+				<div className="flex items-center justify-center py-8">
+					<div className="w-5 h-5 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+				</div>
+			) : error ? (
+				<p className="rounded-lg bg-danger/10 border border-danger/20 px-3 py-2 text-xs text-danger">
+					{error}
+				</p>
+			) : pickable.length === 0 ? (
+				<div className="rounded-lg border border-surface-800 px-3 py-4 text-center space-y-1">
+					<p className="text-xs font-medium">No accounts to pick</p>
+					<p className="text-[11px] text-secondary">
+						{profiles.length === 0
+							? "No profiles exist on chain yet."
+							: "You already sponsor everyone, or the remaining profiles are excluded."}
+					</p>
+				</div>
+			) : (
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+					{pickable.map((addr) => (
+						<ProfileCard
+							key={addr}
+							address={addr}
+							disabled={disabled}
+							onClick={() => onPick(addr)}
+						/>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function ProfileCard({
+	address,
+	disabled,
+	onClick,
+}: {
+	address: string;
+	disabled: boolean;
+	onClick: () => void;
+}) {
+	const { getProfile } = useProfileCache();
+	const profile = getProfile(address);
+	const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-surface-700 hover:border-brand-500/40 hover:bg-brand-500/5 text-left transition-colors"
+		>
+			{profile?.avatar ? (
+				<img
+					src={profile.avatar}
+					alt={profile.name}
+					className="w-9 h-9 rounded-full object-cover bg-surface-800 shrink-0"
+				/>
+			) : (
+				<div className="w-9 h-9 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-xs font-bold shrink-0">
+					{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
+				</div>
+			)}
+			<div className="min-w-0 flex-1">
+				<div className="flex items-center gap-1.5">
+					<span className="text-sm font-medium truncate">
+						{profile?.name || truncated}
+					</span>
+					{profile?.verified && <VerifiedBadge size="sm" />}
+				</div>
+				<span className="text-[11px] font-mono text-surface-500 truncate">
+					{truncated}
+				</span>
+			</div>
+		</button>
 	);
 }
