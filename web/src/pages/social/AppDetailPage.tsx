@@ -8,6 +8,7 @@ import { useIpfs } from "../../hooks/social/useIpfs";
 import { useActingAs } from "../../hooks/social/useManagers";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
 import { useSponsorship } from "../../hooks/social/useSponsorship";
+import { useModeration } from "../../hooks/social/useModeration";
 import AddressDisplay from "../../components/social/AddressDisplay";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
@@ -44,6 +45,8 @@ interface PostData {
 	unlockFee: bigint;
 	createdAt: number;
 	replyCount: number;
+	/** SS58 of the app moderator that redacted this post, if any. */
+	redactedBy: string | null;
 }
 
 interface ReplyData {
@@ -106,6 +109,20 @@ export default function AppDetailPage() {
 	// sponsor with a funded pot — the UI mirrors that state so the user
 	// knows whether their next post will be gasless.
 	const sponsorshipInfo = useSponsorship(account?.address ?? null);
+
+	// Moderation: the app owner can takedown posts inside their own
+	// app. The hook wraps SocialFeeds.redact_post in
+	// SocialAppRegistry.act_as_moderator so the inner call runs under
+	// Origin::AppModerator.
+	const moderation = useModeration();
+
+	const isAppOwner = !!(app && account && app.owner === account.address);
+
+	async function takedownPost(postId: number) {
+		if (!account || !app) return;
+		const ok = await moderation.redactPost(app.id, BigInt(postId), account.signer);
+		if (ok) loadApp();
+	}
 
 	const numericId = Number(appId);
 	const accountAddress = account?.address ?? null;
@@ -190,6 +207,9 @@ export default function AppDetailPage() {
 					unlockFee: e.value.unlock_fee,
 					createdAt: Number(e.value.created_at),
 					replyCount: replyCountMap[Number(e.keyArgs[0])] || 0,
+					redactedBy: e.value.redacted_by
+						? e.value.redacted_by.toString()
+						: null,
 				}))
 				.sort((a, b) => b.id - a.id);
 			setPosts(appPosts);
@@ -592,7 +612,32 @@ export default function AppDetailPage() {
 
 									{/* Content */}
 									<div className={app.hasImages ? "" : "pl-[52px]"}>
-										{visible ? (
+										{post.redactedBy ? (
+											<div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 flex items-start gap-3">
+												<svg
+													className="w-5 h-5 text-warning shrink-0 mt-0.5"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke="currentColor"
+													strokeWidth={1.7}
+												>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0l-7.1 12.25A2 2 0 005 19z"
+													/>
+												</svg>
+												<div className="text-sm">
+													<p className="font-semibold text-warning">
+														Redacted by app moderator
+													</p>
+													<p className="text-[11px] text-secondary mt-0.5">
+														The original author remains visible so the takedown
+														can be contested.
+													</p>
+												</div>
+											</div>
+										) : visible ? (
 											<div className="space-y-2">
 												{post.resolvedImage && (
 													<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
@@ -657,8 +702,37 @@ export default function AppDetailPage() {
 											)}
 										</div>
 
-										{/* Reply button */}
-										{!isMine && account && visible && canComment && (
+										<div className="flex items-center gap-1">
+											{/* Takedown — app owner only, only on posts that aren't
+											    their own, only when not already redacted. Routes
+											    through SocialAppRegistry.act_as_moderator → custom
+											    Origin::AppModerator → SocialFeeds.redact_post. */}
+											{isAppOwner &&
+												post.author !== account?.address &&
+												!post.redactedBy && (
+													<button
+														onClick={() => takedownPost(post.id)}
+														disabled={busy || moderation.tracker.state.stage !== "idle"}
+														title="Redact as app moderator"
+														className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-danger hover:bg-danger/10 transition-colors"
+													>
+														<svg
+															className="w-4 h-4"
+															fill="none"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															strokeWidth={1.5}
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+															/>
+														</svg>
+														Takedown
+													</button>
+												)}
+										{!isMine && account && visible && canComment && !post.redactedBy && (
 											<button
 												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
 												className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
@@ -674,6 +748,7 @@ export default function AppDetailPage() {
 												Reply not authorized for this owner
 											</span>
 										)}
+										</div>
 									</div>
 									<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
 
@@ -761,6 +836,7 @@ export default function AppDetailPage() {
 			</ConfirmModal>
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
+			<TxToast state={moderation.tracker.state} onDismiss={moderation.tracker.reset} />
 		</div>
 	);
 }
