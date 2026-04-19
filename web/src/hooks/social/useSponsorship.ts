@@ -4,54 +4,111 @@ import { useSocialApi } from "./useSocialApi";
 import { useTxTracker } from "./useTxTracker";
 import { useChainStore } from "../../store/chainStore";
 
+export interface SponsorshipState {
+	/** Caller's personal sponsor pot (balance they have deposited to pay
+	 *  fees for their beneficiaries). */
+	myPot: bigint;
+	/** Accounts the caller currently sponsors. */
+	myBeneficiaries: string[];
+	/** The sponsor paying for the caller's own txs, if any. */
+	mySponsor: string | null;
+	/** The caller's current sponsor's pot balance (if mySponsor is set). */
+	mySponsorPot: bigint;
+	loading: boolean;
+}
+
 /**
- * Tiny wrapper around the `pallet-sponsorship` extrinsics + the pot
- * balance. Consumers use this to top up the pot and to submit
- * `ChargeSponsored`-flagged transactions.
- *
- * NOTE: the sponsored-submit path is deliberately a thin helper rather
- * than a new `submit()` in useTxTracker — the only difference from a
- * normal sign flow is the `customSignedExtensions.ChargeSponsored.value`
- * field PAPI forwards into the signed payload.
+ * Hook for the sponsor-side and beneficiary-side views of the sponsorship
+ * pallet. Exposes extrinsic wrappers and live state for the account
+ * currently selected in the wallet store.
  */
-export function useSponsorship() {
+export function useSponsorship(account: string | null) {
 	const { getApi } = useSocialApi();
 	const tracker = useTxTracker();
 	const blockNumber = useChainStore((s) => s.blockNumber);
-	const [potBalance, setPotBalance] = useState<bigint>(0n);
-	const [potAccount, setPotAccount] = useState<string | null>(null);
+	const [state, setState] = useState<SponsorshipState>({
+		myPot: 0n,
+		myBeneficiaries: [],
+		mySponsor: null,
+		mySponsorPot: 0n,
+		loading: false,
+	});
 
 	const refresh = useCallback(async () => {
-		const api = getApi();
-		// The pot account is a PalletId-derived SS58. We don't expose it as
-		// a constant (it's derived at runtime config time) so we ask the
-		// System pallet for any account whose key matches... actually the
-		// simplest path is to read the derived address from our runtime
-		// constants once it's available. Until then we compute via the
-		// PalletId prefix 'modl' + 'sp/spons' + 32-byte padding.
-		const MODL = new TextEncoder().encode("modl");
-		const TAG = new TextEncoder().encode("sp/spons");
-		const raw = new Uint8Array(32);
-		raw.set(MODL, 0);
-		raw.set(TAG, 4);
-		// PAPI's typed API does not expose an SS58 helper directly here;
-		// encode via the runtime's ss58 format. We rely on PAPI accepting
-		// either an SS58 string or raw bytes for balance queries.
-		const { AccountId } = await import("polkadot-api");
-		const ss58 = AccountId().dec(raw);
-		setPotAccount(ss58);
-		const info = await api.query.System.Account.getValue(ss58);
-		setPotBalance(info.data.free);
-	}, [getApi]);
+		if (!account) {
+			setState((s) => ({ ...s, myPot: 0n, myBeneficiaries: [], mySponsor: null, mySponsorPot: 0n }));
+			return;
+		}
+		try {
+			setState((s) => ({ ...s, loading: true }));
+			const api = getApi();
+
+			// Pot the caller maintains as a sponsor.
+			const myPot = await api.query.Sponsorship.SponsorPots.getValue(account);
+
+			// Sponsor who covers the caller's fees, if any.
+			const mySponsor = await api.query.Sponsorship.SponsorOf.getValue(account);
+
+			// Beneficiaries the caller sponsors: scan by value (cheap at
+			// dev scale — the whole storage map is small).
+			const entries = await api.query.Sponsorship.SponsorOf.getEntries();
+			const myBeneficiaries = entries
+				.filter((e) => e.value?.toString() === account)
+				.map((e) => e.keyArgs[0].toString());
+
+			const mySponsorPot = mySponsor
+				? await api.query.Sponsorship.SponsorPots.getValue(mySponsor.toString())
+				: 0n;
+
+			setState({
+				myPot: myPot ?? 0n,
+				myBeneficiaries,
+				mySponsor: mySponsor ? mySponsor.toString() : null,
+				mySponsorPot: mySponsorPot ?? 0n,
+				loading: false,
+			});
+		} catch {
+			setState((s) => ({ ...s, loading: false }));
+		}
+	}, [getApi, account]);
 
 	useEffect(() => {
-		refresh().catch(() => setPotBalance(0n));
+		refresh();
 	}, [refresh, blockNumber]);
+
+	const registerBeneficiary = useCallback(
+		async (beneficiary: string, signer: PolkadotSigner) => {
+			const tx = getApi().tx.Sponsorship.register_beneficiary({ beneficiary });
+			const ok = await tracker.submit(tx, signer, "Add beneficiary");
+			if (ok) refresh();
+			return ok;
+		},
+		[getApi, tracker, refresh],
+	);
+
+	const revokeBeneficiary = useCallback(
+		async (beneficiary: string, signer: PolkadotSigner) => {
+			const tx = getApi().tx.Sponsorship.revoke_beneficiary({ beneficiary });
+			const ok = await tracker.submit(tx, signer, "Revoke beneficiary");
+			if (ok) refresh();
+			return ok;
+		},
+		[getApi, tracker, refresh],
+	);
+
+	const revokeMySponsor = useCallback(
+		async (signer: PolkadotSigner) => {
+			const tx = getApi().tx.Sponsorship.revoke_my_sponsor();
+			const ok = await tracker.submit(tx, signer, "Leave sponsor");
+			if (ok) refresh();
+			return ok;
+		},
+		[getApi, tracker, refresh],
+	);
 
 	const topUp = useCallback(
 		async (amount: bigint, signer: PolkadotSigner) => {
-			const api = getApi();
-			const tx = api.tx.Sponsorship.top_up({ amount });
+			const tx = getApi().tx.Sponsorship.top_up({ amount });
 			const ok = await tracker.submit(tx, signer, "Top up pot");
 			if (ok) refresh();
 			return ok;
@@ -59,5 +116,24 @@ export function useSponsorship() {
 		[getApi, tracker, refresh],
 	);
 
-	return { potBalance, potAccount, topUp, tracker, refresh };
+	const withdraw = useCallback(
+		async (amount: bigint, signer: PolkadotSigner) => {
+			const tx = getApi().tx.Sponsorship.withdraw({ amount });
+			const ok = await tracker.submit(tx, signer, "Withdraw from pot");
+			if (ok) refresh();
+			return ok;
+		},
+		[getApi, tracker, refresh],
+	);
+
+	return {
+		...state,
+		tracker,
+		refresh,
+		registerBeneficiary,
+		revokeBeneficiary,
+		revokeMySponsor,
+		topUp,
+		withdraw,
+	};
 }

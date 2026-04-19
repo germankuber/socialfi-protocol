@@ -21,6 +21,7 @@ const EditProfilePage = lazy(() => import("./pages/social/EditProfilePage"));
 const CreateProfilePage = lazy(() => import("./pages/social/CreateProfilePage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 const ManagersPage = lazy(() => import("./pages/social/ManagersPage"));
+const SponsorshipPage = lazy(() => import("./pages/social/SponsorshipPage"));
 
 const routeFallback = (
 	<div className="flex items-center justify-center py-20">
@@ -126,6 +127,14 @@ createRoot(document.getElementById("root")!).render(
 							element={
 								<Suspense fallback={routeFallback}>
 									<ManagersPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="sponsorship"
+							element={
+								<Suspense fallback={routeFallback}>
+									<SponsorshipPage />
 								</Suspense>
 							}
 						/>

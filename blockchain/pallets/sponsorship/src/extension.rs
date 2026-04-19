@@ -1,21 +1,27 @@
-//! `ChargeSponsored` — a minimal [`TransactionExtension`] that redirects
-//! the fee payment of an extrinsic from the signer to the pallet's
-//! community pot.
+//! `ChargeSponsored` — transaction extension that redirects fee payment
+//! from the signer to a sponsor the signer is registered under.
 //!
-//! This is the smallest possible demonstration of the v2 transaction-extension
-//! pipeline: the struct carries a single boolean. When set, and the pot has
-//! enough balance to cover the estimated fee, the pot is debited in
-//! `prepare` so the subsequent `ChargeTransactionPayment` extension in the
-//! runtime pipeline observes no free balance to charge from the signer.
+//! The extension intentionally carries **zero bytes** in the signed
+//! payload. The opt-in lives entirely in on-chain state (`SponsorOf`), so
+//! the signer's wallet never needs to know about this extension — any
+//! PJS-compatible wallet (Talisman, SubWallet, Polkadot.js) signs the
+//! transaction like any other.
 //!
-//! For a production-grade implementation you would add: per-app budgets, an
-//! allowlist of sponsorable calls, per-(app, user) rate limits, and a
-//! `post_dispatch_details` refund when the actual fee came in below the
-//! estimate. All of those are left out here on purpose — the point of the
-//! file is to keep the extension under 150 lines of code so the reader can
-//! follow the full lifecycle at a glance.
+//! Lifecycle per transaction:
+//!
+//! 1. `validate` — cheap read of `SponsorOf[signer]` and `SponsorPots`.
+//!    Returns `Val::Skip` when the signer has no sponsor or the pot is
+//!    under-funded, and the regular `ChargeTransactionPayment`
+//!    extension bills the signer as usual.
+//! 2. `prepare` — when `Val::Apply` was set, debit the sponsor's pot and
+//!    deposit the fee into the beneficiary's free balance. Emits
+//!    `FeeSponsored { sponsor, beneficiary, fee }`. The next extension
+//!    in the pipeline then withdraws the same amount from the
+//!    beneficiary, netting their balance to zero.
+//! 3. `post_dispatch_details` — no refund path in the MVP; any
+//!    over-estimation stays with the beneficiary.
 
-use crate::{BalanceOf, Config, Event, Pallet};
+use crate::{BalanceOf, Config, Pallet};
 use codec::{Decode, DecodeWithMemTracking, Encode};
 use frame::{
 	deps::{
@@ -28,41 +34,16 @@ use frame::{
 				DispatchInfoOf, Dispatchable, Implication, PostDispatchInfoOf,
 				TransactionExtension, ValidateResult,
 			},
-			transaction_validity::{InvalidTransaction, TransactionValidityError, ValidTransaction},
+			transaction_validity::{
+				InvalidTransaction, TransactionValidityError, ValidTransaction,
+			},
 		},
 	},
 	prelude::*,
-	traits::{Currency, ExistenceRequirement},
 };
 use scale_info::TypeInfo;
 
-/// Custom error codes returned as `InvalidTransaction::Custom(_)` from the
-/// validation step. Keep these stable across releases — clients surface the
-/// raw byte to users.
-pub mod errors {
-	pub const POT_INSUFFICIENT: u8 = 100;
-}
-
-/// Transaction extension that opportunistically routes fee payment through
-/// the community pot.
-///
-/// The extension is deliberately **zero-sized** — it carries no fields in
-/// the SCALE-encoded extrinsic payload. Two consequences:
-///
-/// 1. Wallets that do not recognise `ChargeSponsored` (notably
-///    Polkadot.js extension, which accepts unknown extensions only when
-///    both `value` and `additionalSigned` encode to empty bytes) stay
-///    happy and can still sign ordinary transactions.
-/// 2. Sponsorship becomes an *opt-out of the pallet*, not a per-tx flag:
-///    if the pot has at least `info.call_weight` of free balance, the
-///    extension pays; otherwise the signer pays. A user that does NOT
-///    want their fee covered simply never tops up the pot they rely on.
-///
-/// This is a pragmatic compromise for the hackathon demo. A production
-/// implementation would take the opt-in back with a richer signed
-/// payload (see `pallet-verify-signature` for the `Enum { Disabled |
-/// Signed {..} }` pattern) at the cost of dropping PJS compatibility —
-/// Talisman / SubWallet support arbitrary extensions natively.
+/// Zero-sized extension. See the module docs for why.
 #[derive(
 	Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, Default, TypeInfo,
 )]
@@ -81,20 +62,19 @@ impl<T: Config> core::fmt::Debug for ChargeSponsored<T> {
 	}
 }
 
-/// Value carried from `validate` to `prepare`. `Skip` is the non-sponsored
-/// path and does nothing downstream; `Apply` records the signer and the
-/// fee we intend to move out of the pot.
+/// Intermediate value passed from `validate` to `prepare`.
 pub enum Val<T: Config> {
+	/// No applicable sponsor — the native charge extension handles the fee.
 	Skip,
-	Apply { who: T::AccountId, fee: BalanceOf<T> },
+	/// A sponsor was resolved; `prepare` will settle on their pot.
+	Apply { sponsor: T::AccountId, beneficiary: T::AccountId, fee: BalanceOf<T> },
 }
 
-/// Value carried from `prepare` to `post_dispatch_details`. Kept separate
-/// from `Val` to express the state change: once we are past `prepare`, the
-/// pot has already been debited.
+/// Result of `prepare`. Tagged so a future `post_dispatch_details` can
+/// distinguish a sponsored tx from a native one for refund logic.
 pub enum Pre<T: Config> {
-	Skip,
-	Applied(core::marker::PhantomData<T>),
+	Skipped,
+	Settled(core::marker::PhantomData<T>),
 }
 
 impl<T> TransactionExtension<<T as frame_system::Config>::RuntimeCall> for ChargeSponsored<T>
@@ -113,7 +93,10 @@ where
 		&self,
 		_call: &<T as frame_system::Config>::RuntimeCall,
 	) -> Weight {
-		// Two reads (signer lookup + pot balance) and one write (debit).
+		// Two reads (SponsorOf + SponsorPots) on the skip path, plus one
+		// write (SponsorPots) + one currency transfer on the apply path.
+		// We charge for the apply path always; the skip path just
+		// over-reserves a small amount that the fee multiplier amortises.
 		T::DbWeight::get().reads_writes(2, 1)
 	}
 
@@ -127,35 +110,33 @@ where
 		_inherited: &impl Implication,
 		_source: TransactionSource,
 	) -> ValidateResult<Self::Val, <T as frame_system::Config>::RuntimeCall> {
-		// Conservative upper bound for the fee: we use the call's declared
-		// weight and treat each unit of ref_time as one planck. The
-		// fee-multiplier from pallet-transaction-payment will refine the
-		// actual charge at dispatch time — the minimal extension accepts a
-		// small over-reservation and does not refund the difference.
-		let fee: BalanceOf<T> = info.call_weight.ref_time().saturated_into();
-
-		// The pot is opportunistic: if it cannot cover the full estimated
-		// fee we step aside and let ChargeTransactionPayment bill the
-		// signer normally. This keeps the chain functional when the pot
-		// runs out without requiring users to change their wallet flow.
-		if Pallet::<T>::pot_balance() < fee {
-			return Ok((ValidTransaction::default(), Val::Skip, origin));
-		}
-
-		let who = {
-			let system = match origin.as_system_ref() {
-				Some(raw) => raw.clone(),
-				None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
-			};
-			match system.as_signed() {
+		let beneficiary = match origin.as_system_ref() {
+			Some(raw) => match raw.clone().as_signed() {
 				Some(acc) => acc.clone(),
-				// Unsigned / root origins cannot be sponsored — they have
-				// no signer account to credit.
+				// Unsigned / root origins cannot be sponsored.
 				None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
-			}
+			},
+			None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
 		};
 
-		Ok((ValidTransaction::default(), Val::Apply { who, fee }, origin))
+		// Conservative upper bound on the fee: ref_time of the call, 1
+		// planck per unit. The actual fee is settled by the native
+		// ChargeTransactionPayment extension that runs next — it is free
+		// to compute a different number; we pay the upper bound anyway
+		// and accept the over-reservation as a hackathon simplification.
+		let fee: BalanceOf<T> = info.call_weight.ref_time().saturated_into();
+
+		let sponsor = match Pallet::<T>::resolve_sponsor(&beneficiary, fee) {
+			Some(s) => s,
+			// No sponsor or insufficient pot: fall through to native.
+			None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
+		};
+
+		Ok((
+			ValidTransaction::default(),
+			Val::Apply { sponsor, beneficiary, fee },
+			origin,
+		))
 	}
 
 	fn prepare(
@@ -167,22 +148,11 @@ where
 		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
 		match val {
-			Val::Skip => Ok(Pre::Skip),
-			Val::Apply { who, fee } => {
-				// Move the fee from the pot to the signer so that the
-				// following `ChargeTransactionPayment` sees enough free
-				// balance and withdraws from there. The signer ends up
-				// net-zero and the pot takes the cost.
-				T::Currency::transfer(
-					&Pallet::<T>::pot_account(),
-					&who,
-					fee,
-					ExistenceRequirement::KeepAlive,
-				)
-				.map_err(|_| InvalidTransaction::Custom(errors::POT_INSUFFICIENT))?;
-
-				Pallet::<T>::deposit_event(Event::FeeSponsored { who, fee });
-				Ok(Pre::Applied(Default::default()))
+			Val::Skip => Ok(Pre::Skipped),
+			Val::Apply { sponsor, beneficiary, fee } => {
+				Pallet::<T>::settle_sponsorship(&sponsor, &beneficiary, fee)
+					.map_err(|_| InvalidTransaction::Payment)?;
+				Ok(Pre::Settled(core::marker::PhantomData))
 			},
 		}
 	}
@@ -194,9 +164,9 @@ where
 		_len: usize,
 		_result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
-		// Minimal version does not refund over-estimation. Any unused fee
-		// stays with the signer rather than returning to the pot — a
-		// rounding loss we accept to keep the code small.
+		// Over-estimation stays with the beneficiary in the MVP. A
+		// production version would recompute the actual fee here and
+		// refund the delta to the sponsor's pot.
 		Ok(Weight::zero())
 	}
 }

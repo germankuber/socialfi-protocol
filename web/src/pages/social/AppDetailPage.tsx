@@ -101,11 +101,11 @@ export default function AppDetailPage() {
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const { authorizations, actAs } = useActingAs(account?.address ?? null);
 
-	// Sponsorship: informational only now. Fee redirection happens
-	// unconditionally inside the ChargeSponsored transaction extension
-	// whenever the pot has enough balance — the UI merely mirrors that
-	// state so the user knows whether their next post will be gasless.
-	const { potBalance } = useSponsorship();
+	// Sponsorship: informational only. Fee redirection happens inside
+	// the ChargeSponsored TransactionExtension if the signer has a
+	// sponsor with a funded pot — the UI mirrors that state so the user
+	// knows whether their next post will be gasless.
+	const sponsorshipInfo = useSponsorship(account?.address ?? null);
 
 	const numericId = Number(appId);
 	const accountAddress = account?.address ?? null;
@@ -420,30 +420,14 @@ export default function AppDetailPage() {
 					)}
 
 					{/* Sponsorship status pill. Fee redirection is automatic when
-					    the community pot has funds — the runtime's
-					    ChargeSponsored transaction extension performs it without
-					    a per-tx flag. This banner just mirrors the current state
-					    so the user knows whether their next post will be gasless. */}
-					{!postingAs && (
-						<div
-							className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] ${
-								potBalance > 0n
-									? "border-brand-500/30 bg-brand-500/10 text-brand-500"
-									: "border-surface-700 text-secondary"
-							}`}
-						>
-							<svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-							</svg>
-							<span className="flex-1">
-								{potBalance > 0n
-									? "This post will be sponsored — fee comes from the community pot."
-									: "Sponsorship pot is empty. You'll pay the fee for this post."}
-							</span>
-							<span className="font-mono shrink-0">
-								{(Number(potBalance) / 1e9).toFixed(2)} UNIT
-							</span>
-						</div>
+					    the signer has a sponsor whose pot holds enough to cover
+					    the fee — handled entirely by the ChargeSponsored
+					    TransactionExtension in the runtime pipeline. */}
+					{!postingAs && sponsorshipInfo.mySponsor && (
+						<SponsoredByPill
+							sponsor={sponsorshipInfo.mySponsor}
+							potBalance={sponsorshipInfo.mySponsorPot}
+						/>
 					)}
 
 					<div className="flex items-center gap-3">
@@ -537,7 +521,7 @@ export default function AppDetailPage() {
 								? "Uploading to IPFS..."
 								: postingAs
 									? "Publish (as manager)"
-									: potBalance > 0n
+									: sponsorshipInfo.mySponsor && sponsorshipInfo.mySponsorPot > 0n
 										? "Post (sponsored)"
 										: "Post"}
 					</button>
@@ -988,5 +972,63 @@ function ActAsOption({
 				</div>
 			</div>
 		</button>
+	);
+}
+
+/**
+ * Inline pill shown above the composer when the connected account has an
+ * active sponsor. Pulls the sponsor's profile so the beneficiary sees who
+ * is covering their fees, not just an address.
+ */
+function SponsoredByPill({
+	sponsor,
+	potBalance,
+}: {
+	sponsor: string;
+	potBalance: bigint;
+}) {
+	const { getProfile } = useProfileCache();
+	const profile = getProfile(sponsor);
+	const truncated = `${sponsor.slice(0, 6)}…${sponsor.slice(-4)}`;
+	const potEmpty = potBalance === 0n;
+
+	return (
+		<div
+			className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] ${
+				potEmpty
+					? "border-warning/30 bg-warning/5 text-warning"
+					: "border-brand-500/30 bg-brand-500/10 text-brand-500"
+			}`}
+			title={sponsor}
+		>
+			<svg
+				className="w-3.5 h-3.5 shrink-0"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				strokeWidth={2}
+			>
+				<path
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d="M13 10V3L4 14h7v7l9-11h-7z"
+				/>
+			</svg>
+			{profile?.avatar ? (
+				<img
+					src={profile.avatar}
+					alt={profile.name}
+					className="w-4 h-4 rounded-full object-cover bg-surface-800 shrink-0"
+				/>
+			) : null}
+			<span className="flex-1 truncate">
+				{potEmpty
+					? `${profile?.name || truncated}'s pot is empty — you'll pay this fee.`
+					: `Sponsored by ${profile?.name || truncated}`}
+			</span>
+			<span className="font-mono shrink-0">
+				{(Number(potBalance) / 1e9).toFixed(2)} UNIT
+			</span>
+		</div>
 	);
 }
