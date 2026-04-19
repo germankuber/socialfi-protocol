@@ -16,6 +16,18 @@ export interface TxState {
 	blockHash?: string;
 }
 
+/**
+ * PAPI-level options passed through to `signSubmitAndWatch` when submitting
+ * a transaction. We expose only the subset we actually use in the app.
+ */
+export interface SubmitOptions {
+	/**
+	 * Custom signed-extension values, keyed by the extension's `IDENTIFIER`.
+	 * Used to flip `ChargeSponsored = true` for gasless transactions.
+	 */
+	customSignedExtensions?: Record<string, { value: unknown }>;
+}
+
 interface TxTracker {
 	state: TxState;
 	/** Submit a PAPI transaction and track its lifecycle. Returns true on success. */
@@ -23,6 +35,17 @@ interface TxTracker {
 		tx: { signSubmitAndWatch: (signer: PolkadotSigner) => import("rxjs").Observable<unknown> },
 		signer: PolkadotSigner,
 		label?: string,
+	) => Promise<boolean>;
+	/**
+	 * Same as `submit` but with PAPI submit options — specifically the
+	 * `customSignedExtensions` hook that the sponsorship extension needs.
+	 */
+	submitWithOptions: (
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		tx: any,
+		signer: PolkadotSigner,
+		label: string,
+		options: SubmitOptions,
 	) => Promise<boolean>;
 	reset: () => void;
 }
@@ -49,12 +72,13 @@ export function useTxTracker(): TxTracker {
 		setState(IDLE_STATE);
 	}, []);
 
-	const submit = useCallback(
+	const run = useCallback(
 		(
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			tx: any,
 			signer: PolkadotSigner,
-			label = "Transaction",
+			label: string,
+			options: SubmitOptions | undefined,
 		): Promise<boolean> => {
 			if (timerRef.current) clearTimeout(timerRef.current);
 			subRef.current?.unsubscribe();
@@ -63,7 +87,9 @@ export function useTxTracker(): TxTracker {
 
 			return new Promise<boolean>((resolve) => {
 				try {
-					const observable = tx.signSubmitAndWatch(signer);
+					const observable = options
+						? tx.signSubmitAndWatch(signer, options)
+						: tx.signSubmitAndWatch(signer);
 					subRef.current = observable.subscribe({
 						next: (ev: {
 							type: string;
@@ -126,5 +152,19 @@ export function useTxTracker(): TxTracker {
 		[],
 	);
 
-	return { state, submit, reset };
+	const submit = useCallback(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(tx: any, signer: PolkadotSigner, label = "Transaction") =>
+			run(tx, signer, label, undefined),
+		[run],
+	);
+
+	const submitWithOptions = useCallback(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(tx: any, signer: PolkadotSigner, label: string, options: SubmitOptions) =>
+			run(tx, signer, label, options),
+		[run],
+	);
+
+	return { state, submit, submitWithOptions, reset };
 }

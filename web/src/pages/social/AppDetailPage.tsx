@@ -7,6 +7,7 @@ import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
 import { useActingAs } from "../../hooks/social/useManagers";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
+import { useSponsorship } from "../../hooks/social/useSponsorship";
 import AddressDisplay from "../../components/social/AddressDisplay";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
@@ -99,6 +100,11 @@ export default function AppDetailPage() {
 	const [postingAs, setPostingAs] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const { authorizations, actAs } = useActingAs(account?.address ?? null);
+
+	// Sponsorship: user toggles this on the composer to have the fee paid
+	// from the community pot via the ChargeSponsored transaction extension.
+	const [useSponsor, setUseSponsor] = useState(false);
+	const { potBalance, submitSponsored } = useSponsorship();
 
 	const numericId = Number(appId);
 	const accountAddress = account?.address ?? null;
@@ -253,7 +259,9 @@ export default function AppDetailPage() {
 			});
 			const ok = postingAs
 				? await actAs(postingAs, innerTx, account.signer, "Post (as manager)")
-				: await tracker.submit(innerTx, account.signer, "Create Post");
+				: useSponsor
+					? await submitSponsored(innerTx, account.signer, "Post (sponsored)")
+					: await tracker.submit(innerTx, account.signer, "Create Post");
 			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); setPostImageCid(""); loadApp(); }
 		} catch { setUploading(false); }
 	}
@@ -412,6 +420,52 @@ export default function AppDetailPage() {
 						/>
 					)}
 
+					{/* Sponsorship toggle — only meaningful when NOT acting as a
+					    manager (that path already enters the runtime via
+					    act_as_manager, which doesn't ride the ChargeSponsored
+					    extension). */}
+					{!postingAs && (
+						<label
+							className={`flex items-center gap-3 rounded-xl border px-3 py-2 cursor-pointer transition-colors ${
+								useSponsor
+									? "border-brand-500/50 bg-brand-500/10"
+									: "border-surface-700 hover:border-brand-500/40"
+							}`}
+						>
+							<input
+								type="checkbox"
+								checked={useSponsor}
+								onChange={(e) => setUseSponsor(e.target.checked)}
+								className="sr-only"
+							/>
+							<div
+								className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+									useSponsor ? "border-brand-500 bg-brand-500" : "border-surface-500"
+								}`}
+							>
+								{useSponsor && (
+									<svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+										<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+									</svg>
+								)}
+							</div>
+							<div className="flex-1 min-w-0">
+								<div className="text-sm font-medium flex items-center gap-1.5">
+									Sponsored (gasless)
+									<svg className="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+										<path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+								<div className="text-[11px] text-secondary">
+									Pay the fee from the community pot — balance:{" "}
+									<span className="font-mono text-brand-500">
+										{(Number(potBalance) / 1e9).toFixed(2)} UNIT
+									</span>
+								</div>
+							</div>
+						</label>
+					)}
+
 					<div className="flex items-center gap-3">
 						<ComposerAvatar postingAs={postingAs} fallbackName={account.name} />
 						<div className="flex-1">
@@ -503,7 +557,9 @@ export default function AppDetailPage() {
 								? "Uploading to IPFS..."
 								: postingAs
 									? "Publish (as manager)"
-									: "Post"}
+									: useSponsor
+										? "Publish (sponsored)"
+										: "Post"}
 					</button>
 				</div>
 			)}

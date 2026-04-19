@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import StatCard from "../../components/social/StatCard";
 import AddressDisplay from "../../components/social/AddressDisplay";
+import SponsorshipPanel from "../../components/social/SponsorshipPanel";
 
 interface Stats {
 	profileCount: number;
@@ -74,6 +75,8 @@ export default function SocialDashboard() {
 
 	return (
 		<div className="space-y-6">
+			<SponsorshipPanel />
+
 			{/* Stats */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 				<StatCard
