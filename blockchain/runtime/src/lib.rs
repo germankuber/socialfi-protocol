@@ -57,6 +57,11 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		frame_system::CheckEra<Runtime>,
 		frame_system::CheckNonce<Runtime>,
 		frame_system::CheckWeight<Runtime>,
+		// Runs BEFORE `ChargeTransactionPayment`: when the signer opted
+		// into sponsorship, this extension tops the signer up from the pot
+		// so the native charge extension that follows debits a balance
+		// that effectively came out of the pot.
+		pallet_sponsorship::extension::ChargeSponsored<Runtime>,
 		pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		pallet_revive::evm::tx_extension::SetOrigin<Runtime>,
@@ -80,6 +85,9 @@ impl pallet_revive::evm::runtime::EthExtra for EthExtraImpl {
 			frame_system::CheckMortality::from(generic::Era::Immortal),
 			frame_system::CheckNonce::<Runtime>::from(nonce),
 			frame_system::CheckWeight::<Runtime>::new(),
+			// Ethereum-wrapped txs cannot opt into sponsorship: their
+			// fees are signed by the inner ETH signer. Default = no-op.
+			pallet_sponsorship::extension::ChargeSponsored::<Runtime>::new(false),
 			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
 			frame_metadata_hash_extension::CheckMetadataHash::<Runtime>::new(false),
 			pallet_revive::evm::tx_extension::SetOrigin::<Runtime>::new_from_eth_transaction(),
@@ -270,6 +278,9 @@ mod runtime {
 	#[runtime::pallet_index(56)]
 	pub type SocialManagers = pallet_social_managers;
 
+	#[runtime::pallet_index(57)]
+	pub type Sponsorship = pallet_sponsorship;
+
 	// Smart contracts (EVM + PVM via pallet-revive)
 	#[runtime::pallet_index(90)]
 	pub type Revive = pallet_revive;
@@ -459,7 +470,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 3,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 2,
+	transaction_version: 3,
 	system_version: 1,
 };
 

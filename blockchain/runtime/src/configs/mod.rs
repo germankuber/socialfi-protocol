@@ -415,6 +415,23 @@ impl pallet_social_managers::Config for Runtime {
 	type WeightInfo = pallet_social_managers::weights::SubstrateWeight<Runtime>;
 }
 
+// ── pallet-sponsorship (gasless tx via a community pot) ────────────────
+
+parameter_types! {
+	/// Deterministic SS58 account that holds the community sponsorship pot.
+	/// Derived from a stable `PalletId` so a block explorer can label it.
+	pub SponsorshipPotAccount: AccountId = {
+		use sp_runtime::traits::AccountIdConversion;
+		const ID: PalletId = PalletId(*b"sp/spons");
+		ID.into_account_truncating()
+	};
+}
+
+impl pallet_sponsorship::Config for Runtime {
+	type Currency = Balances;
+	type PotAccount = SponsorshipPotAccount;
+}
+
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────
 
 parameter_types! {

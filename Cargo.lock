@@ -10584,6 +10584,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-sponsorship"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "polkadot-sdk 2512.3.3",
+ "polkadot-sdk-frame",
+ "scale-info",
+ "sp-io",
+]
+
+[[package]]
 name = "pallet-staking"
 version = "45.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18188,6 +18199,7 @@ dependencies = [
  "pallet-social-graph",
  "pallet-social-managers",
  "pallet-social-profiles",
+ "pallet-sponsorship",
  "pallet-template",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
