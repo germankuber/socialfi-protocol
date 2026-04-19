@@ -96,6 +96,16 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxRepliesPerPost: Get<u32>;
 
+		/// Origin authorised to redact posts on moderation grounds. In
+		/// the runtime this is wired to the custom `AppModerator` origin
+		/// emitted by `pallet-social-app-registry`: the guard yields
+		/// `(app_id, moderator)` so we can verify the post being redacted
+		/// actually belongs to that app before applying the state change.
+		type ModerationOrigin: EnsureOrigin<
+			<Self as frame_system::Config>::RuntimeOrigin,
+			Success = (Self::AppId, Self::AccountId),
+		>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -164,6 +174,14 @@ pub mod pallet {
 			author: T::AccountId,
 			fee_paid: BalanceOf<T>,
 		},
+		/// An app moderator redacted a post. The record is kept (author
+		/// stays visible for appeals) but clients are expected to render
+		/// the content as removed.
+		PostRedacted {
+			post_id: T::PostId,
+			app_id: T::AppId,
+			moderator: T::AccountId,
+		},
 	}
 
 	#[pallet::error]
@@ -190,6 +208,11 @@ pub mod pallet {
 		AlreadyUnlocked,
 		/// The post is public and does not need unlocking.
 		PostIsPublic,
+		/// The post does not belong to the app whose moderator is
+		/// attempting to redact it.
+		PostNotInApp,
+		/// The post is already redacted — repeated redactions are no-ops.
+		AlreadyRedacted,
 	}
 
 	impl<T: Config> PostProvider<T::AccountId, T::PostId> for Pallet<T> {
@@ -245,6 +268,7 @@ pub mod pallet {
 				visibility: visibility.clone(),
 				unlock_fee: actual_unlock_fee,
 				created_at: block_number,
+				redacted_by: None,
 			};
 
 			NextPostId::<T>::put(next_id);
@@ -309,6 +333,7 @@ pub mod pallet {
 				visibility: PostVisibility::Public,
 				unlock_fee: Zero::zero(),
 				created_at: block_number,
+				redacted_by: None,
 			};
 
 			NextPostId::<T>::put(next_id);
@@ -385,6 +410,44 @@ pub mod pallet {
 				viewer: who,
 				author: post.author,
 				fee_paid: post.unlock_fee,
+			});
+			Ok(())
+		}
+
+		/// Redact a post from an app. The dispatch is gated by
+		/// `T::ModerationOrigin`, which in the runtime is wired to
+		/// `EnsureAppModerator` — the guard yields `(app_id, moderator)`
+		/// and we verify the post actually belongs to that app before
+		/// applying the state change.
+		///
+		/// This is the primary demonstration of `#[pallet::origin]` in
+		/// this runtime: authority (`moderator` can redact posts in
+		/// `app_id`) is carried in the origin itself, so this extrinsic
+		/// can trust the guard without any re-lookup into the app
+		/// registry.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::unlock_post())]
+		pub fn redact_post(
+			origin: OriginFor<T>,
+			post_id: T::PostId,
+		) -> DispatchResult {
+			let (authorized_app, moderator) = T::ModerationOrigin::ensure_origin(origin)?;
+
+			Posts::<T>::try_mutate(post_id, |maybe_post| -> DispatchResult {
+				let post = maybe_post.as_mut().ok_or(Error::<T>::PostNotFound)?;
+				ensure!(post.redacted_by.is_none(), Error::<T>::AlreadyRedacted);
+				ensure!(
+					post.app_id == Some(authorized_app),
+					Error::<T>::PostNotInApp,
+				);
+				post.redacted_by = Some(moderator.clone());
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::PostRedacted {
+				post_id,
+				app_id: authorized_app,
+				moderator,
 			});
 			Ok(())
 		}

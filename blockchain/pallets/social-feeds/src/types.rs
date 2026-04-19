@@ -47,4 +47,8 @@ pub struct PostInfo<T: Config> {
 	pub unlock_fee: BalanceOf<T>,
 	/// Block number when created.
 	pub created_at: BlockNumberFor<T>,
+	/// If the post has been redacted by an app moderator, records who did
+	/// it so the UI can show a "redacted" overlay while keeping the
+	/// original author visible for appeals and audits.
+	pub redacted_by: Option<T::AccountId>,
 }

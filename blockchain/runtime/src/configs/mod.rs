@@ -349,6 +349,12 @@ impl pallet_social_feeds::Config for Runtime {
 	type MaxContentLen = MaxContentLen;
 	type MaxPostsPerAuthor = MaxPostsPerAuthor;
 	type MaxRepliesPerPost = MaxRepliesPerPost;
+	/// `redact_post` is callable only through the `AppModerator` origin
+	/// emitted by `pallet-social-app-registry::act_as_moderator`. That
+	/// custom origin carries `(app_id, moderator)` and cannot be produced
+	/// by a raw Signed call, so the moderation privilege is enforced at
+	/// the type level.
+	type ModerationOrigin = pallet_social_app_registry::EnsureAppModerator<Runtime>;
 	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
 }
 

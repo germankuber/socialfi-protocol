@@ -126,6 +126,23 @@ parameter_types! {
 	pub TreasuryAccount: u64 = 99;
 }
 
+/// Stand-in origin guard for the moderation tests. `NeverModeration` always
+/// rejects, which is fine for the existing test suite — none of the
+/// existing tests exercise `redact_post`. A dedicated integration test
+/// (e.g. in the runtime crate) would wire this to the real
+/// `EnsureAppModerator` guard.
+pub struct NeverModeration;
+impl EnsureOrigin<RuntimeOrigin> for NeverModeration {
+	type Success = (u32, u64);
+	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
+		Err(o)
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn try_successful_origin() -> Result<RuntimeOrigin, ()> {
+		Err(())
+	}
+}
+
 impl crate::Config for Test {
 	type PostId = u64;
 	type AppId = u32;
@@ -137,6 +154,7 @@ impl crate::Config for Test {
 	type MaxContentLen = MaxContentLen;
 	type MaxPostsPerAuthor = MaxPostsPerAuthor;
 	type MaxRepliesPerPost = MaxRepliesPerPost;
+	type ModerationOrigin = NeverModeration;
 	type WeightInfo = ();
 }
 

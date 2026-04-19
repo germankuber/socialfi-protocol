@@ -37,10 +37,14 @@ pub mod pallet {
 		types::{AppInfo, AppStatus},
 		weights::WeightInfo,
 	};
+	use codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 	use frame::{
+		deps::sp_runtime::traits::Dispatchable,
 		prelude::*,
 		traits::{Currency, ReservableCurrency},
 	};
+	use scale_info::prelude::boxed::Box;
+	use scale_info::TypeInfo;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -48,8 +52,65 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/// Custom origin emitted by this pallet when an app owner acts in a
+	/// moderation capacity through [`Pallet::act_as_moderator`]. Other
+	/// pallets can restrict moderation-only extrinsics with the
+	/// [`EnsureAppModerator`] guard.
+	///
+	/// Carrying `app_id` in the origin is load-bearing: downstream code
+	/// (e.g. `pallet-social-feeds::redact_post`) cross-checks that the
+	/// post being moderated actually belongs to the app the moderator is
+	/// authorized over. Without the `app_id` in the origin, moderators of
+	/// one app could tamper with posts in another.
+	#[pallet::origin]
+	#[derive(
+		Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, DecodeWithMemTracking,
+		TypeInfo, MaxEncodedLen,
+	)]
+	#[scale_info(skip_type_params(T))]
+	pub enum Origin<T: Config> {
+		AppModerator { app_id: T::AppId, moderator: T::AccountId },
+	}
+
+	/// Guard that lifts the [`Origin::AppModerator`] variant into
+	/// `(app_id, moderator)`. Intended to be composed with `EnsureSigned`
+	/// via `EitherOfDiverse` by pallets that accept either a
+	/// directly-signed call or a moderation dispatch.
+	pub struct EnsureAppModerator<T>(core::marker::PhantomData<T>);
+
+	impl<T: Config> EnsureOrigin<<T as frame_system::Config>::RuntimeOrigin>
+		for EnsureAppModerator<T>
+	where
+		<T as frame_system::Config>::RuntimeOrigin: From<Origin<T>>
+			+ Into<Result<Origin<T>, <T as frame_system::Config>::RuntimeOrigin>>,
+	{
+		type Success = (T::AppId, T::AccountId);
+
+		fn try_origin(
+			o: <T as frame_system::Config>::RuntimeOrigin,
+		) -> Result<Self::Success, <T as frame_system::Config>::RuntimeOrigin> {
+			o.into().map(|Origin::AppModerator { app_id, moderator }| (app_id, moderator))
+		}
+
+		#[cfg(feature = "runtime-benchmarks")]
+		fn try_successful_origin()
+			-> Result<<T as frame_system::Config>::RuntimeOrigin, ()>
+		{
+			Err(())
+		}
+	}
+
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config:
+		frame_system::Config<
+			RuntimeCall: Parameter
+				+ Dispatchable<
+					RuntimeOrigin = <Self as frame_system::Config>::RuntimeOrigin,
+					PostInfo = frame::deps::frame_support::dispatch::PostDispatchInfo,
+				> + GetDispatchInfo,
+			RuntimeOrigin: From<Origin<Self>>,
+		>
+	{
 		/// The app ID type — auto-incrementing identifier for registered apps.
 		type AppId: Member
 			+ Parameter
@@ -106,6 +167,10 @@ pub mod pallet {
 		AppRegistered { app_id: T::AppId, owner: T::AccountId },
 		/// An app was deregistered (set to inactive, bond returned).
 		AppDeregistered { app_id: T::AppId, owner: T::AccountId },
+		/// An app owner dispatched a call as `Origin::AppModerator`. The
+		/// downstream call's own event carries the effect — this one
+		/// simply records the moderation fact for audit tooling.
+		ModeratorDispatched { app_id: T::AppId, moderator: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -216,6 +281,56 @@ pub mod pallet {
 
 			Self::deposit_event(Event::AppDeregistered { app_id, owner: who });
 			Ok(())
+		}
+
+		/// Dispatch `call` under an [`Origin::AppModerator`] so that
+		/// downstream pallets can gate moderation-only extrinsics on the
+		/// `EnsureAppModerator` guard.
+		///
+		/// The caller must be the registered owner of `app_id`. The
+		/// inner call's weight is added to the base weight so the fee
+		/// reflects the full amount of work.
+		#[pallet::call_index(2)]
+		#[pallet::weight({
+			let di = call.get_dispatch_info();
+			(
+				T::WeightInfo::deregister_app().saturating_add(di.call_weight),
+				di.class,
+			)
+		})]
+		pub fn act_as_moderator(
+			origin: OriginFor<T>,
+			app_id: T::AppId,
+			call: Box<<T as frame_system::Config>::RuntimeCall>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			let app = Apps::<T>::get(app_id).ok_or(Error::<T>::AppNotFound)?;
+			ensure!(app.owner == who, Error::<T>::NotAppOwner);
+			ensure!(app.status == AppStatus::Active, Error::<T>::AppAlreadyInactive);
+
+			Self::deposit_event(Event::ModeratorDispatched {
+				app_id,
+				moderator: who.clone(),
+			});
+
+			let mod_origin: <T as frame_system::Config>::RuntimeOrigin =
+				Origin::AppModerator { app_id, moderator: who }.into();
+
+			let inner_di = call.get_dispatch_info();
+			let result = call.dispatch(mod_origin);
+
+			let actual_weight = match &result {
+				Ok(post) => post.actual_weight.unwrap_or(inner_di.call_weight),
+				Err(e) => e.post_info.actual_weight.unwrap_or(inner_di.call_weight),
+			};
+
+			Ok(PostDispatchInfo {
+				actual_weight: Some(
+					T::WeightInfo::deregister_app().saturating_add(actual_weight),
+				),
+				pays_fee: Pays::Yes,
+			})
 		}
 	}
 }
