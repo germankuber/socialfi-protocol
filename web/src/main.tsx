@@ -20,6 +20,8 @@ const PublicProfilePage = lazy(() => import("./pages/social/PublicProfilePage"))
 const EditProfilePage = lazy(() => import("./pages/social/EditProfilePage"));
 const CreateProfilePage = lazy(() => import("./pages/social/CreateProfilePage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
+const ManagersPage = lazy(() => import("./pages/social/ManagersPage"));
+const ActAsPage = lazy(() => import("./pages/social/ActAsPage"));
 
 const routeFallback = (
 	<div className="flex items-center justify-center py-20">
@@ -117,6 +119,22 @@ createRoot(document.getElementById("root")!).render(
 							element={
 								<Suspense fallback={routeFallback}>
 									<AccountsPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="managers"
+							element={
+								<Suspense fallback={routeFallback}>
+									<ManagersPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="act-as"
+							element={
+								<Suspense fallback={routeFallback}>
+									<ActAsPage />
 								</Suspense>
 							}
 						/>

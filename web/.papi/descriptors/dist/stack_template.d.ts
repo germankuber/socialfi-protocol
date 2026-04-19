@@ -1,5 +1,5 @@
 import { StorageDescriptor, PlainDescriptor, TxDescriptor, RuntimeDescriptor, Enum, ApisFromDef, QueryFromPalletsDef, TxFromPalletsDef, EventsFromPalletsDef, ErrorsFromPalletsDef, ConstFromPalletsDef, ViewFnsFromPalletsDef, SS58String, FixedSizeBinary, Binary, FixedSizeArray } from "polkadot-api";
-import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, I6al636li82pui, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, Ia2qdl52g2tphb, Iafqnechp3omqg, I95l2k9b1re95f, I4ftk0glls7946, I910puuahutflf, I4nfjdef0ibh44, I74af64m08r6as, Ic8ann3kre6vdm, I1j72qfgdejqsv, I60biiepd74113, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, I6c7gbf58k7t8h, If7o08tfqisijq, I8k3rnvpeeh4hv, I6en421sp09r6o, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, I8f2k5et1bqqua, I9lv278elt0l38, Ia6ds36j6alqgf, Ic6cqd9g0t65v0, I2kds5jji7slh8, Ia9mkdf6l44shb, I9l2s4klu0831o, I2ctrt5nqb8o7c, I711qahikocb1c, I6o1er683vod1j, Id6gojh30v9ib2, Ide1bahhh47lj9, Id9uqtigc0il3v, Ic68lsi7chpv5k, Iek0boln8pgnko, I452bkd71b385t, Ie83f0p0ke1f4u, Ib9nmpn9ru9aeh, Ie5l999tf7t2te, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I61ku76hdq7csa, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I19atppes104dl, Icbccs0ug47ilf, I855j4i3kr8ko1, If21rqeg2djsj2, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I4tep38ti88rbp, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, Iep1lmt6q3s6r3, I1fac16213rie2, Ifjt77oc391o43, Itvt1jsipv0lc, Ick3mveut33f44, I719lqkkbtikbl, Ie4intrc3n8jfu, I2rg5btjrsqec0, Ibdqerrooruuq9, I8u2ba9jeiu6q0, I7ieadb293k6b4, I7svbvm6hg57aj, I8jhsbaiultviu, I7l09gg619a7i, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, I34ialglb7dln6, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, I4u06iraq7t5hd, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I6s4d3bdoj8egi, I9sijb8gfrns29, Iap8efojauov2f, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, Ibhufk297cqkf0, Iau3v6kacrdhku, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, I5tskj2cochug2 } from "./common-types";
+import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, I5jj17lfvf32fe, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, Ia2qdl52g2tphb, Iafqnechp3omqg, I95l2k9b1re95f, I4ftk0glls7946, I910puuahutflf, I4nfjdef0ibh44, I74af64m08r6as, Ic8ann3kre6vdm, I1j72qfgdejqsv, I60biiepd74113, Ifhq9nad1vnuqe, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, Iem3d8qsh2cqa7, I4emso7uh12rm2, I8k3rnvpeeh4hv, Ibbj3slrmqqd2c, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, I8f2k5et1bqqua, I9lv278elt0l38, Ia6ds36j6alqgf, Ic6cqd9g0t65v0, I2kds5jji7slh8, Ia9mkdf6l44shb, I9l2s4klu0831o, I2ctrt5nqb8o7c, I711qahikocb1c, I6o1er683vod1j, Id6gojh30v9ib2, Ide1bahhh47lj9, Id9uqtigc0il3v, Ic68lsi7chpv5k, Iek0boln8pgnko, I452bkd71b385t, Ie83f0p0ke1f4u, Ib9nmpn9ru9aeh, Ie5l999tf7t2te, I5gn45n88f3ubg, I7ujehsqggbv5l, Ihk2h10judon9, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, I3beh9mhnf2vgn, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, I77vubhm88otok, Icbccs0ug47ilf, I855j4i3kr8ko1, I4uehbie9uujp2, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I3qt1hgg4djhgb, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I98tfbjj2ne3k3, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, Iep1lmt6q3s6r3, I1fac16213rie2, Ifjt77oc391o43, Itvt1jsipv0lc, Ick3mveut33f44, I719lqkkbtikbl, Ie4intrc3n8jfu, I2rg5btjrsqec0, Ibdqerrooruuq9, I8u2ba9jeiu6q0, I7ieadb293k6b4, I2jtkn2pq6gl93, Iavmg865r513th, I6gobf0er3s1tq, I1sc39lainhe6f, I7svbvm6hg57aj, I8jhsbaiultviu, I9tleqjne416sd, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, Ibgggcl1tofe8u, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, I20c98t5dtodau, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, I9gtq3r1m1aehd, I9sijb8gfrns29, I5u70l1nqb6ghe, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, If6j176ov57kas, I21oonfjfd9ops, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, I5inrjhfla621c } from "./common-types";
 type AnonymousEnum<T extends {}> = T & {
     __anonymous: true;
 };
@@ -61,7 +61,7 @@ type IStorage = {
          * Events have a large in-memory size. Box the events to not go out-of-memory
          * just in case someone still reads them from within the runtime.
          */
-        Events: StorageDescriptor<[], Anonymize<I6al636li82pui>, false, never>;
+        Events: StorageDescriptor<[], Anonymize<I5jj17lfvf32fe>, false, never>;
         /**
          * The number of events in the `Events<T>` list.
          */
@@ -765,6 +765,22 @@ type IStorage = {
          */
         UnbindingUsernames: StorageDescriptor<[Key: Binary], number, true, never>;
     };
+    SocialManagers: {
+        /**
+         * Active manager authorizations, keyed by `(owner, manager)`.
+         *
+         * We key by raw `AccountId` on both axes because this pallet piggy-backs
+         * on `pallet-social-profiles`' one-profile-per-account invariant: the
+         * owner's `AccountId` *is* their profile id.
+         */
+        ProfileManagers: StorageDescriptor<Anonymize<I2na29tt2afp0j>, Anonymize<Ifhq9nad1vnuqe>, true, never>;
+        /**
+         * Number of active manager entries for each owner. Maintained alongside
+         * [`ProfileManagers`] so we can enforce [`Config::MaxManagersPerOwner`]
+         * without iterating the prefix on every insert.
+         */
+        ManagerCount: StorageDescriptor<[Key: SS58String], number, false, never>;
+    };
     Revive: {
         /**
          * A mapping from a contract's code hash to its code.
@@ -1053,7 +1069,7 @@ type ICalls = {
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          */
-        sudo: TxDescriptor<Anonymize<I6c7gbf58k7t8h>>;
+        sudo: TxDescriptor<Anonymize<Iem3d8qsh2cqa7>>;
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          * This function does not check the weight of the call, and instead allows the
@@ -1061,7 +1077,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_unchecked_weight: TxDescriptor<Anonymize<If7o08tfqisijq>>;
+        sudo_unchecked_weight: TxDescriptor<Anonymize<I4emso7uh12rm2>>;
         /**
          * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
          * key.
@@ -1073,7 +1089,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_as: TxDescriptor<Anonymize<I6en421sp09r6o>>;
+        sudo_as: TxDescriptor<Anonymize<Ibbj3slrmqqd2c>>;
         /**
          * Permanently removes the sudo key.
          *
@@ -1872,6 +1888,46 @@ type ICalls = {
          */
         kill_username: TxDescriptor<Anonymize<Ie5l999tf7t2te>>;
     };
+    SocialManagers: {
+        /**
+         * Authorize `manager` to act on the caller's behalf under `scopes`.
+         *
+         * The caller is the profile owner. A flat deposit of
+         * [`Config::ManagerDepositBase`] is reserved on the owner and
+         * returned when the manager is removed. An optional `expires_at`
+         * block number bounds the authorization in time.
+         */
+        add_manager: TxDescriptor<Anonymize<I5gn45n88f3ubg>>;
+        /**
+         * Revoke a single manager. The reserved deposit is released back to
+         * the owner in the same block.
+         */
+        remove_manager: TxDescriptor<Anonymize<I7ujehsqggbv5l>>;
+        /**
+         * Emergency sweep: wipe every active manager for the caller and
+         * release all deposits at once. This is the "lost my keys, someone
+         * grab the account" panic button.
+         *
+         * Bounded by [`Config::MaxManagersPerOwner`], so the worst-case
+         * weight is deterministic.
+         */
+        remove_all_managers: TxDescriptor<undefined>;
+        /**
+         * Dispatch `call` as if the caller were `owner`, provided the caller
+         * is an active manager of `owner` and the call matches one of their
+         * authorized scopes.
+         *
+         * This mirrors `pallet-proxy::proxy`: the inner call is dispatched
+         * with `RawOrigin::Signed(owner)` and a dynamic filter installed on
+         * the origin enforces scope plus the anti-escalation rules. Downstream
+         * pallets see a regular `Signed` origin and require no changes.
+         *
+         * Weight is charged as `act_as_manager() + inner_call.call_weight`,
+         * matching the pattern used by `pallet-proxy` at
+         * `substrate/frame/proxy/src/lib.rs:240-262`.
+         */
+        act_as_manager: TxDescriptor<Anonymize<Ihk2h10judon9>>;
+    };
     Revive: {
         /**
          * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
@@ -2000,7 +2056,7 @@ type ICalls = {
          * * `call`: The Substrate runtime call to execute.
          * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
          */
-        eth_substrate_call: TxDescriptor<Anonymize<I61ku76hdq7csa>>;
+        eth_substrate_call: TxDescriptor<Anonymize<I3beh9mhnf2vgn>>;
         /**
          * Upload new `code` without instantiating a contract from it.
          *
@@ -2059,7 +2115,7 @@ type ICalls = {
          * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
          * recovery function in case an `AccountId20` was used without creating a mapping first.
          */
-        dispatch_as_fallback_account: TxDescriptor<Anonymize<I6c7gbf58k7t8h>>;
+        dispatch_as_fallback_account: TxDescriptor<Anonymize<Iem3d8qsh2cqa7>>;
     };
 };
 type IEvent = {
@@ -2071,7 +2127,7 @@ type IEvent = {
         /**
          * An extrinsic failed.
          */
-        ExtrinsicFailed: PlainDescriptor<Anonymize<I19atppes104dl>>;
+        ExtrinsicFailed: PlainDescriptor<Anonymize<I77vubhm88otok>>;
         /**
          * `:code` was updated.
          */
@@ -2095,7 +2151,7 @@ type IEvent = {
         /**
          * An invalid authorized upgrade was rejected while trying to apply it.
          */
-        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<If21rqeg2djsj2>>;
+        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<I4uehbie9uujp2>>;
     };
     ParachainSystem: {
         /**
@@ -2258,7 +2314,7 @@ type IEvent = {
         /**
          * A sudo call just took place.
          */
-        Sudid: PlainDescriptor<Anonymize<I4tep38ti88rbp>>;
+        Sudid: PlainDescriptor<Anonymize<I98tfbjj2ne3k3>>;
         /**
          * The sudo key has been updated.
          */
@@ -2270,7 +2326,7 @@ type IEvent = {
         /**
          * A [sudo_as](Pallet::sudo_as) call just took place.
          */
-        SudoAsDone: PlainDescriptor<Anonymize<I4tep38ti88rbp>>;
+        SudoAsDone: PlainDescriptor<Anonymize<I98tfbjj2ne3k3>>;
     };
     CollatorSelection: {
         /**
@@ -2687,6 +2743,30 @@ type IEvent = {
          */
         UsernameKilled: PlainDescriptor<Anonymize<Ie5l999tf7t2te>>;
     };
+    SocialManagers: {
+        /**
+         * A new manager authorization was granted.
+         */
+        ManagerAdded: PlainDescriptor<Anonymize<I2jtkn2pq6gl93>>;
+        /**
+         * An authorization was explicitly revoked by the owner.
+         */
+        ManagerRemoved: PlainDescriptor<Anonymize<Iavmg865r513th>>;
+        /**
+         * The owner wiped every manager authorization in a single call.
+         */
+        AllManagersRemoved: PlainDescriptor<Anonymize<I6gobf0er3s1tq>>;
+        /**
+         * A manager successfully dispatched an inner call on the owner's
+         * behalf. `result` reports whether the inner call succeeded.
+         */
+        ActedAsManager: PlainDescriptor<Anonymize<I1sc39lainhe6f>>;
+        /**
+         * The `on_idle` hook lazily purged an expired authorization and
+         * returned the deposit to the owner.
+         */
+        ExpiredManagerPurged: PlainDescriptor<Anonymize<Iavmg865r513th>>;
+    };
     Revive: {
         /**
          * A custom event emitted by the contract.
@@ -2704,7 +2784,7 @@ type IEvent = {
          * To distinguish reverted calls from successful ones, this event is emitted
          * for failed Ethereum transactions.
          */
-        EthExtrinsicRevert: PlainDescriptor<Anonymize<I7l09gg619a7i>>;
+        EthExtrinsicRevert: PlainDescriptor<Anonymize<I9tleqjne416sd>>;
     };
 };
 type IError = {
@@ -3362,6 +3442,50 @@ type IError = {
          */
         InsufficientPrivileges: PlainDescriptor<undefined>;
     };
+    SocialManagers: {
+        /**
+         * There is no manager record for this `(owner, manager)` pair.
+         */
+        ManagerNotFound: PlainDescriptor<undefined>;
+        /**
+         * A manager with that account already exists for this owner.
+         */
+        ManagerAlreadyExists: PlainDescriptor<undefined>;
+        /**
+         * The owner already has [`Config::MaxManagersPerOwner`] active
+         * managers and cannot add more.
+         */
+        TooManyManagers: PlainDescriptor<undefined>;
+        /**
+         * The authorization has expired and must be renewed by the owner.
+         */
+        ManagerExpired: PlainDescriptor<undefined>;
+        /**
+         * The caller tried to act under a scope they were not granted.
+         */
+        ScopeNotAuthorized: PlainDescriptor<undefined>;
+        /**
+         * The inner call targets an extrinsic that this pallet refuses to
+         * delegate (e.g. self-management, utility::dispatch_as, balance
+         * transfers).
+         */
+        CallNotDelegatable: PlainDescriptor<undefined>;
+        /**
+         * Requested scope set is empty (no bits set). Prevents accidentally
+         * creating useless entries.
+         */
+        EmptyScopeSet: PlainDescriptor<undefined>;
+        /**
+         * Expiration block number must be strictly greater than the current
+         * block.
+         */
+        ExpirationInPast: PlainDescriptor<undefined>;
+        /**
+         * The owner does not have enough free balance to reserve the
+         * per-manager deposit.
+         */
+        InsufficientDeposit: PlainDescriptor<undefined>;
+    };
     Revive: {
         /**
          * Invalid schedule supplied, e.g. with zero weight of a basic operation.
@@ -3963,6 +4087,27 @@ type IConstants = {
          */
         MaxUsernameLength: PlainDescriptor<number>;
     };
+    SocialManagers: {
+        /**
+         * Flat deposit reserved on the owner for each active manager entry.
+         *
+         * Deposits stop a bad actor from bloating state by adding thousands
+         * of managers for free. Set to zero in dev runtimes.
+         */
+        ManagerDepositBase: PlainDescriptor<bigint>;
+        /**
+         * Maximum number of simultaneously-active managers per owner. Bounds
+         * the worst-case iteration cost of `remove_all_managers` and
+         * `on_idle` expiry purges.
+         */
+        MaxManagersPerOwner: PlainDescriptor<number>;
+        /**
+         * Maximum number of expired entries the `on_idle` hook may purge per
+         * block. Keeps idle-reclaim bounded so it never starves other
+         * opportunistic work.
+         */
+        MaxExpiryPurgePerBlock: PlainDescriptor<number>;
+    };
     Revive: {
         /**
          * The amount of balance a caller has to pay for each byte of storage.
@@ -4171,7 +4316,7 @@ type IRuntimeCalls = {
          * Returns an inclusion outcome which specifies if this extrinsic is included in
          * this block or not.
          */
-        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<I34ialglb7dln6>>;
+        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<Ibgggcl1tofe8u>>;
         /**
          * Finish the current block.
          */
@@ -4269,11 +4414,11 @@ type IRuntimeCalls = {
         /**
          * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
          */
-        query_call_info: RuntimeDescriptor<[call: Anonymize<I4u06iraq7t5hd>, len: number], Anonymize<I6spmpef2c7svf>>;
+        query_call_info: RuntimeDescriptor<[call: Anonymize<I20c98t5dtodau>, len: number], Anonymize<I6spmpef2c7svf>>;
         /**
          * Query fee details of a given encoded `Call`.
          */
-        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<I4u06iraq7t5hd>, len: number], Anonymize<Iei2mvq0mjvt81>>;
+        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<I20c98t5dtodau>, len: number], Anonymize<Iei2mvq0mjvt81>>;
         /**
          * Query the output of the current `WeightToFee` given some input.
          */
@@ -4393,13 +4538,13 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_call`].
          */
-        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I6s4d3bdoj8egi>>;
+        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<I9gtq3r1m1aehd>>;
         /**
          * Instantiate a new contract.
          *
          * See `[crate::Pallet::bare_instantiate]`.
          */
-        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<Iap8efojauov2f>>;
+        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<I5u70l1nqb6ghe>>;
         /**
          * Perform an Ethereum call.
          *
@@ -4418,7 +4563,7 @@ type IRuntimeCalls = {
          *
          * See [`crate::Pallet::bare_upload_code`].
          */
-        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<Ibhufk297cqkf0>>;
+        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<If6j176ov57kas>>;
         /**
          * Query a given storage key in a given contract.
          *
@@ -4426,7 +4571,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<Iau3v6kacrdhku>>;
+        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<I21oonfjfd9ops>>;
         /**
          * Query a given variable-sized storage key in a given contract.
          *
@@ -4434,7 +4579,7 @@ type IRuntimeCalls = {
          * specified account and `Ok(None)` if it doesn't. If the account specified by the address
          * doesn't exist, or doesn't have a contract then `Err` is returned.
          */
-        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<Iau3v6kacrdhku>>;
+        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<I21oonfjfd9ops>>;
         /**
          * Traces the execution of an entire block and returns call traces.
          *
@@ -4485,7 +4630,7 @@ type IRuntimeCalls = {
         new_balance_with_dust: RuntimeDescriptor<[balance: Anonymize<I4totqt881mlti>], Anonymize<I512dtcl0pn07c>>;
     };
 };
-export type Stack_templateDispatchError = Anonymize<I5tskj2cochug2>;
+export type Stack_templateDispatchError = Anonymize<I5inrjhfla621c>;
 type IAsset = PlainDescriptor<void>;
 export type Stack_templateExtensions = {};
 type PalletsTypedef = {
@@ -4516,7 +4661,7 @@ export type Stack_templateEvents = EventsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateErrors = ErrorsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateConstants = ConstFromPalletsDef<PalletsTypedef>;
 export type Stack_templateViewFns = ViewFnsFromPalletsDef<PalletsTypedef>;
-export type Stack_templateCallData = Anonymize<I4u06iraq7t5hd> & {
+export type Stack_templateCallData = Anonymize<I20c98t5dtodau> & {
     value: {
         type: string;
     };
@@ -4544,6 +4689,7 @@ type AllInteractions = {
         SocialGraph: ['Follows', 'FollowerCount', 'FollowingCount'];
         SocialFeeds: ['NextPostId', 'Posts', 'PostsByAuthor', 'Replies', 'UnlockedPosts'];
         Identity: ['IdentityOf', 'UsernameOf', 'SuperOf', 'SubsOf', 'Registrars', 'AuthorityOf', 'UsernameInfoOf', 'PendingUsernames', 'UnbindingUsernames'];
+        SocialManagers: ['ProfileManagers', 'ManagerCount'];
         Revive: ['PristineCode', 'CodeInfoOf', 'AccountInfoOf', 'ImmutableDataOf', 'DeletionQueue', 'DeletionQueueCounter', 'OriginalAccount', 'EthereumBlock', 'BlockHash', 'ReceiptInfoData', 'EthBlockBuilderIR', 'EthBlockBuilderFirstValues', 'DebugSettingsOf'];
     };
     tx: {
@@ -4563,6 +4709,7 @@ type AllInteractions = {
         SocialGraph: ['follow', 'unfollow'];
         SocialFeeds: ['create_post', 'create_reply', 'unlock_post'];
         Identity: ['add_registrar', 'set_identity', 'set_subs', 'clear_identity', 'request_judgement', 'cancel_request', 'set_fee', 'set_account_id', 'set_fields', 'provide_judgement', 'kill_identity', 'add_sub', 'rename_sub', 'remove_sub', 'quit_sub', 'add_username_authority', 'remove_username_authority', 'set_username_for', 'accept_username', 'remove_expired_approval', 'set_primary_username', 'unbind_username', 'remove_username', 'kill_username'];
+        SocialManagers: ['add_manager', 'remove_manager', 'remove_all_managers', 'act_as_manager'];
         Revive: ['eth_transact', 'call', 'instantiate', 'instantiate_with_code', 'eth_instantiate_with_code', 'eth_call', 'eth_substrate_call', 'upload_code', 'remove_code', 'set_code', 'map_account', 'unmap_account', 'dispatch_as_fallback_account'];
     };
     events: {
@@ -4584,6 +4731,7 @@ type AllInteractions = {
         SocialGraph: ['Followed', 'Unfollowed'];
         SocialFeeds: ['PostCreated', 'ReplyCreated', 'PostUnlocked'];
         Identity: ['IdentitySet', 'IdentityCleared', 'IdentityKilled', 'JudgementRequested', 'JudgementUnrequested', 'JudgementGiven', 'RegistrarAdded', 'SubIdentityAdded', 'SubIdentitiesSet', 'SubIdentityRenamed', 'SubIdentityRemoved', 'SubIdentityRevoked', 'AuthorityAdded', 'AuthorityRemoved', 'UsernameSet', 'UsernameQueued', 'PreapprovalExpired', 'PrimaryUsernameSet', 'DanglingUsernameRemoved', 'UsernameUnbound', 'UsernameRemoved', 'UsernameKilled'];
+        SocialManagers: ['ManagerAdded', 'ManagerRemoved', 'AllManagersRemoved', 'ActedAsManager', 'ExpiredManagerPurged'];
         Revive: ['ContractEmitted', 'Instantiated', 'EthExtrinsicRevert'];
     };
     errors: {
@@ -4602,6 +4750,7 @@ type AllInteractions = {
         SocialGraph: ['ProfileNotFound', 'CannotFollowSelf', 'AlreadyFollowing', 'NotFollowing', 'InsufficientBalance'];
         SocialFeeds: ['ProfileNotFound', 'AppNotFound', 'ParentPostNotFound', 'InsufficientBalance', 'ContentTooLong', 'TooManyPosts', 'TooManyReplies', 'PostIdOverflow', 'PostNotFound', 'AlreadyUnlocked', 'PostIsPublic'];
         Identity: ['TooManySubAccounts', 'NotFound', 'NotNamed', 'EmptyIndex', 'FeeChanged', 'NoIdentity', 'StickyJudgement', 'JudgementGiven', 'InvalidJudgement', 'InvalidIndex', 'InvalidTarget', 'TooManyRegistrars', 'AlreadyClaimed', 'NotSub', 'NotOwned', 'JudgementForDifferentIdentity', 'JudgementPaymentFailed', 'InvalidSuffix', 'NotUsernameAuthority', 'NoAllocation', 'InvalidSignature', 'RequiresSignature', 'InvalidUsername', 'UsernameTaken', 'NoUsername', 'NotExpired', 'TooEarly', 'NotUnbinding', 'AlreadyUnbinding', 'InsufficientPrivileges'];
+        SocialManagers: ['ManagerNotFound', 'ManagerAlreadyExists', 'TooManyManagers', 'ManagerExpired', 'ScopeNotAuthorized', 'CallNotDelegatable', 'EmptyScopeSet', 'ExpirationInPast', 'InsufficientDeposit'];
         Revive: ['InvalidSchedule', 'InvalidCallFlags', 'OutOfGas', 'TransferFailed', 'MaxCallDepthReached', 'ContractNotFound', 'CodeNotFound', 'CodeInfoNotFound', 'OutOfBounds', 'DecodingFailed', 'ContractTrapped', 'ValueTooLarge', 'TerminatedWhileReentrant', 'InputForwarded', 'TooManyTopics', 'DuplicateContract', 'TerminatedInConstructor', 'ReentranceDenied', 'ReenteredPallet', 'StateChangeDenied', 'StorageDepositNotEnoughFunds', 'StorageDepositLimitExhausted', 'CodeInUse', 'ContractReverted', 'CodeRejected', 'BlobTooLarge', 'StaticMemoryTooLarge', 'BasicBlockTooLarge', 'InvalidInstruction', 'MaxDelegateDependenciesReached', 'DelegateDependencyNotFound', 'DelegateDependencyAlreadyExists', 'CannotAddSelfAsDelegateDependency', 'OutOfTransientStorage', 'InvalidSyscall', 'InvalidStorageFlags', 'ExecutionFailed', 'BalanceConversionFailed', 'InvalidImmutableAccess', 'AccountUnmapped', 'AccountAlreadyMapped', 'InvalidGenericTransaction', 'RefcountOverOrUnderflow', 'UnsupportedPrecompileAddress', 'CallDataTooLarge', 'ReturnDataTooLarge', 'InvalidJump', 'StackUnderflow', 'StackOverflow', 'TxFeeOverdraw', 'EvmConstructorNonEmptyData', 'EvmConstructedFromHash', 'StorageRefundNotEnoughFunds', 'StorageRefundLocked', 'PrecompileDelegateDenied', 'EcdsaRecoveryFailed'];
     };
     constants: {
@@ -4621,6 +4770,7 @@ type AllInteractions = {
         SocialProfiles: ['ProfileBond', 'MaxMetadataLen'];
         SocialFeeds: ['PostFee', 'MaxContentLen', 'MaxPostsPerAuthor', 'MaxRepliesPerPost'];
         Identity: ['BasicDeposit', 'ByteDeposit', 'UsernameDeposit', 'SubAccountDeposit', 'MaxSubAccounts', 'MaxRegistrars', 'PendingUsernameExpiration', 'UsernameGracePeriod', 'MaxSuffixLength', 'MaxUsernameLength'];
+        SocialManagers: ['ManagerDepositBase', 'MaxManagersPerOwner', 'MaxExpiryPurgePerBlock'];
         Revive: ['DepositPerByte', 'DepositPerItem', 'DepositPerChildTrieItem', 'CodeHashLockupDepositPercent', 'UnsafeUnstableInterface', 'AllowEVMBytecode', 'ChainId', 'NativeToEthRatio', 'MaxEthExtrinsicWeight', 'DebugEnabled', 'GasScale'];
     };
     viewFns: {};
