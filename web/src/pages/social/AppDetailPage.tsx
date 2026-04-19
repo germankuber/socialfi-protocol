@@ -1,14 +1,17 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
+import { useActingAs } from "../../hooks/social/useManagers";
+import { useProfileCache } from "../../hooks/social/useProfileCache";
 import AddressDisplay from "../../components/social/AddressDisplay";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
 import TxToast from "../../components/social/TxToast";
+import VerifiedBadge from "../../components/social/VerifiedBadge";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
 const MAX_CHARS = 400;
@@ -89,8 +92,33 @@ export default function AppDetailPage() {
 
 	const [feedTab, setFeedTab] = useState<"all" | "mine">("all");
 
+	// "Act as" state. When `postingAs` is non-null, every write in this page
+	// (create_post, create_reply, …) is routed through
+	// `pallet-social-managers::act_as_manager` so the runtime attributes the
+	// action to the owner, not to the signer.
+	const [postingAs, setPostingAs] = useState<string | null>(null);
+	const [pickerOpen, setPickerOpen] = useState(false);
+	const { authorizations, actAs } = useActingAs(account?.address ?? null);
+
 	const numericId = Number(appId);
 	const accountAddress = account?.address ?? null;
+
+	// Available scopes, computed once per change of posting target so the UI
+	// can disable buttons whose required scope is missing.
+	const activeScopes = useMemo(() => {
+		if (!postingAs) return null; // self — unrestricted
+		const auth = authorizations.find((a) => a.owner === postingAs);
+		return auth?.scopes ?? [];
+	}, [postingAs, authorizations]);
+
+	const canPost = activeScopes === null || activeScopes.includes("Post");
+	const canComment = activeScopes === null || activeScopes.includes("Comment");
+
+	// Drop the "act as" selection if the chosen authorization disappears.
+	useEffect(() => {
+		if (!postingAs) return;
+		if (!authorizations.some((a) => a.owner === postingAs)) setPostingAs(null);
+	}, [authorizations, postingAs]);
 
 	const loadApp = useCallback(async () => {
 		try {
@@ -216,14 +244,16 @@ export default function AppDetailPage() {
 			const cid = await uploadPostContent(content.trim(), postImageCid || undefined);
 			setUploading(false);
 			const api = getApi();
-			const tx = api.tx.SocialFeeds.create_post({
+			const innerTx = api.tx.SocialFeeds.create_post({
 				content: Binary.fromText(cid),
 				app_id: numericId,
 				reply_fee: BigInt(replyFee || "0"),
 				visibility: { type: visibility, value: undefined },
 				unlock_fee: BigInt(unlockFeeInput || "0"),
 			});
-			const ok = await tracker.submit(tx, account.signer, "Create Post");
+			const ok = postingAs
+				? await actAs(postingAs, innerTx, account.signer, "Post (as manager)")
+				: await tracker.submit(innerTx, account.signer, "Create Post");
 			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); setPostImageCid(""); loadApp(); }
 		} catch { setUploading(false); }
 	}
@@ -235,12 +265,14 @@ export default function AppDetailPage() {
 			const cid = await uploadPostContent(replyContent.trim());
 			setUploading(false);
 			const api = getApi();
-			const tx = api.tx.SocialFeeds.create_reply({
+			const innerTx = api.tx.SocialFeeds.create_reply({
 				parent_post_id: BigInt(parentId),
 				content: Binary.fromText(cid),
 				app_id: numericId,
 			});
-			const ok = await tracker.submit(tx, account.signer, "Reply");
+			const ok = postingAs
+				? await actAs(postingAs, innerTx, account.signer, "Reply (as manager)")
+				: await tracker.submit(innerTx, account.signer, "Reply");
 			if (ok) { setReplyContent(""); setReplyingTo(null); loadApp(); }
 		} catch { setUploading(false); }
 	}
@@ -279,8 +311,34 @@ export default function AppDetailPage() {
 	const gradient = APP_COLORS[app.id % APP_COLORS.length];
 	const charsLeft = MAX_CHARS - content.length;
 
+	const actingAsAuth = postingAs
+		? authorizations.find((a) => a.owner === postingAs) ?? null
+		: null;
+
 	return (
-		<div className="space-y-4 animate-fade-in">
+		<div
+			className={`space-y-4 animate-fade-in relative ${
+				postingAs ? "act-as-mode" : ""
+			}`}
+		>
+			{/* Subtle brand-tinted overlay while acting as someone else — the
+			    visual cue that every action on this page is attributed to
+			    another identity. */}
+			{postingAs && (
+				<>
+					<div className="fixed inset-0 pointer-events-none z-0 bg-gradient-to-b from-brand-500/[0.06] via-transparent to-transparent" />
+					<div className="fixed top-14 inset-x-0 h-0.5 bg-brand-500/60 z-40" />
+				</>
+			)}
+
+			{postingAs && actingAsAuth && (
+				<ActingAsBanner
+					owner={postingAs}
+					scopes={actingAsAuth.scopes}
+					onExit={() => setPostingAs(null)}
+				/>
+			)}
+
 			{/* App header */}
 			<div className="panel">
 				<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors mb-3">
@@ -328,16 +386,46 @@ export default function AppDetailPage() {
 
 			{/* Compose — app_id is automatic */}
 			{account && (
-				<div className="panel space-y-3">
+				<div className={`panel space-y-3 ${postingAs ? "ring-1 ring-brand-500/40" : ""}`}>
+					{/* "Act as" entry point — surfaces the feature only when it
+					    is available (the wallet has at least one authorization)
+					    so first-time users aren't distracted by it. */}
+					{authorizations.length > 0 && !postingAs && (
+						<button
+							type="button"
+							onClick={() => setPickerOpen(true)}
+							className="w-full flex items-center gap-2 rounded-xl border border-dashed border-surface-700 hover:border-brand-500/50 px-3 py-2 text-xs text-surface-400 hover:text-brand-500 transition-colors"
+						>
+							<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7.835 11.442a3 3 0 004.33 0M20 19l-2-2m0 0l-2-2m2 2l-2 2m2-2l2-2" />
+							</svg>
+							Act as someone who authorized you ({authorizations.length})
+						</button>
+					)}
+
+					{pickerOpen && (
+						<ActAsPicker
+							authorizations={authorizations}
+							current={postingAs}
+							onPick={(owner) => { setPostingAs(owner); setPickerOpen(false); }}
+							onClose={() => setPickerOpen(false)}
+						/>
+					)}
+
 					<div className="flex items-center gap-3">
-						<div className="avatar bg-brand-500 text-xs shrink-0">{account.name[0]}</div>
+						<ComposerAvatar postingAs={postingAs} fallbackName={account.name} />
 						<div className="flex-1">
 							<textarea
 								value={content}
 								onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setContent(e.target.value); }}
-								placeholder={`Post in App #${app.id}...`}
+								placeholder={
+									postingAs
+										? `Post in App #${app.id} as someone else…`
+										: `Post in App #${app.id}...`
+								}
 								rows={3}
 								className="input resize-none w-full"
+								disabled={!canPost}
 							/>
 							<div className="flex items-center justify-between mt-1">
 								<span className={`text-xs ${charsLeft < 50 ? (charsLeft < 0 ? "text-danger" : "text-warning") : "text-surface-500"}`}>
@@ -404,8 +492,18 @@ export default function AppDetailPage() {
 							</div>
 						)}
 					</div>
-					<button onClick={createPost} disabled={!content.trim() || busy || (app.hasImages && !postImageCid)} className="btn-brand w-full">
-						{uploading ? "Uploading to IPFS..." : "Post"}
+					<button
+						onClick={createPost}
+						disabled={!content.trim() || busy || (app.hasImages && !postImageCid) || !canPost}
+						className="btn-brand w-full"
+					>
+						{!canPost
+							? "Post scope not granted for this owner"
+							: uploading
+								? "Uploading to IPFS..."
+								: postingAs
+									? "Publish (as manager)"
+									: "Post"}
 					</button>
 				</div>
 			)}
@@ -540,7 +638,7 @@ export default function AppDetailPage() {
 										</div>
 
 										{/* Reply button */}
-										{!isMine && account && visible && (
+										{!isMine && account && visible && canComment && (
 											<button
 												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
 												className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
@@ -548,8 +646,13 @@ export default function AppDetailPage() {
 												<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 													<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
 												</svg>
-												Reply
+												Reply{postingAs ? " (as manager)" : ""}
 											</button>
+										)}
+										{!isMine && account && visible && !canComment && postingAs && (
+											<span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 italic">
+												Reply not authorized for this owner
+											</span>
 										)}
 									</div>
 									<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
@@ -639,5 +742,215 @@ export default function AppDetailPage() {
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>
+	);
+}
+
+/* ── Act-as subcomponents ───────────────────────────────────────────── */
+
+/**
+ * Sticky banner shown above the app header while a manager is posting on
+ * behalf of another profile. Visually it picks up the brand color so the
+ * rest of the page's tinted state reads as intentional.
+ */
+function ActingAsBanner({
+	owner,
+	scopes,
+	onExit,
+}: {
+	owner: string;
+	scopes: string[];
+	onExit: () => void;
+}) {
+	const { getProfile } = useProfileCache();
+	const profile = getProfile(owner);
+	const truncated = `${owner.slice(0, 6)}…${owner.slice(-4)}`;
+
+	return (
+		<div className="sticky top-16 z-30 rounded-2xl border border-brand-500/40 bg-brand-500/10 backdrop-blur-xl p-3 flex items-center gap-3 shadow-sm">
+			<div className="relative shrink-0">
+				{profile?.avatar ? (
+					<img
+						src={profile.avatar}
+						alt={profile.name}
+						className="w-10 h-10 rounded-full object-cover bg-surface-800"
+					/>
+				) : (
+					<div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-xs font-bold">
+						{profile?.name?.[0]?.toUpperCase() || owner.slice(2, 4)}
+					</div>
+				)}
+				<span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-brand-500 border-2 border-surface-950 flex items-center justify-center">
+					<svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+						<path strokeLinecap="round" strokeLinejoin="round" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7 21a5 5 0 015-5h0a5 5 0 015 5" />
+					</svg>
+				</span>
+			</div>
+			<div className="flex-1 min-w-0">
+				<div className="flex items-center gap-1.5">
+					<span className="text-[11px] uppercase tracking-wider font-semibold text-brand-500">
+						Acting as
+					</span>
+					<span className="text-sm font-semibold truncate">
+						{profile?.name || truncated}
+					</span>
+					{profile?.verified && <VerifiedBadge size="sm" />}
+				</div>
+				<div className="flex flex-wrap gap-1 mt-1">
+					{scopes.map((s) => (
+						<span
+							key={s}
+							className="inline-flex items-center rounded-md bg-brand-500/15 text-brand-500 px-1.5 py-0.5 text-[10px] font-semibold"
+						>
+							{s}
+						</span>
+					))}
+				</div>
+			</div>
+			<button
+				onClick={onExit}
+				className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-500/40 text-brand-500 hover:bg-brand-500/20 transition-colors"
+			>
+				Exit
+			</button>
+		</div>
+	);
+}
+
+/**
+ * Small avatar rendered next to the composer input. Mirrors the current
+ * posting identity: the connected wallet's initial by default, or the owner's
+ * avatar/initials while acting as someone else. Makes the attribution
+ * unmistakable before the user types a single character.
+ */
+function ComposerAvatar({
+	postingAs,
+	fallbackName,
+}: {
+	postingAs: string | null;
+	fallbackName: string;
+}) {
+	const { getProfile } = useProfileCache();
+	const profile = postingAs ? getProfile(postingAs) : null;
+
+	if (postingAs) {
+		return profile?.avatar ? (
+			<img
+				src={profile.avatar}
+				alt={profile.name}
+				className="w-10 h-10 rounded-full object-cover ring-2 ring-brand-500 bg-surface-800 shrink-0"
+			/>
+		) : (
+			<div className="w-10 h-10 rounded-full bg-brand-500 ring-2 ring-brand-300 flex items-center justify-center text-xs font-bold text-white shrink-0">
+				{profile?.name?.[0]?.toUpperCase() || postingAs.slice(2, 4)}
+			</div>
+		);
+	}
+
+	return (
+		<div className="avatar bg-brand-500 text-xs shrink-0">
+			{fallbackName[0]}
+		</div>
+	);
+}
+
+/**
+ * Inline picker that lists the owners who authorized the current wallet as a
+ * manager. Scopes are surfaced so the user understands which actions they
+ * will gain by selecting that identity.
+ */
+function ActAsPicker({
+	authorizations,
+	current,
+	onPick,
+	onClose,
+}: {
+	authorizations: { owner: string; scopes: string[] }[];
+	current: string | null;
+	onPick: (owner: string) => void;
+	onClose: () => void;
+}) {
+	return (
+		<div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-3 space-y-2">
+			<div className="flex items-center justify-between">
+				<span className="text-[11px] uppercase tracking-wider font-semibold text-brand-500">
+					Pick whose identity to post under
+				</span>
+				<button
+					onClick={onClose}
+					className="text-[11px] text-surface-400 hover:text-surface-100"
+				>
+					Close
+				</button>
+			</div>
+			<div className="space-y-1.5 max-h-72 overflow-y-auto">
+				{authorizations.map((a) => (
+					<ActAsOption
+						key={a.owner}
+						owner={a.owner}
+						scopes={a.scopes}
+						selected={a.owner === current}
+						onClick={() => onPick(a.owner)}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function ActAsOption({
+	owner,
+	scopes,
+	selected,
+	onClick,
+}: {
+	owner: string;
+	scopes: string[];
+	selected: boolean;
+	onClick: () => void;
+}) {
+	const { getProfile } = useProfileCache();
+	const profile = getProfile(owner);
+	const truncated = `${owner.slice(0, 6)}…${owner.slice(-4)}`;
+
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
+				selected
+					? "border-brand-500/60 bg-brand-500/10"
+					: "border-transparent hover:border-brand-500/30 hover:bg-brand-500/5"
+			}`}
+		>
+			{profile?.avatar ? (
+				<img
+					src={profile.avatar}
+					alt={profile.name}
+					className="w-8 h-8 rounded-full object-cover bg-surface-800 shrink-0"
+				/>
+			) : (
+				<div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-[10px] font-bold shrink-0">
+					{profile?.name?.[0]?.toUpperCase() || owner.slice(2, 4)}
+				</div>
+			)}
+			<div className="flex-1 min-w-0">
+				<div className="flex items-center gap-1.5">
+					<span className="text-sm font-medium truncate">
+						{profile?.name || truncated}
+					</span>
+					{profile?.verified && <VerifiedBadge size="sm" />}
+				</div>
+				<div className="flex flex-wrap gap-1 mt-0.5">
+					{scopes.map((s) => (
+						<span
+							key={s}
+							className="inline-flex items-center rounded-md bg-brand-500/10 text-brand-500 px-1.5 py-0.5 text-[9px] font-semibold"
+						>
+							{s}
+						</span>
+					))}
+				</div>
+			</div>
+		</button>
 	);
 }

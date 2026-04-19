@@ -5,7 +5,6 @@ const tabs = [
 	{ path: "/social/apps", label: "Apps" },
 	{ path: "/social/feed", label: "Feed" },
 	{ path: "/social/managers", label: "Managers" },
-	{ path: "/social/act-as", label: "Act as" },
 ];
 
 export default function SocialLayout() {
