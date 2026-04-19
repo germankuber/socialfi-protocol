@@ -58,6 +58,21 @@ fn add_manager_reserves_deposit_and_records_entry() {
 }
 
 #[test]
+fn add_manager_rejects_self_delegation() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialManagers::add_manager(
+				RuntimeOrigin::signed(ALICE),
+				ALICE,
+				ScopeMask::from_scopes(&[ManagerScope::Post]),
+				None,
+			),
+			Error::<Test>::ManagerCannotBeSelf,
+		);
+	});
+}
+
+#[test]
 fn add_manager_rejects_empty_scope_set() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(

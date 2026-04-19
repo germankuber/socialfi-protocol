@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useChainStore } from "../../store/chainStore";
 import {
@@ -7,9 +7,10 @@ import {
 	useManagers,
 	type ManagerScopeKey,
 } from "../../hooks/social/useManagers";
+import { useSocialApi } from "../../hooks/social/useSocialApi";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
-import { useProfileCache } from "../../hooks/social/useProfileCache";
+import { useProfileCache, type CachedProfile } from "../../hooks/social/useProfileCache";
 import { Link } from "react-router-dom";
 import VerifiedBadge from "../../components/social/VerifiedBadge";
 
@@ -42,17 +43,28 @@ export default function ManagersPage() {
 	return (
 		<RequireProfile>
 			<div className="space-y-6 animate-fade-in">
-				<header className="space-y-2">
+				<header className="space-y-3">
 					<h1 className="heading-1">Profile Managers</h1>
 					<p className="text-secondary text-sm max-w-2xl">
 						Let another account post, follow, or update your profile on your
 						behalf — without handing over your keys. Each authorization is
 						scoped, optionally expires, and can be revoked instantly.
 					</p>
-					<div className="inline-flex items-center gap-2 text-[11px] text-surface-400 bg-surface-800/50 border border-surface-700 rounded-lg px-2.5 py-1">
-						<span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-						Powered by a custom FRAME pallet using synthesized origins + dynamic
-						call filters
+					<div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-semibold text-brand-500">
+						<svg
+							className="w-3 h-3"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2.2}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M13 10V3L4 14h7v7l9-11h-7z"
+							/>
+						</svg>
+						Custom FRAME pallet · synthesized origins + dynamic call filters
 					</div>
 				</header>
 
@@ -63,6 +75,8 @@ export default function ManagersPage() {
 				)}
 
 				<AddManagerCard
+					ownerAddress={ownerAddress}
+					existingManagers={managers.map((m) => m.manager)}
 					disabled={!account || tracker.state.stage !== "idle"}
 					onAdd={async (mgr, scopes, expiresAt) => {
 						if (!account) return false;
@@ -98,6 +112,8 @@ export default function ManagersPage() {
 /* ────────────────────────────────────────────────────────────────────── */
 
 interface AddManagerCardProps {
+	ownerAddress: string | null;
+	existingManagers: string[];
 	disabled: boolean;
 	onAdd: (
 		manager: string,
@@ -106,8 +122,20 @@ interface AddManagerCardProps {
 	) => Promise<boolean>;
 }
 
-/** Form used to grant a new authorization. */
-function AddManagerCard({ disabled, onAdd }: AddManagerCardProps) {
+/**
+ * Form used to grant a new authorization.
+ *
+ * The manager picker is a two-mode control: by default we present the list of
+ * accounts the owner already follows (those are the people they know and are
+ * most likely to delegate to), with a "paste an address" escape hatch for the
+ * less-common case of authorizing a fresh account.
+ */
+function AddManagerCard({
+	ownerAddress,
+	existingManagers,
+	disabled,
+	onAdd,
+}: AddManagerCardProps) {
 	const [manager, setManager] = useState("");
 	const [selectedScopes, setSelectedScopes] = useState<ManagerScopeKey[]>([
 		"Post",
@@ -115,8 +143,17 @@ function AddManagerCard({ disabled, onAdd }: AddManagerCardProps) {
 	const [duration, setDuration] = useState<"7d" | "30d" | "90d" | "never">(
 		"30d",
 	);
+	const [pickerMode, setPickerMode] = useState<"following" | "address">(
+		"following",
+	);
 	const [localError, setLocalError] = useState<string | null>(null);
 	const blockNumber = useChainStore((s) => s.blockNumber);
+
+	const excludedAddresses = useMemo(() => {
+		const set = new Set(existingManagers);
+		if (ownerAddress) set.add(ownerAddress);
+		return set;
+	}, [existingManagers, ownerAddress]);
 
 	function toggleScope(scope: ManagerScopeKey) {
 		setSelectedScopes((prev) =>
@@ -136,7 +173,7 @@ function AddManagerCard({ disabled, onAdd }: AddManagerCardProps) {
 		e.preventDefault();
 		setLocalError(null);
 		if (!manager.trim()) {
-			setLocalError("Manager address is required");
+			setLocalError("Pick someone to authorize");
 			return;
 		}
 		if (selectedScopes.length === 0) {
@@ -177,16 +214,59 @@ function AddManagerCard({ disabled, onAdd }: AddManagerCardProps) {
 				</div>
 			</div>
 
-			<div className="space-y-2">
-				<label className="form-label">Manager address</label>
-				<input
-					type="text"
-					value={manager}
-					onChange={(e) => setManager(e.target.value)}
-					placeholder="5F3sa2TJAWMqDhXG6jhV4N8ko9SxwGy8TpaNS1repo5EYjQX"
-					className="input font-mono text-xs"
-					disabled={disabled}
-				/>
+			<div className="space-y-3">
+				<div className="flex items-center justify-between">
+					<label className="form-label mb-0">Pick a manager</label>
+					<div className="flex gap-1 text-[11px]">
+						<button
+							type="button"
+							onClick={() => {
+								setPickerMode("following");
+								setManager("");
+							}}
+							className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+								pickerMode === "following"
+									? "bg-brand-500/10 text-brand-500"
+									: "text-surface-500 hover:text-surface-300"
+							}`}
+						>
+							Following
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setPickerMode("address");
+								setManager("");
+							}}
+							className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+								pickerMode === "address"
+									? "bg-brand-500/10 text-brand-500"
+									: "text-surface-500 hover:text-surface-300"
+							}`}
+						>
+							Paste address
+						</button>
+					</div>
+				</div>
+
+				{pickerMode === "following" ? (
+					<FollowingPicker
+						ownerAddress={ownerAddress}
+						excluded={excludedAddresses}
+						selected={manager}
+						onSelect={setManager}
+						disabled={disabled}
+					/>
+				) : (
+					<input
+						type="text"
+						value={manager}
+						onChange={(e) => setManager(e.target.value)}
+						placeholder="5F3sa2TJAWMqDhXG6jhV4N8ko9SxwGy8TpaNS1repo5EYjQX"
+						className="input font-mono text-xs"
+						disabled={disabled}
+					/>
+				)}
 			</div>
 
 			<div className="space-y-2">
@@ -277,9 +357,13 @@ function AddManagerCard({ disabled, onAdd }: AddManagerCardProps) {
 			<button
 				type="submit"
 				className="btn-brand w-full"
-				disabled={disabled}
+				disabled={disabled || !manager.trim() || selectedScopes.length === 0}
 			>
-				Authorize manager
+				{manager.trim()
+					? "Authorize manager"
+					: pickerMode === "following"
+						? "Pick someone to continue"
+						: "Paste an address to continue"}
 			</button>
 		</form>
 	);
@@ -310,14 +394,14 @@ function ManagersList({
 
 	if (managers.length === 0) {
 		return (
-			<div className="panel text-center py-10 space-y-2">
-				<div className="w-12 h-12 rounded-2xl bg-surface-800 flex items-center justify-center mx-auto">
+			<div className="panel text-center py-10 space-y-3">
+				<div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mx-auto">
 					<svg
-						className="w-6 h-6 text-surface-500"
+						className="w-7 h-7 text-brand-500"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
-						strokeWidth={1.5}
+						strokeWidth={1.6}
 					>
 						<path
 							strokeLinecap="round"
@@ -326,8 +410,8 @@ function ManagersList({
 						/>
 					</svg>
 				</div>
-				<h3 className="text-sm font-semibold">No managers yet</h3>
-				<p className="text-xs text-surface-500 max-w-sm mx-auto">
+				<h3 className="text-base font-semibold">No managers yet</h3>
+				<p className="text-sm text-secondary max-w-sm mx-auto">
 					Authorize another account above to let them post or interact on your
 					behalf without sharing your keys.
 				</p>
@@ -514,5 +598,200 @@ function PanicButton({ onRevokeAll }: { onRevokeAll: () => Promise<void> }) {
 				</div>
 			)}
 		</section>
+	);
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+
+interface FollowingPickerProps {
+	ownerAddress: string | null;
+	/** Accounts that must not be selectable (self + already-authorized). */
+	excluded: Set<string>;
+	/** Currently-picked address, or empty string when nothing is selected. */
+	selected: string;
+	onSelect: (address: string) => void;
+	disabled: boolean;
+}
+
+/**
+ * Visual picker: a grid of cards for every account the owner follows, each
+ * with avatar + display name. Clicking a card sets it as the manager
+ * candidate. Accounts already-authorized as managers (or self) are excluded
+ * from the list so the user never picks a dead-end entry.
+ */
+function FollowingPicker({
+	ownerAddress,
+	excluded,
+	selected,
+	onSelect,
+	disabled,
+}: FollowingPickerProps) {
+	const { getApi } = useSocialApi();
+	const [following, setFollowing] = useState<string[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!ownerAddress) {
+			setFollowing([]);
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				setLoading(true);
+				setLoadError(null);
+				const api = getApi();
+				const entries =
+					await api.query.SocialGraph.Follows.getEntries(ownerAddress);
+				if (cancelled) return;
+				setFollowing(entries.map((e) => e.keyArgs[1].toString()));
+			} catch (e) {
+				if (!cancelled)
+					setLoadError(e instanceof Error ? e.message : "Failed to load follows");
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [ownerAddress, getApi]);
+
+	const pickable = useMemo(
+		() => following.filter((a) => !excluded.has(a)),
+		[following, excluded],
+	);
+
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center py-10 rounded-xl border border-surface-800">
+				<div className="w-5 h-5 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+			</div>
+		);
+	}
+
+	if (loadError) {
+		return (
+			<div className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-xs text-danger">
+				{loadError}
+			</div>
+		);
+	}
+
+	if (pickable.length === 0) {
+		const noFollows = following.length === 0;
+		return (
+			<div className="rounded-xl border border-surface-800 px-4 py-6 text-center space-y-3">
+				<p className="text-sm font-medium">Nobody to pick yet</p>
+				<p className="text-xs text-secondary max-w-sm mx-auto">
+					{noFollows
+						? "Follow someone first, then come back here to authorize them as a manager."
+						: "Everyone you follow is already a manager. Revoke one first, or use the \"Paste address\" tab."}
+				</p>
+				<Link
+					to={noFollows ? "/people" : "/social/graph"}
+					className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-500 hover:underline"
+				>
+					{noFollows ? "Browse people to follow" : "Go to Social Graph"} →
+				</Link>
+			</div>
+		);
+	}
+
+	return (
+		<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+			{pickable.map((address) => (
+				<FollowingCard
+					key={address}
+					address={address}
+					selected={selected === address}
+					disabled={disabled}
+					onClick={() => onSelect(address)}
+				/>
+			))}
+		</div>
+	);
+}
+
+/**
+ * A single clickable row in the `FollowingPicker`. Resolves name + avatar
+ * lazily via `useProfileCache` so freshly-rendered cards don't block on the
+ * IPFS fetch for the whole list.
+ */
+function FollowingCard({
+	address,
+	selected,
+	disabled,
+	onClick,
+}: {
+	address: string;
+	selected: boolean;
+	disabled: boolean;
+	onClick: () => void;
+}) {
+	// `getProfile` is lazy: first call for a given address kicks off the IPFS
+	// fetch and returns null; the cache re-renders the component once it
+	// resolves. That means we can treat it as a plain accessor here.
+	const { getProfile } = useProfileCache();
+	const profile: CachedProfile | null = getProfile(address);
+
+	const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-colors ${
+				selected
+					? "border-brand-500/40 bg-brand-500/10"
+					: "border-surface-700 hover:border-surface-500"
+			}`}
+		>
+			{profile?.avatar ? (
+				<img
+					src={profile.avatar}
+					alt={profile.name}
+					className="w-10 h-10 rounded-full object-cover bg-surface-800 shrink-0"
+				/>
+			) : (
+				<div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-xs font-bold shrink-0">
+					{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
+				</div>
+			)}
+			<div className="min-w-0 flex-1">
+				<div className="flex items-center gap-1.5">
+					<span className="text-sm font-medium truncate">
+						{profile?.name || truncated}
+					</span>
+					{profile?.verified && <VerifiedBadge size="sm" />}
+				</div>
+				<span className="text-[11px] font-mono text-surface-500 truncate">
+					{truncated}
+				</span>
+			</div>
+			<div
+				className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+					selected ? "border-brand-500 bg-brand-500" : "border-surface-600"
+				}`}
+			>
+				{selected && (
+					<svg
+						className="w-2.5 h-2.5 text-white"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={3}
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M5 13l4 4L19 7"
+						/>
+					</svg>
+				)}
+			</div>
+		</button>
 	);
 }

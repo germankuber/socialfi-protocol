@@ -195,6 +195,10 @@ pub mod pallet {
 		/// The owner does not have enough free balance to reserve the
 		/// per-manager deposit.
 		InsufficientDeposit,
+		/// An owner tried to authorize themselves as a manager. There is no
+		/// semantic value to self-delegation and allowing it would burn a
+		/// `MaxManagersPerOwner` slot for nothing.
+		ManagerCannotBeSelf,
 	}
 
 	#[pallet::call]
@@ -215,6 +219,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let owner = ensure_signed(origin)?;
 
+			// Self-delegation is nonsensical: an owner can already perform every
+			// action we'd authorize a manager for, and allowing it would let a
+			// single entry consume a MaxManagersPerOwner slot for nothing.
+			ensure!(owner != manager, Error::<T>::ManagerCannotBeSelf);
 			ensure!(!scopes.is_empty(), Error::<T>::EmptyScopeSet);
 			ensure!(
 				!ProfileManagers::<T>::contains_key(&owner, &manager),
