@@ -25,6 +25,7 @@ pallet-social-app-registry.workspace = true
 pallet-social-profiles.workspace = true
 pallet-social-feeds.workspace = true
 pallet-social-graph.workspace = true
+pallet-social-managers.workspace = true
 polkadot-sdk = { workspace = true, features = [
 	"cumulus-pallet-aura-ext",
 	"cumulus-pallet-session-benchmarking",
@@ -72,6 +73,7 @@ std = [
 	"pallet-social-app-registry/std",
 	"pallet-social-feeds/std",
 	"pallet-social-graph/std",
+	"pallet-social-managers/std",
 	"pallet-social-profiles/std",
 	"pallet-template/std",
 	"polkadot-sdk/std",
@@ -84,6 +86,7 @@ runtime-benchmarks = [
 	"pallet-social-app-registry/runtime-benchmarks",
 	"pallet-social-feeds/runtime-benchmarks",
 	"pallet-social-graph/runtime-benchmarks",
+	"pallet-social-managers/runtime-benchmarks",
 	"pallet-social-profiles/runtime-benchmarks",
 	"pallet-template/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
@@ -93,6 +96,7 @@ try-runtime = [
 	"pallet-social-app-registry/try-runtime",
 	"pallet-social-feeds/try-runtime",
 	"pallet-social-graph/try-runtime",
+	"pallet-social-managers/try-runtime",
 	"pallet-social-profiles/try-runtime",
 	"pallet-template/try-runtime",
 	"polkadot-sdk/try-runtime",

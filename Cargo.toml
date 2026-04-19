@@ -7,6 +7,7 @@ members = [
 	"blockchain/pallets/social-profiles",
 	"blockchain/pallets/social-graph",
 	"blockchain/pallets/social-feeds",
+	"blockchain/pallets/social-managers",
 	"cli",
 ]
 
@@ -24,6 +25,7 @@ pallet-social-app-registry = { path = "./blockchain/pallets/social-app-registry"
 pallet-social-profiles = { path = "./blockchain/pallets/social-profiles", default-features = false }
 pallet-social-graph = { path = "./blockchain/pallets/social-graph", default-features = false }
 pallet-social-feeds = { path = "./blockchain/pallets/social-feeds", default-features = false }
+pallet-social-managers = { path = "./blockchain/pallets/social-managers", default-features = false }
 
 # Common dependencies
 codec = { version = "3.7.4", default-features = false, package = "parity-scale-codec" }

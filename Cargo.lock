@@ -10544,6 +10544,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-social-managers"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "polkadot-sdk 2512.3.3",
+ "polkadot-sdk-frame",
+ "scale-info",
+ "sp-io",
+]
+
+[[package]]
 name = "pallet-social-profiles"
 version = "0.1.0"
 dependencies = [
@@ -18175,6 +18186,7 @@ dependencies = [
  "pallet-social-app-registry",
  "pallet-social-feeds",
  "pallet-social-graph",
+ "pallet-social-managers",
  "pallet-social-profiles",
  "pallet-template",
  "parity-scale-codec",

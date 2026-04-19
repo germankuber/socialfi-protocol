@@ -267,6 +267,9 @@ mod runtime {
 	#[runtime::pallet_index(55)]
 	pub type Identity = pallet_identity;
 
+	#[runtime::pallet_index(56)]
+	pub type SocialManagers = pallet_social_managers;
+
 	// Smart contracts (EVM + PVM via pallet-revive)
 	#[runtime::pallet_index(90)]
 	pub type Revive = pallet_revive;

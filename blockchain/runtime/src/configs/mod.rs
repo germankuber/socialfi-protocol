@@ -391,6 +391,30 @@ impl pallet_identity::Config for Runtime {
 	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
+// ── pallet-social-managers (scoped delegation) ─────────────────────────
+
+parameter_types! {
+	/// Per-manager deposit reserved on the owner. Set to zero here so the
+	/// hackathon demo is friction-free; raise to something like
+	/// `EXISTENTIAL_DEPOSIT` on a public testnet to stop state-bloat grief.
+	pub const ManagerDepositBase: Balance = 0;
+	/// Cap on active delegations per owner. Chosen to cover realistic
+	/// multi-device/multi-bot setups (web, mobile, backup, scheduler, …)
+	/// without letting any single owner inflate `MaxExpiryPurgePerBlock`.
+	pub const MaxManagersPerOwner: u32 = 8;
+	/// Upper bound on expired entries swept by `on_idle` per block. Keeps
+	/// lazy reclamation predictable and prevents hook starvation.
+	pub const MaxExpiryPurgePerBlock: u32 = 16;
+}
+
+impl pallet_social_managers::Config for Runtime {
+	type Currency = Balances;
+	type ManagerDepositBase = ManagerDepositBase;
+	type MaxManagersPerOwner = MaxManagersPerOwner;
+	type MaxExpiryPurgePerBlock = MaxExpiryPurgePerBlock;
+	type WeightInfo = pallet_social_managers::weights::SubstrateWeight<Runtime>;
+}
+
 // ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────
 
 parameter_types! {
