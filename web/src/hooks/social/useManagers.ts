@@ -226,6 +226,11 @@ export function useActingAs(managerAddress: string | null) {
 	 * Dispatch `innerCall` as if the caller were `owner`. The inner call must
 	 * be a PAPI-built `Tx` (for example `api.tx.SocialFeeds.create_post(...)`).
 	 * Returns `true` when the finalized transaction succeeded.
+	 *
+	 * We pass `innerCall.decodedCall` (a tagged-enum shape PAPI expects for
+	 * call-accepting extrinsics), NOT the SCALE-encoded bytes — the pallet's
+	 * `call: Box<RuntimeCall>` argument wants the structured enum, and PAPI
+	 * will encode it at submit time together with the outer extrinsic.
 	 */
 	const actAs = useCallback(
 		async (
@@ -236,10 +241,9 @@ export function useActingAs(managerAddress: string | null) {
 			label: string,
 		) => {
 			const api = getApi();
-			const callData = await innerCall.getEncodedData();
 			const tx = api.tx.SocialManagers.act_as_manager({
 				owner,
-				call: callData,
+				call: innerCall.decodedCall,
 			});
 			return tracker.submit(tx, signer, label);
 		},
