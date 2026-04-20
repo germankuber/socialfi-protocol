@@ -337,6 +337,12 @@ parameter_types! {
 	pub FeedsTreasuryAccount: AccountId = sp_runtime::AccountId32::new([0xffu8; 32]);
 }
 
+parameter_types! {
+	pub const FeedsUnsignedValidityWindow: BlockNumber = 16;
+	pub const FeedsUnsignedPriority: sp_runtime::transaction_validity::TransactionPriority =
+		sp_runtime::transaction_validity::TransactionPriority::MAX / 2;
+}
+
 /// Configure the social feeds pallet.
 impl pallet_social_feeds::Config for Runtime {
 	type PostId = u64;
@@ -355,6 +361,11 @@ impl pallet_social_feeds::Config for Runtime {
 	/// by a raw Signed call, so the moderation privilege is enforced at
 	/// the type level.
 	type ModerationOrigin = pallet_social_app_registry::EnsureAppModerator<Runtime>;
+	/// Key service + delivery authority for encrypted posts.
+	type AuthorityId = pallet_social_feeds::crypto::AuthorityId;
+	type AdminOrigin = EnsureRoot<AccountId>;
+	type UnsignedValidityWindow = FeedsUnsignedValidityWindow;
+	type UnsignedPriority = FeedsUnsignedPriority;
 	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
 }
 
@@ -477,4 +488,56 @@ impl pallet_revive::Config for Runtime {
 	type MaxEthExtrinsicWeight = MaxEthExtrinsicWeight;
 	type DebugEnabled = ConstBool<true>;
 	type GasScale = ConstU32<50_000>;
+}
+
+// ── OCW glue for pallet-social-feeds encrypted posts ───────────────────
+//
+// Provides the trait family the offchain worker needs to build+submit
+// unsigned-with-signed-payload transactions from runtime code.
+// In stable2512 `SendTransactionTypes` was renamed `CreateTransactionBase`.
+
+use frame_system::offchain::{
+	CreateBare, CreateSignedTransaction, CreateTransactionBase, SigningTypes,
+};
+use sp_runtime::MultiSignature;
+
+impl SigningTypes for Runtime {
+	type Public = <MultiSignature as sp_runtime::traits::Verify>::Signer;
+	type Signature = MultiSignature;
+}
+
+impl<LocalCall> CreateTransactionBase<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	type Extrinsic = super::UncheckedExtrinsic;
+	type RuntimeCall = RuntimeCall;
+}
+
+impl<LocalCall> CreateBare<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_bare(call: RuntimeCall) -> super::UncheckedExtrinsic {
+		use sp_runtime::generic;
+		generic::UncheckedExtrinsic::new_bare(call).into()
+	}
+}
+
+impl<LocalCall> CreateSignedTransaction<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_signed_transaction<
+		C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>,
+	>(
+		_call: RuntimeCall,
+		_public: <MultiSignature as sp_runtime::traits::Verify>::Signer,
+		_account: AccountId,
+		_nonce: Nonce,
+	) -> Option<super::UncheckedExtrinsic> {
+		// We only submit unsigned-with-signed-payload from the OCW; the
+		// signed path is never used, so a stub `None` is enough.
+		None
+	}
 }

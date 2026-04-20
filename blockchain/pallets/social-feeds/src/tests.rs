@@ -1,6 +1,6 @@
 use crate::{
 	mock::*,
-	pallet::{Error, NextPostId, Posts, PostsByAuthor, Replies, UnlockedPosts},
+	pallet::{Error, NextPostId, Posts, PostsByAuthor, Replies, Unlocks},
 	types::PostVisibility,
 	PostProvider,
 };
@@ -29,6 +29,7 @@ fn create_post_public_works() {
 			0,
 			PostVisibility::Public,
 			0,
+			None,
 		));
 		let post = Posts::<Test>::get(0).expect("post should exist");
 		assert_eq!(post.visibility, PostVisibility::Public);
@@ -48,6 +49,7 @@ fn create_post_global_fee_goes_to_treasury() {
 			0,
 			PostVisibility::Public,
 			0,
+			None,
 		));
 		assert_eq!(Balances::free_balance(99), treasury_before + 10);
 	});
@@ -66,6 +68,7 @@ fn create_post_app_scoped_fee_goes_to_app_owner() {
 			0,
 			PostVisibility::Public,
 			0,
+			None,
 		));
 		assert_eq!(Balances::free_balance(3), owner_before + 10);
 	});
@@ -81,7 +84,8 @@ fn create_post_increments_id() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert_ok!(SocialFeeds::create_post(
 			RuntimeOrigin::signed(1),
@@ -89,7 +93,8 @@ fn create_post_increments_id() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert_eq!(NextPostId::<Test>::get(), 2);
 	});
@@ -105,7 +110,8 @@ fn create_post_populates_posts_by_author() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert_ok!(SocialFeeds::create_post(
 			RuntimeOrigin::signed(1),
@@ -113,7 +119,8 @@ fn create_post_populates_posts_by_author() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert_eq!(PostsByAuthor::<Test>::get(1).as_slice(), &[0, 1]);
 	});
@@ -129,9 +136,10 @@ fn create_post_fails_no_profile() {
 				None,
 				0,
 				PostVisibility::Public,
-				0
+				0,
+				None,
 			),
-			Error::<Test>::ProfileNotFound,
+			Error::<Test>::ProfileNotFound
 		);
 	});
 }
@@ -147,9 +155,10 @@ fn create_post_fails_invalid_app() {
 				Some(999),
 				0,
 				PostVisibility::Public,
-				0
+				0,
+				None,
 			),
-			Error::<Test>::AppNotFound,
+			Error::<Test>::AppNotFound
 		);
 	});
 }
@@ -167,6 +176,7 @@ fn create_post_obfuscated_stores_visibility_and_unlock_fee() {
 			0,
 			PostVisibility::Obfuscated,
 			50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		let post = Posts::<Test>::get(0).unwrap();
 		assert_eq!(post.visibility, PostVisibility::Obfuscated);
@@ -185,6 +195,7 @@ fn create_post_private_stores_visibility() {
 			0,
 			PostVisibility::Private,
 			100,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		let post = Posts::<Test>::get(0).unwrap();
 		assert_eq!(post.visibility, PostVisibility::Private);
@@ -203,6 +214,7 @@ fn create_post_public_ignores_unlock_fee() {
 			0,
 			PostVisibility::Public,
 			999,
+			None,
 		));
 		let post = Posts::<Test>::get(0).unwrap();
 		assert_eq!(post.unlock_fee, 0); // forced to 0 for public
@@ -221,7 +233,8 @@ fn create_reply_works() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		let reply_content = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
 		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, reply_content, None));
@@ -241,7 +254,8 @@ fn create_reply_pays_reply_fee_to_author() {
 			None,
 			25,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		let author_before = Balances::free_balance(1);
 		let replier_before = Balances::free_balance(2);
@@ -262,7 +276,8 @@ fn create_reply_populates_replies_storage() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		let rc = BoundedVec::try_from(b"QmReply".to_vec()).unwrap();
 		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, rc.clone(), None));
@@ -296,15 +311,16 @@ fn unlock_obfuscated_post_transfers_fee_to_author() {
 			0,
 			PostVisibility::Obfuscated,
 			50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		let author_before = Balances::free_balance(1);
 		let viewer_before = Balances::free_balance(2);
 
-		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]));
 
 		assert_eq!(Balances::free_balance(2), viewer_before - 50);
 		assert_eq!(Balances::free_balance(1), author_before + 50);
-		assert!(UnlockedPosts::<Test>::contains_key(2, 0));
+		assert!(Unlocks::<Test>::contains_key(0, 2));
 	});
 }
 
@@ -319,9 +335,10 @@ fn unlock_private_post_works() {
 			0,
 			PostVisibility::Private,
 			100,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
-		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
-		assert!(UnlockedPosts::<Test>::contains_key(2, 0));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]));
+		assert!(Unlocks::<Test>::contains_key(0, 2));
 	});
 }
 
@@ -336,12 +353,13 @@ fn unlock_post_author_gets_free_access() {
 			0,
 			PostVisibility::Obfuscated,
 			50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		let balance_before = Balances::free_balance(1);
-		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0, [1u8; 32]));
 		// Author pays nothing and no storage is written.
 		assert_eq!(Balances::free_balance(1), balance_before);
-		assert!(!UnlockedPosts::<Test>::contains_key(1, 0));
+		assert!(!Unlocks::<Test>::contains_key(0, 1));
 	});
 }
 
@@ -356,10 +374,11 @@ fn unlock_post_fails_already_unlocked() {
 			0,
 			PostVisibility::Obfuscated,
 			50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
-		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]));
 		assert_noop!(
-			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0),
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]),
 			Error::<Test>::AlreadyUnlocked,
 		);
 	});
@@ -376,9 +395,10 @@ fn unlock_post_fails_public_post() {
 			0,
 			PostVisibility::Public,
 			0,
+			None,
 		));
 		assert_noop!(
-			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0),
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]),
 			Error::<Test>::PostIsPublic,
 		);
 	});
@@ -388,7 +408,7 @@ fn unlock_post_fails_public_post() {
 fn unlock_post_fails_not_found() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 999),
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 999, [1u8; 32]),
 			Error::<Test>::PostNotFound,
 		);
 	});
@@ -405,10 +425,11 @@ fn unlock_post_fails_insufficient_balance() {
 			0,
 			PostVisibility::Private,
 			100,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		// Account 4 has only 5.
 		assert_noop!(
-			SocialFeeds::unlock_post(RuntimeOrigin::signed(4), 0),
+			SocialFeeds::unlock_post(RuntimeOrigin::signed(4), 0, [1u8; 32]),
 			Error::<Test>::InsufficientBalance,
 		);
 	});
@@ -427,7 +448,8 @@ fn post_provider_exists() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert!(<SocialFeeds as PostProvider<u64, u64>>::exists(&0));
 	});
@@ -443,7 +465,8 @@ fn post_provider_get_author() {
 			None,
 			0,
 			PostVisibility::Public,
-			0
+			0,
+			None,
 		));
 		assert_eq!(<SocialFeeds as PostProvider<u64, u64>>::get_author(&0), Some(1));
 	});
@@ -458,10 +481,11 @@ fn unlock_post_author_does_not_write_storage() {
 		assert_ok!(SocialFeeds::create_post(
 			RuntimeOrigin::signed(1), test_content(), None, 0,
 			PostVisibility::Obfuscated, 50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		// Author calls unlock on own post.
-		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0));
-		// No entry in UnlockedPosts — author has implicit access.
-		assert!(!UnlockedPosts::<Test>::contains_key(1, 0));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0, [1u8; 32]));
+		// No entry in Unlocks — author has implicit access.
+		assert!(!Unlocks::<Test>::contains_key(0, 1));
 	});
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Binary } from "polkadot-api";
+import { Binary, FixedSizeBinary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
@@ -9,6 +9,13 @@ import { useActingAs } from "../../hooks/social/useManagers";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
 import { useSponsorship } from "../../hooks/social/useSponsorship";
 import { useModeration } from "../../hooks/social/useModeration";
+import {
+	fetchRawFromIpfs,
+	sealPostContent,
+	uploadRawToIpfs,
+	useKeyService,
+	useUnlockEncryptedPost,
+} from "../../hooks/social/useEncryptedPosts";
 import AddressDisplay from "../../components/social/AddressDisplay";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
@@ -115,6 +122,12 @@ export default function AppDetailPage() {
 	// SocialAppRegistry.act_as_moderator so the inner call runs under
 	// Origin::AppModerator.
 	const moderation = useModeration();
+
+	// Key service: the collator's X25519 public key used to seal content
+	// keys for non-public posts. Null until an admin has configured it
+	// via `set_key_service`; the composer prevents encrypted posts in
+	// that state.
+	const keyService = useKeyService();
 
 	const isAppOwner = !!(app && account && app.owner === account.address);
 
@@ -268,7 +281,24 @@ export default function AppDetailPage() {
 		if (!account || !content.trim()) return;
 		try {
 			setUploading(true);
-			const cid = await uploadPostContent(content.trim(), postImageCid || undefined);
+
+			let cid: string;
+			let capsule: Uint8Array | undefined;
+			if (visibility === "Public") {
+				// Public: plaintext JSON straight to IPFS, no capsule on-chain.
+				cid = await uploadPostContent(content.trim(), postImageCid || undefined);
+			} else {
+				// Encrypted: refuse to publish if the key service is not set —
+				// otherwise the capsule would have nowhere to go.
+				if (!keyService) throw new Error("Key service not configured on-chain");
+				const payload = new TextEncoder().encode(
+					JSON.stringify({ text: content.trim(), image: postImageCid || undefined }),
+				);
+				const sealed = await sealPostContent(payload, keyService.encryptionPk);
+				cid = await uploadRawToIpfs(sealed.blob);
+				capsule = sealed.capsule;
+			}
+
 			setUploading(false);
 			const api = getApi();
 			const innerTx = api.tx.SocialFeeds.create_post({
@@ -277,12 +307,16 @@ export default function AppDetailPage() {
 				reply_fee: BigInt(replyFee || "0"),
 				visibility: { type: visibility, value: undefined },
 				unlock_fee: BigInt(unlockFeeInput || "0"),
+				capsule: capsule ? FixedSizeBinary.fromBytes(capsule) : undefined,
 			});
 			const ok = postingAs
 				? await actAs(postingAs, innerTx, account.signer, "Post (as manager)")
 				: await tracker.submit(innerTx, account.signer, "Create Post");
 			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); setPostImageCid(""); loadApp(); }
-		} catch { setUploading(false); }
+		} catch (e) {
+			setUploading(false);
+			console.error("createPost failed", e);
+		}
 	}
 
 	async function createReply(parentId: number) {
@@ -304,13 +338,9 @@ export default function AppDetailPage() {
 		} catch { setUploading(false); }
 	}
 
-	async function unlockPost(postId: number) {
-		if (!account) return;
-		const api = getApi();
-		const tx = api.tx.SocialFeeds.unlock_post({ post_id: BigInt(postId) });
-		const ok = await tracker.submit(tx, account.signer, "Unlock Post");
-		if (ok) loadApp();
-	}
+	// Unlock is now a two-step flow handled inline per-post by the
+	// `EncryptedPostUnlock` component below: pay + register ephemeral
+	// pk, wait for the OCW delivery, decrypt locally.
 
 	function canSee(post: PostData): boolean {
 		if (post.visibility === "Public") return true;
@@ -649,18 +679,14 @@ export default function AppDetailPage() {
 												)}
 											</div>
 										) : (
-											<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
-												<svg className="w-6 h-6 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-												</svg>
-												<p className="text-xs text-secondary">Content is {post.visibility.toLowerCase()}</p>
-												{account && (
-													<button onClick={() => unlockPost(post.id)} disabled={busy} className="btn-brand btn-sm">
-														Unlock for {post.unlockFee.toString()} units
-													</button>
-												)}
-												<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
-											</div>
+											<EncryptedPostUnlock
+												postId={post.id}
+												cid={post.contentCid}
+												unlockFee={post.unlockFee}
+												visibility={post.visibility}
+												viewer={accountAddress}
+												onSettled={() => loadApp()}
+											/>
 										)}
 									</div>
 

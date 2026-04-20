@@ -22,6 +22,9 @@ mod tests;
 
 pub mod weights;
 
+#[cfg(feature = "std")]
+pub mod offchain;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -31,28 +34,127 @@ pub trait PostProvider<AccountId, PostId> {
 	fn exists(post_id: &PostId) -> bool;
 }
 
+/// AppCrypto module for the key-service's offchain signing key. The
+/// collator inserts an sr25519 key with `KeyTypeId(*b"p2dc")` into its
+/// local keystore (via `author_insertKey` or a dev genesis shortcut);
+/// the offchain worker signs the `DeliverUnlockPayload` with it and the
+/// on-chain `validate_unsigned` checks the signature against this key.
+pub mod crypto {
+	use frame::deps::sp_runtime::{
+		app_crypto::{app_crypto, sr25519},
+		KeyTypeId, MultiSignature, MultiSigner,
+	};
+
+	pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"p2dc");
+	app_crypto!(sr25519, KEY_TYPE);
+
+	pub struct AuthorityId;
+	impl frame::deps::frame_system::offchain::AppCrypto<MultiSigner, MultiSignature>
+		for AuthorityId
+	{
+		type RuntimeAppPublic = Public;
+		type GenericSignature = frame::deps::sp_core::sr25519::Signature;
+		type GenericPublic = frame::deps::sp_core::sr25519::Public;
+	}
+}
+
 #[frame::pallet]
 pub mod pallet {
 	use crate::{
-		types::{PostInfo, PostVisibility},
+		types::{
+			KeyServiceInfo, PostInfo, PostVisibility, UnlockRecord, SEALED_KEY_LEN, X25519_PK_LEN,
+		},
 		weights::WeightInfo,
 		PostProvider,
 	};
+	use codec::{Decode, DecodeWithMemTracking, Encode};
 	use frame::{
+		deps::{
+			frame_support::pallet_prelude::{TransactionSource, ValidTransaction},
+			sp_runtime::{
+				traits::Saturating,
+				transaction_validity::{InvalidTransaction, TransactionValidity},
+			},
+		},
 		prelude::*,
 		traits::{Currency, ExistenceRequirement},
 	};
+	use frame::deps::frame_system::offchain::{
+		AppCrypto, CreateBare, CreateSignedTransaction, SignedPayload, SigningTypes,
+	};
 	use pallet_social_app_registry::AppProvider;
 	use pallet_social_profiles::ProfileProvider;
+	use scale_info::TypeInfo;
 
 	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+	/// Custom error codes returned by `validate_unsigned`.
+	pub mod unsigned_error {
+		pub const KEY_SERVICE_NOT_SET: u8 = 101;
+		pub const SIGNER_NOT_KEY_SERVICE: u8 = 102;
+		pub const STALE_PAYLOAD: u8 = 103;
+	}
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/// Signed payload carried by `deliver_unlock_unsigned`. The collator
+	/// OCW fills this in, signs it with its `AuthorityId`, and the on-chain
+	/// `validate_unsigned` verifies the signature + freshness window.
+	#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct DeliverUnlockPayload<T: Config> {
+		pub public: T::Public,
+		pub block_number: BlockNumberFor<T>,
+		pub post_id: T::PostId,
+		pub viewer: T::AccountId,
+		pub wrapped_key: BoundedVec<u8, ConstU32<{ SEALED_KEY_LEN }>>,
+	}
+
+	// Manual trait impls — `derive` requires `T: Clone`, too strict.
+	impl<T: Config> Clone for DeliverUnlockPayload<T> {
+		fn clone(&self) -> Self {
+			Self {
+				public: self.public.clone(),
+				block_number: self.block_number,
+				post_id: self.post_id,
+				viewer: self.viewer.clone(),
+				wrapped_key: self.wrapped_key.clone(),
+			}
+		}
+	}
+	impl<T: Config> core::fmt::Debug for DeliverUnlockPayload<T> {
+		fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+			f.debug_struct("DeliverUnlockPayload")
+				.field("block_number", &self.block_number)
+				.finish_non_exhaustive()
+		}
+	}
+	impl<T: Config> PartialEq for DeliverUnlockPayload<T> {
+		fn eq(&self, other: &Self) -> bool {
+			self.block_number == other.block_number
+				&& self.post_id == other.post_id
+				&& self.viewer == other.viewer
+				&& self.wrapped_key == other.wrapped_key
+				&& self.public == other.public
+		}
+	}
+	impl<T: Config> Eq for DeliverUnlockPayload<T> {}
+
+	impl<T: Config> SignedPayload<T> for DeliverUnlockPayload<T>
+	where
+		T: SigningTypes,
+	{
+		fn public(&self) -> T::Public {
+			self.public.clone()
+		}
+	}
+
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config:
+		frame_system::Config + CreateSignedTransaction<Call<Self>> + CreateBare<Call<Self>>
+	{
 		/// Post ID type (u64 for large capacity).
 		type PostId: Member
 			+ Parameter
@@ -106,6 +208,24 @@ pub mod pallet {
 			Success = (Self::AppId, Self::AccountId),
 		>;
 
+		/// Offchain authority used by the collator to sign
+		/// `DeliverUnlockPayload` inside `deliver_unlock_unsigned`.
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		/// Origin authorised to set / rotate the key service. Typically
+		/// `EnsureRoot` in dev (sudo), governance in production.
+		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// How many blocks an unsigned delivery payload is valid for.
+		#[pallet::constant]
+		type UnsignedValidityWindow: Get<BlockNumberFor<Self>>;
+
+		/// Transaction-pool priority for unsigned deliveries.
+		#[pallet::constant]
+		type UnsignedPriority: Get<
+			frame::deps::sp_runtime::transaction_validity::TransactionPriority,
+		>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -138,11 +258,32 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// Tracks which accounts have unlocked which posts.
-	/// (viewer, post_id) -> true if unlocked.
+	/// Per-viewer unlock records. Keyed by `(post_id, viewer)` — the
+	/// post_id first lets the OCW iterate unlocks for a given post
+	/// cheaply. A `None` `wrapped_key` means "payment received, waiting
+	/// for the collator to deliver".
 	#[pallet::storage]
-	pub type UnlockedPosts<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Blake2_128Concat, T::PostId, bool>;
+	pub type Unlocks<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::PostId,
+		Blake2_128Concat,
+		T::AccountId,
+		UnlockRecord<T>,
+		OptionQuery,
+	>;
+
+	/// Index of unlocks still awaiting key delivery. The OCW iterates
+	/// this map to find work. A present key == pending; it is removed
+	/// when the key is delivered.
+	#[pallet::storage]
+	pub type PendingUnlocks<T: Config> =
+		StorageMap<_, Blake2_128Concat, (T::PostId, T::AccountId), (), OptionQuery>;
+
+	/// On-chain record of the custodial key service (collator).
+	#[pallet::storage]
+	pub type KeyService<T: Config> =
+		StorageValue<_, KeyServiceInfo<T::AccountId>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -182,6 +323,10 @@ pub mod pallet {
 			app_id: T::AppId,
 			moderator: T::AccountId,
 		},
+		/// The admin configured (or rotated) the key service.
+		KeyServiceUpdated { version: u32 },
+		/// The collator OCW delivered a wrapped key for a pending unlock.
+		UnlockKeyDelivered { post_id: T::PostId, viewer: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -213,6 +358,19 @@ pub mod pallet {
 		PostNotInApp,
 		/// The post is already redacted — repeated redactions are no-ops.
 		AlreadyRedacted,
+		/// Non-public posts must ship a `capsule` of the exact sealed-box
+		/// length; public posts must not carry one.
+		CapsuleInvalid,
+		/// The ephemeral X25519 public key provided by the viewer is
+		/// malformed (e.g. all zeros).
+		InvalidBuyerPk,
+		/// The key service is not configured on-chain yet.
+		KeyServiceNotConfigured,
+		/// Wrapped key delivered by the OCW was not the expected length.
+		WrappedKeyInvalid,
+		/// Tried to deliver for an unlock record that does not exist or
+		/// already has a wrapped key.
+		UnlockNotPending,
 	}
 
 	impl<T: Config> PostProvider<T::AccountId, T::PostId> for Pallet<T> {
@@ -240,10 +398,30 @@ pub mod pallet {
 			reply_fee: BalanceOf<T>,
 			visibility: PostVisibility,
 			unlock_fee: BalanceOf<T>,
+			capsule: Option<BoundedVec<u8, ConstU32<{ SEALED_KEY_LEN }>>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			ensure!(T::ProfileProvider::exists(&who), Error::<T>::ProfileNotFound);
+
+			// Enforce capsule invariants tied to visibility:
+			//  * Public posts must never carry a capsule (the content is
+			//    plaintext anyway, a capsule would be misleading data).
+			//  * Non-public posts MUST carry a capsule whose length matches
+			//    the sealed-box size. Zero-capsule posts would be silently
+			//    undecryptable, which is worse than failing fast.
+			match (&visibility, &capsule) {
+				(PostVisibility::Public, None) => {},
+				(PostVisibility::Public, Some(_)) => return Err(Error::<T>::CapsuleInvalid.into()),
+				(_, Some(c)) if c.len() as u32 == SEALED_KEY_LEN => {},
+				_ => return Err(Error::<T>::CapsuleInvalid.into()),
+			}
+			if capsule.is_some() {
+				// The chain must know where to direct the OCW's sealed
+				// box; a post cannot ship a capsule before the admin has
+				// configured a key service.
+				ensure!(KeyService::<T>::exists(), Error::<T>::KeyServiceNotConfigured);
+			}
 
 			let fee_recipient = Self::resolve_fee_recipient(&app_id)?;
 
@@ -269,6 +447,7 @@ pub mod pallet {
 				unlock_fee: actual_unlock_fee,
 				created_at: block_number,
 				redacted_by: None,
+				capsule,
 			};
 
 			NextPostId::<T>::put(next_id);
@@ -334,6 +513,7 @@ pub mod pallet {
 				unlock_fee: Zero::zero(),
 				created_at: block_number,
 				redacted_by: None,
+				capsule: None,
 			};
 
 			NextPostId::<T>::put(next_id);
@@ -372,27 +552,38 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Unlock an obfuscated or private post by paying the unlock fee to the author.
+		/// Unlock a non-public post.
 		///
-		/// After unlocking, the viewer can see the content. The author of a post
-		/// always has access without needing to unlock.
+		/// The viewer pays `unlock_fee` to the author and registers an
+		/// ephemeral X25519 public key. Payment alone does not hand over
+		/// the content key: the pallet enqueues an [`UnlockRecord`] with
+		/// `wrapped_key = None`, and the collator's offchain worker
+		/// eventually re-seals the content key to `buyer_pk` and submits
+		/// `deliver_unlock_unsigned`. The viewer polls until
+		/// `wrapped_key.is_some()` and then decrypts locally.
+		///
+		/// The author keeps implicit access — if the caller is the
+		/// author, we short-circuit without creating an unlock record.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::unlock_post())]
-		pub fn unlock_post(origin: OriginFor<T>, post_id: T::PostId) -> DispatchResult {
+		pub fn unlock_post(
+			origin: OriginFor<T>,
+			post_id: T::PostId,
+			buyer_pk: [u8; X25519_PK_LEN as usize],
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let post = Posts::<T>::get(post_id).ok_or(Error::<T>::PostNotFound)?;
+			ensure!(buyer_pk != [0u8; X25519_PK_LEN as usize], Error::<T>::InvalidBuyerPk);
 
+			let post = Posts::<T>::get(post_id).ok_or(Error::<T>::PostNotFound)?;
 			ensure!(post.visibility != PostVisibility::Public, Error::<T>::PostIsPublic);
 
-			// Author always has implicit access — no storage write needed.
 			if who == post.author {
 				return Ok(());
 			}
 
-			ensure!(!UnlockedPosts::<T>::contains_key(&who, post_id), Error::<T>::AlreadyUnlocked);
+			ensure!(!Unlocks::<T>::contains_key(post_id, &who), Error::<T>::AlreadyUnlocked);
 
-			// Transfer unlock fee to author.
 			if post.unlock_fee > Zero::zero() {
 				T::Currency::transfer(
 					&who,
@@ -403,13 +594,73 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
-			UnlockedPosts::<T>::insert(&who, post_id, true);
+			let now = frame_system::Pallet::<T>::block_number();
+			Unlocks::<T>::insert(
+				post_id,
+				&who,
+				UnlockRecord::<T> { buyer_pk, wrapped_key: None, requested_at: now },
+			);
+			PendingUnlocks::<T>::insert((post_id, who.clone()), ());
 
 			Self::deposit_event(Event::PostUnlocked {
 				post_id,
 				viewer: who,
 				author: post.author,
 				fee_paid: post.unlock_fee,
+			});
+			Ok(())
+		}
+
+		/// Admin entry point to publish / rotate the key service (the
+		/// custodial collator's X25519 pk + signer account).
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::unlock_post())]
+		pub fn set_key_service(
+			origin: OriginFor<T>,
+			account: T::AccountId,
+			encryption_pk: [u8; X25519_PK_LEN as usize],
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			ensure!(encryption_pk != [0u8; X25519_PK_LEN as usize], Error::<T>::InvalidBuyerPk);
+			let next_version =
+				KeyService::<T>::get().map(|ks| ks.version.saturating_add(1)).unwrap_or(1);
+			KeyService::<T>::put(KeyServiceInfo { account, encryption_pk, version: next_version });
+			Self::deposit_event(Event::KeyServiceUpdated { version: next_version });
+			Ok(())
+		}
+
+		/// Unsigned extrinsic submitted by the collator OCW to hand a
+		/// re-sealed content key to the viewer. See the `validate_unsigned`
+		/// block for the pool-level validation rules.
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::unlock_post())]
+		pub fn deliver_unlock_unsigned(
+			origin: OriginFor<T>,
+			payload: DeliverUnlockPayload<T>,
+			_signature: T::Signature,
+		) -> DispatchResult {
+			ensure_none(origin)?;
+
+			ensure!(
+				payload.wrapped_key.len() as u32 == SEALED_KEY_LEN,
+				Error::<T>::WrappedKeyInvalid,
+			);
+
+			Unlocks::<T>::try_mutate(
+				payload.post_id,
+				&payload.viewer,
+				|maybe_record| -> DispatchResult {
+					let record = maybe_record.as_mut().ok_or(Error::<T>::UnlockNotPending)?;
+					ensure!(record.wrapped_key.is_none(), Error::<T>::UnlockNotPending);
+					record.wrapped_key = Some(payload.wrapped_key.clone());
+					Ok(())
+				},
+			)?;
+			PendingUnlocks::<T>::remove((payload.post_id, payload.viewer.clone()));
+
+			Self::deposit_event(Event::UnlockKeyDelivered {
+				post_id: payload.post_id,
+				viewer: payload.viewer,
 			});
 			Ok(())
 		}
@@ -461,6 +712,75 @@ pub mod pallet {
 				},
 				None => Ok(T::TreasuryAccount::get()),
 			}
+		}
+
+		/// Pure validation helper used by `validate_unsigned`. Extracted
+		/// so the logic is reusable if we later migrate to
+		/// `#[pallet::authorize]` (post-stable2512).
+		pub(crate) fn validate_delivery(call: &Call<T>) -> TransactionValidity {
+			let (payload, signature) = match call {
+				Call::deliver_unlock_unsigned { payload, signature } => (payload, signature),
+				_ => return InvalidTransaction::Call.into(),
+			};
+
+			// 1. Freshness window.
+			let now = frame_system::Pallet::<T>::block_number();
+			let window = T::UnsignedValidityWindow::get();
+			if payload.block_number > now
+				|| now.saturating_sub(payload.block_number) > window
+			{
+				return InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into();
+			}
+
+			// 2. Signature.
+			let valid = SignedPayload::<T>::verify::<T::AuthorityId>(payload, signature.clone());
+			if !valid {
+				return InvalidTransaction::BadProof.into();
+			}
+
+			// 3. Signer must be the current key service.
+			let ks = KeyService::<T>::get().ok_or_else(|| {
+				InvalidTransaction::Custom(unsigned_error::KEY_SERVICE_NOT_SET)
+			})?;
+			let signer: T::AccountId = payload.public.clone().into_account();
+			if signer != ks.account {
+				return InvalidTransaction::Custom(unsigned_error::SIGNER_NOT_KEY_SERVICE).into();
+			}
+
+			// 4. Dedup tag per (post_id, viewer).
+			let tag = (b"feeds-unlock", payload.post_id, payload.viewer.clone()).encode();
+
+			ValidTransaction::with_tag_prefix("social-feeds-unlock")
+				.priority(T::UnsignedPriority::get())
+				.and_provides(tag)
+				.longevity(window.saturated_into::<u64>())
+				.propagate(true)
+				.build()
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(
+			source: TransactionSource,
+			call: &Self::Call,
+		) -> TransactionValidity {
+			// Only accept from a local OCW or in-block propagation — stops
+			// external peers from flooding the pool with speculative keys.
+			if !matches!(source, TransactionSource::Local | TransactionSource::InBlock) {
+				return InvalidTransaction::Call.into();
+			}
+			Pallet::<T>::validate_delivery(call)
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		#[cfg(feature = "std")]
+		fn offchain_worker(block_number: BlockNumberFor<T>) {
+			crate::offchain::run::<T>(block_number);
 		}
 	}
 }

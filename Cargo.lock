@@ -3259,6 +3259,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto_box"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16182b4f39a82ec8a6851155cc4c0cda3065bb1db33651726a29e1951de0f009"
+dependencies = [
+ "aead",
+ "blake2 0.10.6",
+ "crypto_secretbox",
+ "curve25519-dalek",
+ "salsa20",
+ "subtle 2.6.1",
+ "zeroize",
+]
+
+[[package]]
 name = "crypto_secretbox"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10522,13 +10537,17 @@ dependencies = [
 name = "pallet-social-feeds"
 version = "0.1.0"
 dependencies = [
+ "crypto_box",
+ "log",
  "pallet-social-app-registry",
  "pallet-social-profiles",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
+ "rand_chacha 0.3.1",
  "scale-info",
  "sp-io",
+ "zeroize",
 ]
 
 [[package]]

@@ -155,7 +155,72 @@ impl crate::Config for Test {
 	type MaxPostsPerAuthor = MaxPostsPerAuthor;
 	type MaxRepliesPerPost = MaxRepliesPerPost;
 	type ModerationOrigin = NeverModeration;
+	type AuthorityId = MockAuthorityId;
+	type AdminOrigin = frame_system::EnsureRoot<u64>;
+	type UnsignedValidityWindow = ConstU64<16>;
+	type UnsignedPriority = ConstU64<1_000>;
 	type WeightInfo = ();
+}
+
+/// Test-only AppCrypto wrapper. Bridges `UintAuthorityId` / `TestSignature`
+/// to the `AppCrypto` trait expected by the pallet's Config; the concrete
+/// keystore-based wrapper from `crate::crypto::AuthorityId` only works in a
+/// real runtime with `MultiSignature`, so we substitute a simpler one here.
+pub struct MockAuthorityId;
+impl frame_system::offchain::AppCrypto<UintAuthorityId, TestSignature> for MockAuthorityId {
+	type RuntimeAppPublic = UintAuthorityId;
+	type GenericSignature = TestSignature;
+	type GenericPublic = UintAuthorityId;
+}
+
+// Minimal OCW glue so the mock runtime satisfies the new Config bounds.
+// The mock never actually submits unsigned txs, so `None` / bare-pass-through
+// impls are sufficient. We use `TestSignature` / `UintAuthorityId` from
+// `sp-runtime::testing` because they implement `IdentifyAccount<AccountId =
+// u64>` out of the box and avoid dragging `AccountId32` into the mock.
+use frame::deps::sp_runtime::{
+	generic,
+	testing::{TestSignature, UintAuthorityId},
+};
+use frame_system::offchain::{
+	CreateBare as _CreateBare, CreateSignedTransaction, CreateTransactionBase, SigningTypes,
+};
+
+impl SigningTypes for Test {
+	type Public = UintAuthorityId;
+	type Signature = TestSignature;
+}
+impl<LocalCall> CreateTransactionBase<LocalCall> for Test
+where
+	RuntimeCall: From<LocalCall>,
+{
+	type Extrinsic = generic::UncheckedExtrinsic<u64, RuntimeCall, TestSignature, ()>;
+	type RuntimeCall = RuntimeCall;
+}
+impl<LocalCall> _CreateBare<LocalCall> for Test
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_bare(
+		call: RuntimeCall,
+	) -> generic::UncheckedExtrinsic<u64, RuntimeCall, TestSignature, ()> {
+		generic::UncheckedExtrinsic::new_bare(call)
+	}
+}
+impl<LocalCall> CreateSignedTransaction<LocalCall> for Test
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_signed_transaction<
+		C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>,
+	>(
+		_call: RuntimeCall,
+		_public: UintAuthorityId,
+		_account: u64,
+		_nonce: u64,
+	) -> Option<generic::UncheckedExtrinsic<u64, RuntimeCall, TestSignature, ()>> {
+		None
+	}
 }
 
 /// Build genesis storage with pre-funded accounts for testing.
@@ -179,5 +244,16 @@ pub fn new_test_ext() -> TestState {
 	.assimilate_storage(&mut storage)
 	.unwrap();
 
-	storage.into()
+	let mut state: TestState = storage.into();
+	// Register a dummy key service so tests that publish non-public posts
+	// (with a capsule) pass the `KeyServiceNotConfigured` guard without
+	// needing to stand up the admin flow in every test.
+	state.execute_with(|| {
+		crate::pallet::KeyService::<Test>::put(crate::types::KeyServiceInfo {
+			account: 42u64,
+			encryption_pk: [7u8; 32],
+			version: 1,
+		});
+	});
+	state
 }

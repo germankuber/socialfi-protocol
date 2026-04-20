@@ -12,9 +12,17 @@ publish = false
 [dependencies]
 codec = { features = ["derive"], workspace = true }
 frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
+log = { workspace = true }
 pallet-social-app-registry = { workspace = true, default-features = false }
 pallet-social-profiles = { workspace = true, default-features = false }
 scale-info = { features = ["derive"], workspace = true }
+
+# Crypto used by the offchain worker only. These crates compile to wasm
+# under `no_std` with the features below. On-chain code only stores
+# opaque bytes and never calls these primitives.
+crypto_box = { version = "0.9", default-features = false, features = ["seal", "salsa20", "alloc", "rand_core"] }
+rand_chacha = { version = "0.3", default-features = false }
+zeroize = { version = "1.8", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 frame = { workspace = true, features = ["std", "experimental", "runtime"] }
@@ -25,10 +33,14 @@ sp-io = { workspace = true, features = ["std"] }
 default = ["std"]
 std = [
 	"codec/std",
+	"crypto_box/std",
 	"frame/std",
+	"log/std",
 	"pallet-social-app-registry/std",
 	"pallet-social-profiles/std",
+	"rand_chacha/std",
 	"scale-info/std",
+	"zeroize/std",
 ]
 runtime-benchmarks = [
 	"frame/runtime-benchmarks",
