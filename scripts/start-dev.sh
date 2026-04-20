@@ -12,21 +12,42 @@ log_info "Typical startup time is under 2 minutes once Rust dependencies are bui
 log_info "Statement Store is intentionally unavailable in this solo-node mode."
 echo ""
 
+cleanup_dev() {
+    if [ -n "${NODE_PID:-}" ]; then
+        kill "$NODE_PID" 2>/dev/null || true
+        wait "$NODE_PID" 2>/dev/null || true
+    fi
+}
+trap cleanup_dev EXIT INT TERM
+
 validate_solo_dev_toolchain
 
 # Build the runtime
-echo "[1/3] Building runtime..."
+echo "[1/4] Building runtime..."
 build_runtime
 
 # Create the chain spec using the newly built WASM
-echo "[2/3] Generating chain spec..."
+echo "[2/4] Generating chain spec..."
 generate_chain_spec
 
 echo "  Chain spec written to blockchain/chain_spec.json"
 
 # Start the local node
-echo "[3/3] Starting local omni-node..."
+echo "[3/4] Starting local omni-node..."
 log_info "RPC endpoint: $SUBSTRATE_RPC_WS"
 log_info "Use start-all.sh for the full stack, or start-local.sh for just the relay-backed network."
 echo ""
-run_local_node_foreground
+start_local_node_background
+wait_for_substrate_rpc
+
+echo "[4/4] Registering dev key-service identity..."
+insert_key_service_in_keystore
+
+echo ""
+log_info "Node is ready. Streaming log below — Ctrl+C to stop."
+echo ""
+tail -n +1 -f "$NODE_LOG" &
+TAIL_PID=$!
+# Make sure the tail dies with the script.
+trap 'kill "$TAIL_PID" 2>/dev/null || true; cleanup_dev' EXIT INT TERM
+wait "$NODE_PID"

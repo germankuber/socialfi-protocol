@@ -233,18 +233,28 @@ export default function AppDetailPage() {
 
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
-				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
-				unlockedSet = new Set(unlockedEntries.map((e) => Number(e.keyArgs[1])));
+				// New shape: `Unlocks` is keyed by (post_id, viewer). A post
+				// counts as "unlocked" only once the OCW has delivered the
+				// wrapped key — a pending record means payment succeeded but
+				// the decrypt material is still in flight.
+				const all = await api.query.SocialFeeds.Unlocks.getEntries();
+				unlockedSet = new Set(
+					all
+						.filter(
+							(e: { keyArgs: [bigint, string]; value: { wrapped_key: unknown } }) =>
+								e.keyArgs[1].toString() === accountAddress && !!e.value.wrapped_key,
+						)
+						.map((e: { keyArgs: [bigint, string] }) => Number(e.keyArgs[0])),
+				);
 				setUnlocked(unlockedSet);
 			}
 
-			// Resolve content from IPFS in background
-			// Public: always. Non-public: if author or unlocked.
+			// Resolve content from IPFS in background. Only for posts whose
+			// CID points to plaintext JSON — encrypted posts are handled by
+			// `<EncryptedPostUnlock>` which fetches the raw blob and decrypts
+			// it locally via `useUnlockEncryptedPost`.
 			for (const p of appPosts) {
-				const shouldResolve =
-					p.visibility === "Public" ||
-					p.author === accountAddress ||
-					unlockedSet.has(p.id);
+				const shouldResolve = p.visibility === "Public";
 				if (shouldResolve) {
 					fetchPostContent(p.contentCid).then((result) => {
 						if (result) setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: result.text, resolvedImage: result.image ? ipfsUrl(result.image) : null } : pp));
@@ -667,7 +677,19 @@ export default function AppDetailPage() {
 													</p>
 												</div>
 											</div>
-										) : visible ? (
+										) : post.visibility !== "Public" && post.author !== accountAddress ? (
+											// Encrypted post from another author: always go through the
+											// unlock component — it transparently handles the three
+											// states (pay / wait for OCW / decrypt & show).
+											<EncryptedPostUnlock
+												postId={post.id}
+												cid={post.contentCid}
+												unlockFee={post.unlockFee}
+												visibility={post.visibility}
+												viewer={accountAddress}
+												onSettled={() => loadApp()}
+											/>
+										) : (
 											<div className="space-y-2">
 												{post.resolvedImage && (
 													<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
@@ -678,15 +700,6 @@ export default function AppDetailPage() {
 													<span className="text-surface-500 italic text-sm">Loading content...</span>
 												)}
 											</div>
-										) : (
-											<EncryptedPostUnlock
-												postId={post.id}
-												cid={post.contentCid}
-												unlockFee={post.unlockFee}
-												visibility={post.visibility}
-												viewer={accountAddress}
-												onSettled={() => loadApp()}
-											/>
 										)}
 									</div>
 
@@ -1131,6 +1144,120 @@ function SponsoredByPill({
 			<span className="font-mono shrink-0">
 				{(Number(potBalance) / 1e9).toFixed(2)} UNIT
 			</span>
+		</div>
+	);
+}
+
+/**
+ * Inline unlock flow for an encrypted post.
+ *
+ * - **Not purchased yet**: show "Unlock for X UNIT" button.
+ * - **Key pending**: show spinner — waiting for the collator OCW.
+ * - **Key delivered**: decrypt locally and show the plaintext.
+ */
+function EncryptedPostUnlock({
+	postId,
+	cid,
+	unlockFee,
+	visibility,
+	viewer,
+	onSettled,
+}: {
+	postId: number;
+	cid: string;
+	unlockFee: bigint;
+	visibility: Visibility;
+	viewer: string | null;
+	onSettled: () => void;
+}) {
+	const { account } = useSelectedAccount();
+	const bigPostId = useMemo(() => BigInt(postId), [postId]);
+	const { state, wrappedKey, start, decryptNow, tracker } = useUnlockEncryptedPost(
+		bigPostId,
+		viewer,
+	);
+
+	const [decoded, setDecoded] = useState<{ text: string; image?: string } | null>(null);
+
+	useEffect(() => {
+		if (!wrappedKey || decoded) return;
+		(async () => {
+			await decryptNow(cid, fetchRawFromIpfs);
+		})();
+	}, [wrappedKey, cid, decoded, decryptNow]);
+
+	useEffect(() => {
+		if (state.status === "ready" && state.plaintext) {
+			try {
+				const parsed = JSON.parse(new TextDecoder().decode(state.plaintext));
+				setDecoded({ text: parsed.text ?? "", image: parsed.image });
+			} catch {
+				setDecoded({ text: new TextDecoder().decode(state.plaintext) });
+			}
+		}
+	}, [state]);
+
+	const busy =
+		tracker.state.stage !== "idle" && tracker.state.stage !== "error";
+
+	if (decoded) {
+		return (
+			<div className="space-y-2">
+				<div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-500">
+					<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
+						<path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+					</svg>
+					Decrypted locally
+				</div>
+				<p className="text-sm whitespace-pre-wrap break-words">{decoded.text}</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
+			<svg
+				className="w-6 h-6 text-surface-500 mx-auto"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				strokeWidth={1.5}
+			>
+				<path
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+				/>
+			</svg>
+			<p className="text-xs text-secondary">
+				{visibility === "Private" ? "Private content" : "Obfuscated content"}
+			</p>
+			{wrappedKey ? (
+				<p className="text-[11px] text-brand-500 font-semibold">
+					Key delivered — decrypting…
+				</p>
+			) : state.status === "awaiting-key" ? (
+				<p className="text-[11px] text-surface-400">
+					Waiting for collator to deliver the key (typically 1-2 blocks)…
+				</p>
+			) : account ? (
+				<button
+					onClick={async () => {
+						const ok = await start(account.signer);
+						if (ok) onSettled();
+					}}
+					disabled={busy}
+					className="btn-brand btn-sm"
+				>
+					Unlock for {unlockFee.toString()} units
+				</button>
+			) : (
+				<p className="text-[11px] text-surface-500">Connect a wallet to unlock.</p>
+			)}
+			{state.status === "error" && (
+				<p className="text-[11px] text-danger">{state.error}</p>
+			)}
+			<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
 		</div>
 	);
 }

@@ -10546,6 +10546,7 @@ dependencies = [
  "polkadot-sdk-frame",
  "rand_chacha 0.3.1",
  "scale-info",
+ "serde",
  "sp-io",
  "zeroize",
 ]

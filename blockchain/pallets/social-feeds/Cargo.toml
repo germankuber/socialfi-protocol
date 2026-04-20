@@ -16,6 +16,7 @@ log = { workspace = true }
 pallet-social-app-registry = { workspace = true, default-features = false }
 pallet-social-profiles = { workspace = true, default-features = false }
 scale-info = { features = ["derive"], workspace = true }
+serde = { workspace = true, features = ["derive", "alloc"] }
 
 # Crypto used by the offchain worker only. These crates compile to wasm
 # under `no_std` with the features below. On-chain code only stores
@@ -40,6 +41,7 @@ std = [
 	"pallet-social-profiles/std",
 	"rand_chacha/std",
 	"scale-info/std",
+	"serde/std",
 	"zeroize/std",
 ]
 runtime-benchmarks = [

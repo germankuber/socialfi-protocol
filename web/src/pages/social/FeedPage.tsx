@@ -1,10 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Binary } from "polkadot-api";
+import { Binary, FixedSizeBinary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
+import {
+	sealPostContent,
+	uploadRawToIpfs,
+	useKeyService,
+} from "../../hooks/social/useEncryptedPosts";
+import { generateX25519Keypair, stashBuyerSk } from "../../utils/postCrypto";
 import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import ConfirmModal from "../../components/social/ConfirmModal";
@@ -30,6 +36,7 @@ export default function FeedPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
 	const tracker = useTxTracker();
+	const keyService = useKeyService();
 	const { uploadPostContent, fetchPostContent } = useIpfs();
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [replies, setReplies] = useState<Record<number, PostData[]>>({});
@@ -90,8 +97,18 @@ export default function FeedPage() {
 
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
-				const unlockedEntries = await api.query.SocialFeeds.UnlockedPosts.getEntries(accountAddress);
-				unlockedSet = new Set(unlockedEntries.map((e) => Number(e.keyArgs[1])));
+				// New shape: `Unlocks` is keyed by (post_id, viewer). A post
+				// counts as unlocked only once the OCW has delivered the
+				// wrapped key.
+				const all = await api.query.SocialFeeds.Unlocks.getEntries();
+				unlockedSet = new Set(
+					all
+						.filter(
+							(e: { keyArgs: [bigint, string]; value: { wrapped_key: unknown } }) =>
+								e.keyArgs[1].toString() === accountAddress && !!e.value.wrapped_key,
+						)
+						.map((e: { keyArgs: [bigint, string] }) => Number(e.keyArgs[0])),
+				);
 				setUnlocked(unlockedSet);
 			}
 
@@ -145,7 +162,18 @@ export default function FeedPage() {
 		if (!account || !content.trim()) return;
 		try {
 			setUploading(true);
-			const cid = await uploadPostContent(content.trim());
+
+			let cid: string;
+			let capsule: Uint8Array | undefined;
+			if (visibility === "Public") {
+				cid = await uploadPostContent(content.trim());
+			} else {
+				if (!keyService) throw new Error("Key service not configured on-chain");
+				const payload = new TextEncoder().encode(JSON.stringify({ text: content.trim() }));
+				const sealed = await sealPostContent(payload, keyService.encryptionPk);
+				cid = await uploadRawToIpfs(sealed.blob);
+				capsule = sealed.capsule;
+			}
 			setUploading(false);
 
 			const api = getApi();
@@ -155,6 +183,7 @@ export default function FeedPage() {
 				reply_fee: BigInt(replyFee || "0"),
 				visibility: { type: visibility, value: undefined },
 				unlock_fee: BigInt(unlockFeeInput || "0"),
+				capsule: capsule ? FixedSizeBinary.fromBytes(capsule) : undefined,
 			});
 			const ok = await tracker.submit(tx, account.signer, "Create Post");
 			if (ok) {
@@ -165,8 +194,9 @@ export default function FeedPage() {
 				setVisibility("Public");
 				loadPosts();
 			}
-		} catch {
+		} catch (e) {
 			setUploading(false);
+			console.error("createPost failed", e);
 		}
 	}
 
@@ -197,8 +227,19 @@ export default function FeedPage() {
 
 	async function unlockPost(postId: number) {
 		if (!account) return;
+		// Encrypted-post unlock: generate ephemeral X25519 keypair,
+		// stash the secret in sessionStorage, submit with the public
+		// key. The collator OCW eventually delivers the wrapped key;
+		// the full decrypt flow lives on `AppDetailPage` where the
+		// per-post component polls + decrypts. From the global feed we
+		// only kick off the payment; deep-read happens on the post page.
+		const kp = await generateX25519Keypair();
+		stashBuyerSk(postId, kp.secretKey);
 		const api = getApi();
-		const tx = api.tx.SocialFeeds.unlock_post({ post_id: BigInt(postId) });
+		const tx = api.tx.SocialFeeds.unlock_post({
+			post_id: BigInt(postId),
+			buyer_pk: FixedSizeBinary.fromBytes(kp.publicKey),
+		});
 		const ok = await tracker.submit(tx, account.signer, "Unlock Post");
 		if (ok) loadPosts();
 	}

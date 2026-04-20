@@ -53,6 +53,9 @@ log_info "and the parachain must register before the collator starts authoring."
 start_zombienet_background
 wait_for_substrate_rpc
 
+log_info "Registering dev key-service identity..."
+insert_key_service_in_keystore
+
 echo "[5/8] Starting eth-rpc adapter..."
 start_eth_rpc_background
 wait_for_eth_rpc

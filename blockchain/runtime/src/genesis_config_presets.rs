@@ -1,6 +1,7 @@
 use crate::{
 	AccountId, BalancesConfig, CollatorSelectionConfig, ParachainInfoConfig, PolkadotXcmConfig,
-	RuntimeGenesisConfig, SessionConfig, SessionKeys, SudoConfig, EXISTENTIAL_DEPOSIT,
+	RuntimeGenesisConfig, SessionConfig, SessionKeys, SocialFeedsConfig, SudoConfig,
+	EXISTENTIAL_DEPOSIT,
 };
 
 use alloc::{vec, vec::Vec};
@@ -31,9 +32,26 @@ fn testnet_genesis(
 	root: AccountId,
 	id: ParaId,
 ) -> Value {
+	// The key-service account is the identity the collator's OCW uses
+	// to sign `deliver_unlock_unsigned`. Kept distinct from Alice/Bob
+	// so it's obvious that unlock deliveries do not come from the same
+	// account the UI signs with.
+	let key_service_account = sp_core::crypto::AccountId32::from(
+		pallet_social_feeds::dev_key::key_service_account_id(),
+	);
+
+	// Endow it so the on-chain `KeyServiceInfo::account` resolves to a
+	// real, reachable account (the unsigned payload carries the public
+	// key, but the account needs to exist for downstream consumers and
+	// future migrations that might add a fee path).
+	let mut endowed = endowed_accounts;
+	if !endowed.iter().any(|a| a == &key_service_account) {
+		endowed.push(key_service_account.clone());
+	}
+
 	build_struct_json_patch!(RuntimeGenesisConfig {
 		balances: BalancesConfig {
-			balances: endowed_accounts
+			balances: endowed
 				.iter()
 				.cloned()
 				.map(|k| (k, 1u128 << 60))
@@ -52,6 +70,18 @@ fn testnet_genesis(
 		},
 		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 		sudo: SudoConfig { key: Some(root) },
+		// Pre-register the key service so encrypted posts work out of
+		// the box in dev. Both the X25519 public key and the sr25519
+		// account match the keys the OCW derives at runtime (see
+		// `pallet_social_feeds::dev_key`).
+		social_feeds: SocialFeedsConfig {
+			key_service: Some(pallet_social_feeds::types::KeyServiceInfo {
+				account: key_service_account,
+				encryption_pk: pallet_social_feeds::dev_key::public_key_bytes(),
+				version: 1,
+			}),
+			..Default::default()
+		},
 	})
 }
 

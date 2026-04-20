@@ -22,7 +22,8 @@ mod tests;
 
 pub mod weights;
 
-#[cfg(feature = "std")]
+pub mod dev_key;
+
 pub mod offchain;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -383,6 +384,34 @@ pub mod pallet {
 		}
 	}
 
+	/// Genesis configuration for the pallet.
+	///
+	/// `key_service` (optional) lets a chainspec pre-register the
+	/// custodial collator account + X25519 public key so the OCW can
+	/// start delivering encrypted-post unlocks from block 1 with no
+	/// manual sudo ceremony. For dev chainspecs we wire this up to the
+	/// deterministic Alice key; production deployments leave it `None`
+	/// and register via governance later.
+	#[pallet::genesis_config]
+	#[derive(frame::deps::frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		pub key_service: Option<KeyServiceInfo<T::AccountId>>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			if let Some(ks) = &self.key_service {
+				log::info!(
+					target: "social-feeds",
+					"🔑 GENESIS: registering key service version={} account={:?} pk={:02x?}",
+					ks.version, ks.account, &ks.encryption_pk[..8],
+				);
+				KeyService::<T>::put(ks.clone());
+			}
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Create a new original post.
@@ -421,6 +450,11 @@ pub mod pallet {
 				// box; a post cannot ship a capsule before the admin has
 				// configured a key service.
 				ensure!(KeyService::<T>::exists(), Error::<T>::KeyServiceNotConfigured);
+				log::info!(
+					target: "social-feeds",
+					"📝 encrypted create_post author={:?} visibility={:?} capsule_len={}",
+					who, visibility, capsule.as_ref().map(|c| c.len()).unwrap_or(0),
+				);
 			}
 
 			let fee_recipient = Self::resolve_fee_recipient(&app_id)?;
@@ -602,6 +636,12 @@ pub mod pallet {
 			);
 			PendingUnlocks::<T>::insert((post_id, who.clone()), ());
 
+			log::info!(
+				target: "social-feeds",
+				"💰 unlock_post paid post_id={:?} viewer={:?} fee={:?} buyer_pk={:02x?}",
+				post_id, who, post.unlock_fee, &buyer_pk[..8],
+			);
+
 			Self::deposit_event(Event::PostUnlocked {
 				post_id,
 				viewer: who,
@@ -657,6 +697,12 @@ pub mod pallet {
 				},
 			)?;
 			PendingUnlocks::<T>::remove((payload.post_id, payload.viewer.clone()));
+
+			log::info!(
+				target: "social-feeds",
+				"🔓 deliver_unlock_unsigned accepted post_id={:?} viewer={:?} wrapped_key_len={}",
+				payload.post_id, payload.viewer, payload.wrapped_key.len(),
+			);
 
 			Self::deposit_event(Event::UnlockKeyDelivered {
 				post_id: payload.post_id,
@@ -772,13 +818,17 @@ pub mod pallet {
 			if !matches!(source, TransactionSource::Local | TransactionSource::InBlock) {
 				return InvalidTransaction::Call.into();
 			}
-			Pallet::<T>::validate_delivery(call)
+			let res = Pallet::<T>::validate_delivery(call);
+			log::debug!(
+				target: "social-feeds::validate",
+				"validate_unsigned source={:?} ok={}", source, res.is_ok(),
+			);
+			res
 		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		#[cfg(feature = "std")]
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			crate::offchain::run::<T>(block_number);
 		}

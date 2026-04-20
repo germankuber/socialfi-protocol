@@ -64,11 +64,15 @@ export default function PostDetailPage() {
 			};
 			setPost(p);
 
-			// Check unlock status
+			// Check unlock status (new shape: Unlocks keyed by (post_id, viewer);
+			// unlocked = record exists AND wrapped_key has been delivered).
 			let unlockedNow = false;
 			if (accountAddress && p.visibility !== "Public") {
-				const unlockVal = await api.query.SocialFeeds.UnlockedPosts.getValue(accountAddress, BigInt(numericId));
-				unlockedNow = !!unlockVal;
+				const raw = await api.query.SocialFeeds.Unlocks.getValue(
+					BigInt(numericId),
+					accountAddress,
+				);
+				unlockedNow = !!(raw && raw.wrapped_key);
 				setIsUnlocked(unlockedNow);
 			}
 
@@ -129,10 +133,23 @@ export default function PostDetailPage() {
 
 	async function unlockPost() {
 		if (!account || !post) return;
+		// Encrypted flow: generate ephemeral X25519 keypair, stash the
+		// secret for the viewer's next visit, submit with the public key.
+		// The content key is delivered asynchronously by the collator
+		// OCW; decryption happens once `Unlocks.wrapped_key` is populated.
+		const { generateX25519Keypair, stashBuyerSk } = await import(
+			"../../utils/postCrypto"
+		);
+		const { FixedSizeBinary } = await import("polkadot-api");
+		const kp = await generateX25519Keypair();
+		stashBuyerSk(post.id, kp.secretKey);
 		const api = getApi();
-		const tx = api.tx.SocialFeeds.unlock_post({ post_id: BigInt(post.id) });
+		const tx = api.tx.SocialFeeds.unlock_post({
+			post_id: BigInt(post.id),
+			buyer_pk: FixedSizeBinary.fromBytes(kp.publicKey),
+		});
 		const ok = await tracker.submit(tx, account.signer, "Unlock Post");
-		if (ok) { setIsUnlocked(true); loadPost(); }
+		if (ok) loadPost();
 	}
 
 	async function createReply() {

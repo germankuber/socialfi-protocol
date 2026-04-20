@@ -1,7 +1,8 @@
 //! Offchain worker for `pallet-social-feeds`.
 //!
-//! Only compiled with `feature = "std"` so the on-chain runtime wasm
-//! does not drag in the X25519 / sealed-box crates.
+//! The OCW runs inside the runtime WASM — the crypto crates we depend
+//! on (`crypto_box`, `rand_chacha`, `zeroize`) are configured with
+//! `default-features = false` plus `alloc` so they compile in no_std.
 //!
 //! Every imported block, each collator runs this hook. The worker:
 //!
@@ -17,19 +18,19 @@
 //! 7. Zeroizes `k_content` before returning.
 
 use crate::{
+	dev_key,
 	pallet::{
 		Call, Config, DeliverUnlockPayload, KeyService, PendingUnlocks, Posts, Unlocks,
 	},
 	types::{SEALED_KEY_LEN, X25519_PK_LEN},
 };
 use codec::Encode;
-use crypto_box::{PublicKey as CboxPublic, SecretKey as CboxSecret};
+use crypto_box::PublicKey as CboxPublic;
 use frame::{
 	deps::{
 		frame_system,
 		sp_io,
 		sp_runtime::offchain::{
-			storage::StorageValueRef,
 			storage_lock::{BlockAndTime, StorageLock},
 			Duration,
 		},
@@ -38,10 +39,6 @@ use frame::{
 };
 use frame::deps::frame_system::offchain::{SendUnsignedTransaction, Signer};
 use rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
-
-/// Local offchain storage key under which the operator stashes the
-/// 32-byte X25519 static secret. Version tag baked in.
-pub const COLLATOR_SK_STORAGE_KEY: &[u8] = b"p2d::collator_sk::v1";
 
 /// Max pending unlocks processed per block — prevents a pathological
 /// backlog from stalling block production.
@@ -52,7 +49,6 @@ const LOCK_TTL_MS: u64 = 5_000;
 
 #[derive(Debug)]
 enum OcwError {
-	SkMissing,
 	DecryptFailed,
 	SealFailed,
 	Encoding,
@@ -63,24 +59,33 @@ enum OcwError {
 /// Entry point called from `Pallet::offchain_worker`.
 pub fn run<T: Config>(block_number: BlockNumberFor<T>) {
 	if !sp_io::offchain::is_validator() {
+		log::trace!(target: "social-feeds::ocw", "skip: not a validator");
 		return;
 	}
 
 	let ks = match KeyService::<T>::get() {
 		Some(ks) => ks,
-		None => return,
-	};
-
-	let sk = match load_collator_sk() {
-		Ok(sk) => sk,
-		Err(_) => {
-			log::warn!(
-				target: "social-feeds::ocw",
-				"collator sk not in local offchain DB — cannot deliver unlocks"
-			);
+		None => {
+			log::trace!(target: "social-feeds::ocw", "skip: key service not set");
 			return;
 		},
 	};
+
+	// Dev mode: derive the custodial sk from the compiled-in seed.
+	// Production would replace this with a keystore-derived HKDF,
+	// a TEE-backed oracle, or a DKG-shared secret.
+	let sk = dev_key::secret_key();
+
+	let pending_count = PendingUnlocks::<T>::iter().count();
+	if pending_count == 0 {
+		log::trace!(target: "social-feeds::ocw", "nothing to deliver at block {:?}", block_number);
+		return;
+	}
+	log::info!(
+		target: "social-feeds::ocw",
+		"🛰️ OCW tick block={:?} pending={} key_service_version={}",
+		block_number, pending_count, ks.version,
+	);
 
 	let mut delivered = 0usize;
 	for ((post_id, viewer), _) in PendingUnlocks::<T>::iter() {
@@ -101,7 +106,13 @@ pub fn run<T: Config>(block_number: BlockNumberFor<T>) {
 		};
 
 		match try_deliver::<T>(&sk, post_id, &viewer, block_number) {
-			Ok(()) => delivered += 1,
+			Ok(()) => {
+				delivered += 1;
+				log::info!(
+					target: "social-feeds::ocw",
+					"✅ delivered post_id={:?} viewer={:?}", post_id, viewer,
+				);
+			},
 			Err(OcwError::Gone) => {},
 			Err(err) => log::warn!(
 				target: "social-feeds::ocw",
@@ -115,7 +126,7 @@ pub fn run<T: Config>(block_number: BlockNumberFor<T>) {
 }
 
 fn try_deliver<T: Config>(
-	sk: &CboxSecret,
+	sk: &crypto_box::SecretKey,
 	post_id: T::PostId,
 	viewer: &T::AccountId,
 	block_number: BlockNumberFor<T>,
@@ -165,15 +176,6 @@ fn try_deliver<T: Config>(
 		Some((_, Ok(()))) => Ok(()),
 		_ => Err(OcwError::SubmitFailed),
 	}
-}
-
-fn load_collator_sk() -> Result<CboxSecret, OcwError> {
-	let storage = StorageValueRef::persistent(COLLATOR_SK_STORAGE_KEY);
-	let bytes = storage
-		.get::<[u8; 32]>()
-		.map_err(|_| OcwError::SkMissing)?
-		.ok_or(OcwError::SkMissing)?;
-	Ok(CboxSecret::from(bytes))
 }
 
 // Type-level guards to keep constants in sync with pallet bounds.

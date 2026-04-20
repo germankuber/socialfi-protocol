@@ -13,9 +13,19 @@ pub const X25519_PK_LEN: u32 = 32;
 /// Key-service descriptor stored on-chain. The collator publishes its
 /// X25519 public key here so sellers can wrap content keys to it.
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
 )]
-pub struct KeyServiceInfo<AccountId> {
+pub struct KeyServiceInfo<AccountId: codec::Codec> {
 	/// Account the collator uses to sign `deliver_unlock_unsigned`.
 	pub account: AccountId,
 	/// X25519 public key content keys are sealed to.

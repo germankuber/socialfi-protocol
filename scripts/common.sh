@@ -477,6 +477,44 @@ $found
 EOF
 }
 
+insert_key_service_in_keystore() {
+    # Insert the dev `//KeyService` sr25519 key into the collator's
+    # keystore under KeyTypeId `p2dc`. The pallet's offchain worker
+    # picks it up via `Signer::<T, T::AuthorityId>::any_account()` to
+    # sign `deliver_unlock_unsigned` transactions.
+    #
+    # The public key is read from the on-chain `KeyServiceInfo.account`
+    # that genesis pinned via `pallet_social_feeds::dev_key`. Reading
+    # it back (rather than hardcoding a second copy here) guarantees
+    # the keystore, genesis, and ValidateUnsigned stay in sync.
+    log_info "Registering key-service identity (KeyTypeId=p2dc) ..."
+    local suri="//KeyService"
+
+    # Storage key for `SocialFeeds::KeyService`, a StorageValue:
+    #   xxh128("SocialFeeds") || xxh128("KeyService")
+    local storage_key="0xac90ae8a8767934e0aaff6ece7c94449497433e5bdf2388425e84a6673cc0d57"
+    local raw
+    raw=$(curl -s -H "Content-Type: application/json" \
+        -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"state_getStorage\",\"params\":[\"$storage_key\"]}" \
+        "$SUBSTRATE_RPC_HTTP" | sed -E 's/.*"result":"(0x[0-9a-fA-F]+)".*/\1/')
+    if [ -z "$raw" ] || [ "$raw" = "null" ]; then
+        log_error "KeyService storage empty — genesis did not register the key-service identity."
+        return 1
+    fi
+
+    # Layout: account (32) || encryption_pk (32) || version (u32 LE).
+    # The first 32 bytes are the sr25519 public key of //KeyService.
+    local public_hex="0x${raw:2:64}"
+
+    if ! curl -s -H "Content-Type: application/json" \
+        -d "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"author_insertKey\",\"params\":[\"p2dc\",\"$suri\",\"$public_hex\"]}" \
+        "$SUBSTRATE_RPC_HTTP" >/dev/null; then
+        log_error "Failed to insert key-service key into keystore."
+        return 1
+    fi
+    log_info "Key-service identity installed (pk=${public_hex:0:18}…)"
+}
+
 wait_for_substrate_rpc() {
     local startup_log
     startup_log="$(startup_log_path)"
@@ -682,6 +720,7 @@ start_local_node_background() {
         --tmp \
         --alice \
         --force-authoring \
+        --offchain-worker always \
         --dev-block-time 3000 \
         --no-prometheus \
         --unsafe-force-node-key-generation \
@@ -702,6 +741,7 @@ run_local_node_foreground() {
         --tmp \
         --alice \
         --force-authoring \
+        --offchain-worker always \
         --dev-block-time 2000 \
         --no-prometheus \
         --unsafe-force-node-key-generation \
