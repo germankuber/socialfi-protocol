@@ -206,5 +206,80 @@ export async function startIndexer() {
     logEvent("SocialFeeds", "PostUnlocked", block.number, { viewer, author, post_id: postId, fee }); logTx("UnlockFeePaid", viewer, author, fee);
   });
 
-  console.log(chalk.bold.green("[indexer]") + " ✓ Watching all social pallet events");
+  // ── Sponsorship ──
+  // Every FeeSponsored event tells us the pot paid a beneficiary's tx fee.
+  // This is the canonical proof that ChargeSponsored fired (debited sponsor
+  // pot, credited beneficiary by the same amount); ChargeTransactionPayment
+  // then withdraws the fee from the beneficiary, netting their balance to
+  // zero. If you never see FeeSponsored in the same block a beneficiary
+  // signs, the extension was skipped (pot empty, no sponsor, etc.).
+  watch(api.event.Sponsorship.FeeSponsored, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const beneficiary = str(d.beneficiary);
+    const fee = str(d.fee);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "FeeSponsored", data: { sponsor, beneficiary, fee }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "FeeSponsored", from: sponsor, to: beneficiary, amount: fee, postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "FeeSponsored", block.number, { sponsor, beneficiary, fee }); logTx("FeeSponsored", sponsor, beneficiary, fee);
+  });
+
+  watch(api.event.Sponsorship.BeneficiaryRegistered, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const beneficiary = str(d.beneficiary);
+    const previous = d.previous_sponsor == null ? "" : str(d.previous_sponsor);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "BeneficiaryRegistered", data: { sponsor, beneficiary, previous_sponsor: previous }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "BeneficiaryRegistered", from: sponsor, to: beneficiary, amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "BeneficiaryRegistered", block.number, { sponsor, beneficiary, previous });
+  });
+
+  watch(api.event.Sponsorship.BeneficiaryRevoked, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const beneficiary = str(d.beneficiary);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "BeneficiaryRevoked", data: { sponsor, beneficiary }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "BeneficiaryRevoked", from: sponsor, to: beneficiary, amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "BeneficiaryRevoked", block.number, { sponsor, beneficiary });
+  });
+
+  watch(api.event.Sponsorship.SponsorAbandoned, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const beneficiary = str(d.beneficiary);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "SponsorAbandoned", data: { sponsor, beneficiary }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "SponsorAbandoned", from: beneficiary, to: sponsor, amount: "0", postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "SponsorAbandoned", block.number, { sponsor, beneficiary });
+  });
+
+  watch(api.event.Sponsorship.PotToppedUp, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const amount = str(d.amount);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "PotToppedUp", data: { sponsor, amount }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PotToppedUp", from: sponsor, to: "", amount, postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "PotToppedUp", block.number, { sponsor, amount });
+  });
+
+  watch(api.event.Sponsorship.PotWithdrawn, async (ev) => {
+    const { block } = ev.meta;
+    const d = ev.payload;
+    const ts = Date.now();
+    const sponsor = str(d.sponsor);
+    const amount = str(d.amount);
+    await insertEvent({ blockNumber: block.number, blockHash: block.hash, pallet: "Sponsorship", eventName: "PotWithdrawn", data: { sponsor, amount }, timestamp: ts });
+    await insertTx({ blockNumber: block.number, blockHash: block.hash, kind: "PotWithdrawn", from: sponsor, to: "", amount, postId: null, appId: null, timestamp: ts });
+    logEvent("Sponsorship", "PotWithdrawn", block.number, { sponsor, amount });
+  });
+
+  console.log(chalk.bold.green("[indexer]") + " ✓ Watching all social + sponsorship events");
 }
