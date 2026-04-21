@@ -125,7 +125,20 @@ pub mod pallet {
 	/// Signed payload carried by `deliver_unlock_unsigned`. The collator
 	/// OCW fills this in, signs it with its `AuthorityId`, and the on-chain
 	/// `validate_unsigned` verifies the signature + freshness window.
-	#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo)]
+	///
+	/// `Clone`, `PartialEq`, `Eq` use the `*NoBound` derives so the impls
+	/// apply without forcing `T: Clone + PartialEq + Eq`. `Debug` stays
+	/// hand-written on purpose: `DebugNoBound` prints every field, and
+	/// `wrapped_key` + `viewer` should not land in logs.
+	#[derive(
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		TypeInfo,
+		CloneNoBound,
+		PartialEqNoBound,
+		EqNoBound,
+	)]
 	#[scale_info(skip_type_params(T))]
 	pub struct DeliverUnlockPayload<T: Config> {
 		pub public: T::Public,
@@ -135,18 +148,6 @@ pub mod pallet {
 		pub wrapped_key: BoundedVec<u8, ConstU32<{ SEALED_KEY_LEN }>>,
 	}
 
-	// Manual trait impls — `derive` requires `T: Clone`, too strict.
-	impl<T: Config> Clone for DeliverUnlockPayload<T> {
-		fn clone(&self) -> Self {
-			Self {
-				public: self.public.clone(),
-				block_number: self.block_number,
-				post_id: self.post_id,
-				viewer: self.viewer.clone(),
-				wrapped_key: self.wrapped_key.clone(),
-			}
-		}
-	}
 	impl<T: Config> core::fmt::Debug for DeliverUnlockPayload<T> {
 		fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 			f.debug_struct("DeliverUnlockPayload")
@@ -154,16 +155,6 @@ pub mod pallet {
 				.finish_non_exhaustive()
 		}
 	}
-	impl<T: Config> PartialEq for DeliverUnlockPayload<T> {
-		fn eq(&self, other: &Self) -> bool {
-			self.block_number == other.block_number
-				&& self.post_id == other.post_id
-				&& self.viewer == other.viewer
-				&& self.wrapped_key == other.wrapped_key
-				&& self.public == other.public
-		}
-	}
-	impl<T: Config> Eq for DeliverUnlockPayload<T> {}
 
 	impl<T: Config> SignedPayload<T> for DeliverUnlockPayload<T>
 	where

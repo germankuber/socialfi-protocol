@@ -1,10 +1,18 @@
 use crate::{
 	mock::*,
-	pallet::{Error, NextPostId, Posts, PostsByAuthor, PostsTimeline, Replies, Unlocks},
-	types::PostVisibility,
+	pallet::{
+		unsigned_error, Call, DeliverUnlockPayload, Error, KeyService, NextPostId, PendingUnlocks,
+		Posts, PostsByAuthor, PostsTimeline, Replies, Unlocks,
+	},
+	types::{PostVisibility, SEALED_KEY_LEN},
 	PostProvider,
 };
+use codec::Encode;
+use frame::deps::frame_support::pallet_prelude::{
+	InvalidTransaction, TransactionSource, ValidateUnsigned,
+};
 use frame::deps::frame_system;
+use frame::deps::sp_runtime::testing::{TestSignature, UintAuthorityId};
 use frame::testing_prelude::*;
 
 fn test_content() -> BoundedVec<u8, MaxContentLen> {
@@ -124,6 +132,35 @@ fn create_post_populates_posts_by_author() {
 			None,
 		));
 		assert_eq!(PostsByAuthor::<Test>::get(1).as_slice(), &[0, 1]);
+	});
+}
+
+#[test]
+fn create_post_insufficient_balance_does_not_mutate_storage() {
+	// Account 4 has 5 units, PostFee is 10 — the transfer fails *after*
+	// NextPostId / Posts / PostsByAuthor / PostsTimeline have already been
+	// written. FRAME's transactional storage layer must roll them back; if
+	// it does not, we leak a post id or end up with a half-built record.
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[4]);
+		let next_id_before = NextPostId::<Test>::get();
+
+		assert_noop!(
+			SocialFeeds::create_post(
+				RuntimeOrigin::signed(4),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			),
+			Error::<Test>::InsufficientBalance,
+		);
+
+		assert_eq!(NextPostId::<Test>::get(), next_id_before);
+		assert!(Posts::<Test>::get(next_id_before).is_none());
+		assert!(PostsByAuthor::<Test>::get(4).is_empty());
 	});
 }
 
@@ -796,6 +833,50 @@ fn create_reply_emits_event_with_all_fields() {
 }
 
 #[test]
+fn set_key_service_first_write_has_version_one_and_no_previous() {
+	new_test_ext().execute_with(|| {
+		// `new_test_ext` pre-registers a key service — clear it so this
+		// test exercises the first-write branch.
+		KeyService::<Test>::kill();
+		frame_system::Pallet::<Test>::set_block_number(1);
+
+		assert_ok!(SocialFeeds::set_key_service(RuntimeOrigin::root(), 77u64, [1u8; 32]));
+
+		let stored = KeyService::<Test>::get().expect("written");
+		assert_eq!(stored.account, 77);
+		assert_eq!(stored.version, 1);
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::KeyServiceUpdated {
+				version: 1,
+				account: 77,
+				previous_account: None,
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn set_key_service_rejects_zero_pk() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialFeeds::set_key_service(RuntimeOrigin::root(), 77u64, [0u8; 32]),
+			Error::<Test>::InvalidBuyerPk,
+		);
+	});
+}
+
+#[test]
+fn set_key_service_rejects_non_admin_origin() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialFeeds::set_key_service(RuntimeOrigin::signed(1), 77u64, [1u8; 32]),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn set_key_service_emits_previous_account_on_rotation() {
 	new_test_ext().execute_with(|| {
 		frame_system::Pallet::<Test>::set_block_number(1);
@@ -993,5 +1074,349 @@ fn view_feed_by_author_empty_for_unknown() {
 	new_test_ext().execute_with(|| {
 		let feed = crate::Pallet::<Test>::feed_by_author(999, None, None, 10);
 		assert!(feed.is_empty());
+	});
+}
+
+// ── redact_post ────────────────────────────────────────────────────────
+
+/// Create a public post owned by `author` inside `app_id`. Used by the
+/// moderation tests to set up a redactable target with a known app id.
+fn post_in_app(author: u64, app_id: u32) -> u64 {
+	assert_ok!(SocialFeeds::create_post(
+		RuntimeOrigin::signed(author),
+		test_content(),
+		Some(app_id),
+		0,
+		PostVisibility::Public,
+		0,
+		None,
+	));
+	// First post in a fresh ext — id starts at 0 — but we read it
+	// explicitly so the helper keeps working if callers chain posts.
+	NextPostId::<Test>::get().saturating_sub(1)
+}
+
+#[test]
+fn redact_post_works_for_matching_app() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		MockAppProvider::add_app(10, 3);
+		let post_id = post_in_app(1, 10);
+
+		// Arm the guard as (app_id=10, moderator=3) — matches the post's app.
+		arm_moderation(10, 3);
+		frame_system::Pallet::<Test>::set_block_number(1);
+		assert_ok!(SocialFeeds::redact_post(RuntimeOrigin::signed(3), post_id));
+
+		let post = Posts::<Test>::get(post_id).unwrap();
+		assert_eq!(post.redacted_by, Some(3));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::PostRedacted { post_id, app_id: 10, moderator: 3 }.into(),
+		);
+	});
+}
+
+#[test]
+fn redact_post_fails_when_post_not_found() {
+	new_test_ext().execute_with(|| {
+		arm_moderation(10, 3);
+		assert_noop!(
+			SocialFeeds::redact_post(RuntimeOrigin::signed(3), 999),
+			Error::<Test>::PostNotFound,
+		);
+	});
+}
+
+#[test]
+fn redact_post_fails_when_post_not_in_app() {
+	// Moderator of app 10 must NOT be able to redact a post in app 20 —
+	// carrying `app_id` inside the origin is load-bearing precisely for
+	// this case.
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		MockAppProvider::add_app(10, 3);
+		MockAppProvider::add_app(20, 4);
+		let post_id = post_in_app(1, 20);
+
+		arm_moderation(10, 3); // moderator of app 10, post belongs to app 20
+		assert_noop!(
+			SocialFeeds::redact_post(RuntimeOrigin::signed(3), post_id),
+			Error::<Test>::PostNotInApp,
+		);
+	});
+}
+
+#[test]
+fn redact_post_fails_when_already_redacted() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		MockAppProvider::add_app(10, 3);
+		let post_id = post_in_app(1, 10);
+
+		arm_moderation(10, 3);
+		assert_ok!(SocialFeeds::redact_post(RuntimeOrigin::signed(3), post_id));
+		assert_noop!(
+			SocialFeeds::redact_post(RuntimeOrigin::signed(3), post_id),
+			Error::<Test>::AlreadyRedacted,
+		);
+	});
+}
+
+// ── deliver_unlock_unsigned + validate_unsigned ────────────────────────
+
+/// Account id used by the mock's pre-registered key service (see
+/// `new_test_ext`). The OCW authority used for signing must bridge
+/// through `UintAuthorityId` to this account, otherwise
+/// `validate_unsigned` rejects with `SIGNER_NOT_KEY_SERVICE`.
+const KEY_SERVICE_ACCOUNT: u64 = 42;
+
+fn wrapped_key_bytes() -> BoundedVec<u8, frame::traits::ConstU32<{ SEALED_KEY_LEN }>> {
+	BoundedVec::try_from(vec![9u8; SEALED_KEY_LEN as usize]).unwrap()
+}
+
+fn make_payload(
+	post_id: u64,
+	viewer: u64,
+	block_number: u64,
+	signer: UintAuthorityId,
+	wrapped_key: BoundedVec<u8, frame::traits::ConstU32<{ SEALED_KEY_LEN }>>,
+) -> DeliverUnlockPayload<Test> {
+	DeliverUnlockPayload {
+		public: signer,
+		block_number,
+		post_id,
+		viewer,
+		wrapped_key,
+	}
+}
+
+fn sign_payload(
+	payload: &DeliverUnlockPayload<Test>,
+	signer: UintAuthorityId,
+) -> TestSignature {
+	// `UintAuthorityId::sign` would work here, but `TestSignature(id, msg)`
+	// is just an equality check against the payload bytes — constructing it
+	// directly keeps the test readable and avoids the optional return.
+	TestSignature(u64::from(signer), payload.encode())
+}
+
+/// Set up an obfuscated post (id=0) and a pending unlock from `viewer`.
+/// Returns the block number the unlock was issued at.
+fn setup_pending_unlock(author: u64, viewer: u64) -> u64 {
+	setup_profiles(&[author, viewer]);
+	frame_system::Pallet::<Test>::set_block_number(10);
+	assert_ok!(SocialFeeds::create_post(
+		RuntimeOrigin::signed(author),
+		test_content(),
+		None,
+		0,
+		PostVisibility::Obfuscated,
+		50,
+		Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
+	));
+	assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(viewer), 0, [7u8; 32]));
+	assert!(PendingUnlocks::<Test>::contains_key((0u64, viewer)));
+	10
+}
+
+#[test]
+fn deliver_unlock_unsigned_delivers_key_and_clears_pending() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+
+		assert_ok!(SocialFeeds::deliver_unlock_unsigned(
+			RuntimeOrigin::none(),
+			payload,
+			signature,
+		));
+
+		let record = Unlocks::<Test>::get(0u64, 2).expect("unlock record");
+		assert!(record.wrapped_key.is_some());
+		assert!(!PendingUnlocks::<Test>::contains_key((0u64, 2)));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::UnlockKeyDelivered { post_id: 0, viewer: 2 }.into(),
+		);
+	});
+}
+
+#[test]
+fn deliver_unlock_unsigned_fails_when_no_unlock_record() {
+	new_test_ext().execute_with(|| {
+		// No unlock_post was called — the record does not exist.
+		frame_system::Pallet::<Test>::set_block_number(10);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, 10, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+
+		assert_noop!(
+			SocialFeeds::deliver_unlock_unsigned(RuntimeOrigin::none(), payload, signature),
+			Error::<Test>::UnlockNotPending,
+		);
+	});
+}
+
+#[test]
+fn deliver_unlock_unsigned_fails_on_redelivery() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer.clone());
+
+		// First delivery succeeds.
+		assert_ok!(SocialFeeds::deliver_unlock_unsigned(
+			RuntimeOrigin::none(),
+			payload.clone(),
+			signature.clone(),
+		));
+
+		// Second delivery fails — wrapped_key is already set.
+		assert_noop!(
+			SocialFeeds::deliver_unlock_unsigned(RuntimeOrigin::none(), payload, signature),
+			Error::<Test>::UnlockNotPending,
+		);
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_external_source() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		let result =
+			crate::Pallet::<Test>::validate_unsigned(TransactionSource::External, &call);
+		assert_eq!(result, Err(InvalidTransaction::Call.into()));
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_stale_payload() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		// Advance past the 16-block validity window.
+		frame_system::Pallet::<Test>::set_block_number(block + 100);
+
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
+		assert_eq!(
+			result,
+			Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into())
+		);
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_future_payload() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		// Claim the payload was signed in a future block.
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block + 50, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
+		assert_eq!(
+			result,
+			Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into())
+		);
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_when_key_service_unset() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		// Clear the key service so the guard kicks in.
+		KeyService::<Test>::kill();
+
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
+		assert_eq!(
+			result,
+			Err(InvalidTransaction::Custom(unsigned_error::KEY_SERVICE_NOT_SET).into())
+		);
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_wrong_signer() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		// Sign with an account that is NOT the registered key service.
+		let attacker = UintAuthorityId(999);
+		let payload = make_payload(0, 2, block, attacker.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, attacker);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
+		assert_eq!(
+			result,
+			Err(InvalidTransaction::Custom(unsigned_error::SIGNER_NOT_KEY_SERVICE).into())
+		);
+	});
+}
+
+#[test]
+fn validate_unsigned_rejects_bad_signature() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		// Signature does not match the payload bytes.
+		let bad_signature = TestSignature(KEY_SERVICE_ACCOUNT, b"wrong-message".to_vec());
+		let call = Call::<Test>::deliver_unlock_unsigned {
+			payload,
+			signature: bad_signature,
+		};
+
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
+		assert_eq!(result, Err(InvalidTransaction::BadProof.into()));
+	});
+}
+
+#[test]
+fn validate_unsigned_accepts_fresh_valid_payload() {
+	new_test_ext().execute_with(|| {
+		let block = setup_pending_unlock(1, 2);
+		let signer = UintAuthorityId(KEY_SERVICE_ACCOUNT);
+		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
+		let signature = sign_payload(&payload, signer);
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
+
+		assert!(crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call).is_ok());
+		// InBlock source is also allowed.
+		assert!(crate::Pallet::<Test>::validate_unsigned(TransactionSource::InBlock, &call).is_ok());
+	});
+}
+
+#[test]
+fn redact_post_bad_origin_when_guard_disarmed() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		MockAppProvider::add_app(10, 3);
+		let post_id = post_in_app(1, 10);
+
+		// Guard defaults to disarmed → behaves like NeverModeration.
+		disarm_moderation();
+		assert_noop!(
+			SocialFeeds::redact_post(RuntimeOrigin::signed(3), post_id),
+			DispatchError::BadOrigin,
+		);
 	});
 }

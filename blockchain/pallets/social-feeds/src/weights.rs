@@ -19,11 +19,6 @@
 // --steps 20
 // --repeat 10
 // --output target/benchmarks/pallet_social_feeds.rs
-//
-// `redact_post` was skipped by the bencher (`ModerationOrigin::try_successful_origin`
-// returns `Err` until the runtime provides a benchmark-friendly guard); the
-// values below for that method are conservative placeholders matching the
-// previous hand-authored estimate.
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
