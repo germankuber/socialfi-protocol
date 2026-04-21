@@ -47,6 +47,7 @@ pub mod benchmarking;
 
 #[frame::pallet]
 pub mod pallet {
+	use crate::weights::WeightInfo;
 	use frame::{
 		prelude::*,
 		traits::{Currency, ExistenceRequirement},
@@ -69,6 +70,9 @@ pub mod pallet {
 		/// balance is non-zero.
 		#[pallet::constant]
 		type MinimumPotBalance: Get<BalanceOf<Self>>;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	/// "Who is my sponsor?" — keyed by the **beneficiary** so the
@@ -144,8 +148,7 @@ pub mod pallet {
 		/// from the caller's pot. Overwrites any previous sponsor the
 		/// beneficiary had.
 		#[pallet::call_index(0)]
-		#[pallet::weight(Weight::from_parts(22_000_000, 2000)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::register_beneficiary())]
 		pub fn register_beneficiary(
 			origin: OriginFor<T>,
 			beneficiary: T::AccountId,
@@ -184,8 +187,7 @@ pub mod pallet {
 		/// their sponsor — we only remove the link when it still points at
 		/// the caller to avoid racy cross-account deregistration.
 		#[pallet::call_index(1)]
-		#[pallet::weight(Weight::from_parts(18_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::revoke_beneficiary())]
 		pub fn revoke_beneficiary(
 			origin: OriginFor<T>,
 			beneficiary: T::AccountId,
@@ -212,8 +214,7 @@ pub mod pallet {
 		/// sponsor. Useful if the sponsor turns hostile (e.g. tries to
 		/// shape content by threatening to cut them off).
 		#[pallet::call_index(2)]
-		#[pallet::weight(Weight::from_parts(16_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::revoke_my_sponsor())]
 		pub fn revoke_my_sponsor(origin: OriginFor<T>) -> DispatchResult {
 			let beneficiary = ensure_signed(origin)?;
 			let sponsor = SponsorOf::<T>::take(&beneficiary)
@@ -234,8 +235,7 @@ pub mod pallet {
 		/// sponsor pot. The pot is tracked separately from the caller's
 		/// regular balance so withdrawals are explicit.
 		#[pallet::call_index(3)]
-		#[pallet::weight(Weight::from_parts(20_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::top_up())]
 		pub fn top_up(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let sponsor = ensure_signed(origin)?;
 
@@ -262,8 +262,7 @@ pub mod pallet {
 		/// Take `amount` out of the caller's pot and back into their free
 		/// balance. Fails if the pot holds less than `amount`.
 		#[pallet::call_index(4)]
-		#[pallet::weight(Weight::from_parts(20_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::withdraw())]
 		pub fn withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let sponsor = ensure_signed(origin)?;
 			SponsorPots::<T>::try_mutate(&sponsor, |b| -> DispatchResult {

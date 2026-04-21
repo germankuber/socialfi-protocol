@@ -539,6 +539,7 @@ parameter_types! {
 impl pallet_sponsorship::Config for Runtime {
 	type Currency = Balances;
 	type MinimumPotBalance = SponsorMinimumPotBalance;
+	type WeightInfo = pallet_sponsorship::weights::SubstrateWeight<Runtime>;
 }
 
 // ── OCW glue for pallet-social-feeds encrypted posts ───────────────────

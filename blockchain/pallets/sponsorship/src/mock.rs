@@ -60,6 +60,7 @@ parameter_types! {
 impl crate::Config for Test {
 	type Currency = Balances;
 	type MinimumPotBalance = MinimumPotBalance;
+	type WeightInfo = ();
 }
 
 pub const SPONSOR: u64 = 1;
