@@ -489,7 +489,7 @@ pub mod pallet {
 		/// `visibility`: Public, Obfuscated, or Private.
 		/// `unlock_fee`: fee to unlock content (only for Obfuscated/Private, ignored for Public).
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::create_post())]
+		#[pallet::weight(T::WeightInfo::create_post(T::MaxPostsPerAuthor::get()))]
 		pub fn create_post(
 			origin: OriginFor<T>,
 			content: BoundedVec<u8, T::MaxContentLen>,
@@ -582,7 +582,7 @@ pub mod pallet {
 		///
 		/// Replies are always public with visibility Public.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::create_reply())]
+		#[pallet::weight(T::WeightInfo::create_reply(T::MaxPostsPerAuthor::get()))]
 		pub fn create_reply(
 			origin: OriginFor<T>,
 			parent_post_id: T::PostId,
