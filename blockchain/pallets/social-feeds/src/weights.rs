@@ -84,10 +84,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
+	/// Storage: `SocialFeeds::Posts` (r:1 w:1)
 	fn redact_post() -> Weight {
-		// Placeholder — bencher skipped this call because the runtime
-		// has no successful `ModerationOrigin` in benchmark mode.
-		Weight::from_parts(11_000_000, 0)
+		// Measured: `276`  Estimated: `3818`  Min time: 6_000_000 ps.
+		Weight::from_parts(7_000_000, 0)
+			.saturating_add(Weight::from_parts(0, 3818))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -127,7 +128,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	fn redact_post() -> Weight {
-		Weight::from_parts(11_000_000, 0)
+		Weight::from_parts(7_000_000, 0)
+			.saturating_add(Weight::from_parts(0, 3818))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}

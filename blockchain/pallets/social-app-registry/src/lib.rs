@@ -92,11 +92,25 @@ pub mod pallet {
 			o.into().map(|Origin::AppModerator { app_id, moderator }| (app_id, moderator))
 		}
 
+		/// Produce a usable `Origin::AppModerator` for benchmarking.
+		///
+		/// Mirrors `pallet_collective::EnsureMember::try_successful_origin`
+		/// (`substrate/frame/collective/src/lib.rs:1400-1406`):
+		/// decode a zero-filled `AccountId` — the bytes are meaningless
+		/// but the type is well-formed — and pair it with a default
+		/// `AppId`. Benchmarks run against this synthetic origin; there
+		/// is no real storage interaction, only dispatching through
+		/// `ModerationOrigin` in downstream pallets.
 		#[cfg(feature = "runtime-benchmarks")]
 		fn try_successful_origin()
 			-> Result<<T as frame_system::Config>::RuntimeOrigin, ()>
 		{
-			Err(())
+			let moderator = T::AccountId::decode(
+				&mut frame::deps::sp_runtime::traits::TrailingZeroInput::zeroes(),
+			)
+			.map_err(|_| ())?;
+			let app_id = T::AppId::default();
+			Ok(Origin::AppModerator { app_id, moderator }.into())
 		}
 	}
 
