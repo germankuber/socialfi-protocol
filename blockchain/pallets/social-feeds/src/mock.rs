@@ -186,6 +186,7 @@ impl crate::Config for Test {
 	type UnsignedValidityWindow = ConstU64<16>;
 	type UnsignedPriority = ConstU64<1_000>;
 	type WeightInfo = ();
+	type NotificationSubmitter = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = TestBenchmarkHelper;
 }

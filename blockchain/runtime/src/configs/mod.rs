@@ -302,6 +302,23 @@ parameter_types! {
 }
 
 /// Configure the social app registry pallet.
+/// Adapter that plugs the SocialFi pallets into `pallet-statement` so
+/// reply / follow / new-app events turn into live Statement Store
+/// notifications. Clients subscribed via `statement_subscribeStatement`
+/// get the update pushed immediately — no block polling, no indexer.
+pub struct NotificationStatementSubmitter;
+
+impl social_notifications_primitives::StatementSubmitter<AccountId>
+	for NotificationStatementSubmitter
+{
+	fn submit_statement(
+		account: AccountId,
+		statement: sp_statement_store::Statement,
+	) {
+		pallet_statement::Pallet::<Runtime>::submit_statement(account, statement);
+	}
+}
+
 impl pallet_social_app_registry::Config for Runtime {
 	type AppId = u32;
 	type Currency = Balances;
@@ -309,6 +326,7 @@ impl pallet_social_app_registry::Config for Runtime {
 	type MaxMetadataLen = MaxMetadataLen;
 	type MaxAppsPerOwner = MaxAppsPerOwner;
 	type WeightInfo = pallet_social_app_registry::weights::SubstrateWeight<Runtime>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
 }
 
 parameter_types! {
@@ -330,6 +348,7 @@ impl pallet_social_graph::Config for Runtime {
 	type Currency = Balances;
 	type ProfileProvider = SocialProfiles;
 	type WeightInfo = pallet_social_graph::weights::SubstrateWeight<Runtime>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = GraphBenchmarkHelper;
 }
@@ -392,6 +411,7 @@ impl pallet_social_feeds::Config for Runtime {
 	type UnsignedValidityWindow = FeedsUnsignedValidityWindow;
 	type UnsignedPriority = FeedsUnsignedPriority;
 	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = FeedsBenchmarkHelper;
 }

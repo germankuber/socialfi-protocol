@@ -55,6 +55,7 @@ pub mod pallet {
 	};
 	use scale_info::prelude::boxed::Box;
 	use scale_info::TypeInfo;
+	use social_notifications_primitives::StatementSubmitter;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -164,6 +165,13 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Submitter for real-time Statement Store notifications. The
+		/// runtime wires this to `pallet-statement`; mocks default to
+		/// `()` which discards every submission.
+		type NotificationSubmitter: social_notifications_primitives::StatementSubmitter<
+			Self::AccountId,
+		>;
 	}
 
 	/// Auto-incrementing app ID counter.
@@ -290,6 +298,20 @@ pub mod pallet {
 			);
 
 			Self::deposit_event(Event::AppRegistered { app_id, owner: who.clone() });
+
+			// Broadcast a Statement Store notification so any client
+			// subscribed to `BROADCAST_NEW_APP_TOPIC` learns about the
+			// new app in real time — no block polling required.
+			let notif = social_notifications_primitives::build_statement(
+				who.clone(),
+				&social_notifications_primitives::Recipient::Broadcast,
+				social_notifications_primitives::NotificationKind::NewApp,
+				&app_id,
+				frame::deps::sp_runtime::traits::SaturatedConversion::saturated_into::<u64>(
+					block_number,
+				),
+			);
+			T::NotificationSubmitter::submit_statement(who.clone(), notif);
 
 			// Owner just filled the last slot — surface it for UX/indexers.
 			// Next register_app from the same account will fail with

@@ -95,7 +95,7 @@ pub mod pallet {
 		deps::{
 			frame_support::pallet_prelude::{TransactionSource, ValidTransaction},
 			sp_runtime::{
-				traits::Saturating,
+				traits::{SaturatedConversion, Saturating},
 				transaction_validity::{InvalidTransaction, TransactionValidity},
 			},
 		},
@@ -107,6 +107,7 @@ pub mod pallet {
 	};
 	use pallet_social_app_registry::AppProvider;
 	use pallet_social_profiles::ProfileProvider;
+	use social_notifications_primitives::StatementSubmitter;
 	use scale_info::{prelude::vec::Vec, TypeInfo};
 
 	pub type BalanceOf<T> =
@@ -243,6 +244,13 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Submitter for real-time Statement Store notifications. The
+		/// runtime wires this to `pallet-statement`; mocks default to
+		/// `()` which discards every submission.
+		type NotificationSubmitter: social_notifications_primitives::StatementSubmitter<
+			Self::AccountId,
+		>;
 
 		/// Benchmark-only helpers. The runtime provides an impl that
 		/// short-circuits `ProfileProvider` / `AppProvider` guard checks
@@ -635,6 +643,22 @@ pub mod pallet {
 				ExistenceRequirement::KeepAlive,
 			)
 			.map_err(|_| Error::<T>::InsufficientBalance)?;
+
+			// Push a Statement Store notification so `parent.author` gets
+			// a live "someone replied to your post" ping without anyone
+			// polling. Self-replies are skipped — no point notifying
+			// yourself — and the statement carries the new reply id as
+			// the entity so the UI can jump straight to it.
+			if who != parent.author {
+				let notif = social_notifications_primitives::build_statement(
+					who.clone(),
+					&social_notifications_primitives::Recipient::Direct(parent.author.clone()),
+					social_notifications_primitives::NotificationKind::Reply,
+					&post_id,
+					block_number.saturated_into::<u64>(),
+				);
+				T::NotificationSubmitter::submit_statement(who.clone(), notif);
+			}
 
 			Self::deposit_event(Event::ReplyCreated {
 				post_id,

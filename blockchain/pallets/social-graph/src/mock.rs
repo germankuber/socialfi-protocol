@@ -101,6 +101,7 @@ impl crate::Config for Test {
 	type Currency = Balances;
 	type ProfileProvider = MockProfileProvider;
 	type WeightInfo = ();
+	type NotificationSubmitter = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = TestBenchmarkHelper;
 }

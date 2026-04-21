@@ -27,6 +27,7 @@ pallet-social-feeds.workspace = true
 pallet-social-graph.workspace = true
 pallet-social-managers.workspace = true
 pallet-sponsorship.workspace = true
+social-notifications-primitives.workspace = true
 polkadot-sdk = { workspace = true, features = [
 	"cumulus-pallet-aura-ext",
 	"cumulus-pallet-session-benchmarking",
@@ -80,6 +81,7 @@ std = [
 	"polkadot-sdk/std",
 	"scale-info/std",
 	"serde_json/std",
+	"social-notifications-primitives/std",
 	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [

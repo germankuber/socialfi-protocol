@@ -62,6 +62,7 @@ impl crate::Config for Test {
 	type MaxMetadataLen = MaxMetadataLen;
 	type MaxAppsPerOwner = MaxAppsPerOwner;
 	type WeightInfo = ();
+	type NotificationSubmitter = ();
 }
 
 /// Build genesis storage with pre-funded accounts for testing.

@@ -14,6 +14,7 @@ codec = { features = ["derive"], workspace = true }
 frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
 log = { workspace = true }
 scale-info = { features = ["derive"], workspace = true }
+social-notifications-primitives = { workspace = true, default-features = false }
 
 [dev-dependencies]
 frame = { workspace = true, features = ["std", "experimental", "runtime"] }
@@ -27,6 +28,7 @@ std = [
 	"frame/std",
 	"log/std",
 	"scale-info/std",
+	"social-notifications-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame/runtime-benchmarks",

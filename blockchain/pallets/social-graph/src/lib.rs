@@ -44,6 +44,7 @@ pub mod pallet {
 		traits::{Currency, ExistenceRequirement},
 	};
 	use pallet_social_profiles::ProfileProvider;
+	use social_notifications_primitives::StatementSubmitter;
 
 	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -61,6 +62,13 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Submitter for real-time Statement Store notifications. The
+		/// runtime wires this to `pallet-statement`; mocks default to
+		/// `()` which discards every submission.
+		type NotificationSubmitter: social_notifications_primitives::StatementSubmitter<
+			Self::AccountId,
+		>;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper: crate::BenchmarkHelper<Self::AccountId>;
@@ -155,6 +163,20 @@ pub mod pallet {
 			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
 			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
 			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
+
+			// Ping the followed user in real time. The notification
+			// carries the follower as entity_id so the UI can deep-link
+			// to their profile.
+			let notif = social_notifications_primitives::build_statement(
+				who.clone(),
+				&social_notifications_primitives::Recipient::Direct(target.clone()),
+				social_notifications_primitives::NotificationKind::Follow,
+				&who,
+				frame::deps::sp_runtime::traits::SaturatedConversion::saturated_into::<u64>(
+					block_number,
+				),
+			);
+			T::NotificationSubmitter::submit_statement(who.clone(), notif);
 
 			Self::deposit_event(Event::Followed { follower: who, followed: target, fee_paid: fee });
 			Ok(())

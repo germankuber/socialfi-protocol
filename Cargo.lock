@@ -10532,6 +10532,7 @@ dependencies = [
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
  "scale-info",
+ "social-notifications-primitives",
  "sp-io",
 ]
 
@@ -10549,6 +10550,7 @@ dependencies = [
  "rand_chacha 0.3.1",
  "scale-info",
  "serde",
+ "social-notifications-primitives",
  "sp-io",
  "zeroize",
 ]
@@ -10562,6 +10564,7 @@ dependencies = [
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
  "scale-info",
+ "social-notifications-primitives",
  "sp-io",
 ]
 
@@ -17275,6 +17278,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "social-notifications-primitives"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-statement-store",
+]
+
+[[package]]
 name = "socket2"
 version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18231,6 +18244,7 @@ dependencies = [
  "scale-info",
  "serde_json",
  "smallvec",
+ "social-notifications-primitives",
  "substrate-wasm-builder",
 ]
 
