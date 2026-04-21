@@ -25,9 +25,19 @@ pub mod weights;
 mod benchmarking;
 
 /// Trait that other pallets use to query app information.
+///
+/// All methods treat `Inactive` apps as if they did not exist — downstream
+/// pallets should not be able to post, moderate, or otherwise transact
+/// against an app whose owner has deregistered it. Callers that need to
+/// inspect historical (inactive) records must read `Apps` storage directly.
 pub trait AppProvider<AccountId, AppId> {
+	/// Return the owner of an **active** app, or `None` if the app does
+	/// not exist or is inactive.
 	fn get_owner(app_id: &AppId) -> Option<AccountId>;
+	/// `true` iff the app exists **and** is active.
 	fn exists(app_id: &AppId) -> bool;
+	/// `true` iff the app is active **and** was registered with
+	/// `has_images = true`. Returns `false` for inactive or missing apps.
 	fn has_images(app_id: &AppId) -> bool;
 }
 
@@ -181,9 +191,12 @@ pub mod pallet {
 		AppRegistered { app_id: T::AppId, owner: T::AccountId },
 		/// An app was deregistered (set to inactive, bond returned).
 		AppDeregistered { app_id: T::AppId, owner: T::AccountId },
-		/// An app owner dispatched a call as `Origin::AppModerator`. The
-		/// downstream call's own event carries the effect — this one
-		/// simply records the moderation fact for audit tooling.
+		/// An app owner attempted to dispatch a call as
+		/// `Origin::AppModerator`. Emitted before the inner call runs, so
+		/// the inner call may still fail — this event records the
+		/// *moderation attempt* for audit tooling, not a confirmed effect.
+		/// Pair with the downstream call's own event to distinguish
+		/// attempted from applied moderation.
 		ModeratorDispatched { app_id: T::AppId, moderator: T::AccountId },
 		/// Emitted on the registration that fills the owner's last
 		/// available slot. Signals to indexers / front-ends that any

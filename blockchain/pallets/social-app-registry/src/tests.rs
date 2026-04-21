@@ -1,9 +1,10 @@
 use crate::{
 	mock::*,
-	pallet::{Apps, AppsByOwner, Error, NextAppId},
+	pallet::{Apps, AppsByOwner, EnsureAppModerator, Error, NextAppId, Origin as RegistryOrigin},
 	types::AppStatus,
 };
-use frame::{testing_prelude::*, traits::Currency};
+use frame::{deps::frame_support::traits::EnsureOrigin, testing_prelude::*, traits::Currency};
+use scale_info::prelude::boxed::Box;
 
 fn test_metadata() -> BoundedVec<u8, MaxMetadataLen> {
 	BoundedVec::try_from(b"QmTestCid12345".to_vec()).unwrap()
@@ -369,5 +370,165 @@ fn register_app_with_has_images() {
 		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(1), test_metadata(), true));
 		let app = Apps::<Test>::get(0).unwrap();
 		assert!(app.has_images);
+	});
+}
+
+// ── act_as_moderator ───────────────────────────────────────────────────
+
+/// Inner call used as the moderator-dispatched payload. `frame_system::remark`
+/// is a no-op that succeeds on any signed origin, so dispatching it through
+/// `act_as_moderator` exercises the wrapper path without coupling the test
+/// to a second pallet. `remark` requires a signed origin — we pass one via
+/// the outer origin before the wrapper converts it to `AppModerator`.
+fn remark_call() -> Box<RuntimeCall> {
+	Box::new(RuntimeCall::System(frame_system::Call::remark { remark: vec![] }))
+}
+
+#[test]
+fn act_as_moderator_works_for_owner() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		assert_ok!(SocialAppRegistry::register_app(
+			RuntimeOrigin::signed(1),
+			test_metadata(),
+			false,
+		));
+
+		assert_ok!(SocialAppRegistry::act_as_moderator(
+			RuntimeOrigin::signed(1),
+			0,
+			remark_call(),
+		));
+	});
+}
+
+#[test]
+fn act_as_moderator_emits_event() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		assert_ok!(SocialAppRegistry::register_app(
+			RuntimeOrigin::signed(1),
+			test_metadata(),
+			false,
+		));
+
+		assert_ok!(SocialAppRegistry::act_as_moderator(
+			RuntimeOrigin::signed(1),
+			0,
+			remark_call(),
+		));
+
+		// Must be present among the emitted events — not asserted as the
+		// last event because the inner call also emits on completion.
+		let emitted = System::events().into_iter().any(|r| matches!(
+			r.event,
+			RuntimeEvent::SocialAppRegistry(
+				crate::Event::ModeratorDispatched { app_id: 0, moderator: 1 },
+			),
+		));
+		assert!(emitted, "ModeratorDispatched event not found");
+	});
+}
+
+#[test]
+fn act_as_moderator_fails_when_not_owner() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialAppRegistry::register_app(
+			RuntimeOrigin::signed(1),
+			test_metadata(),
+			false,
+		));
+
+		assert_noop!(
+			SocialAppRegistry::act_as_moderator(RuntimeOrigin::signed(2), 0, remark_call()),
+			Error::<Test>::NotAppOwner,
+		);
+	});
+}
+
+#[test]
+fn act_as_moderator_fails_when_app_not_found() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialAppRegistry::act_as_moderator(RuntimeOrigin::signed(1), 99, remark_call()),
+			Error::<Test>::AppNotFound,
+		);
+	});
+}
+
+#[test]
+fn act_as_moderator_fails_when_app_inactive() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialAppRegistry::register_app(
+			RuntimeOrigin::signed(1),
+			test_metadata(),
+			false,
+		));
+		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(1), 0));
+
+		// Inactive app — even the original owner cannot moderate.
+		assert_noop!(
+			SocialAppRegistry::act_as_moderator(RuntimeOrigin::signed(1), 0, remark_call()),
+			Error::<Test>::AppAlreadyInactive,
+		);
+	});
+}
+
+#[test]
+fn act_as_moderator_unsigned_origin_rejected() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(SocialAppRegistry::register_app(
+			RuntimeOrigin::signed(1),
+			test_metadata(),
+			false,
+		));
+
+		assert_noop!(
+			SocialAppRegistry::act_as_moderator(RuntimeOrigin::none(), 0, remark_call()),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+// ── EnsureAppModerator ─────────────────────────────────────────────────
+
+#[test]
+fn ensure_app_moderator_extracts_app_id_and_moderator() {
+	new_test_ext().execute_with(|| {
+		let origin: RuntimeOrigin =
+			RegistryOrigin::<Test>::AppModerator { app_id: 7, moderator: 42 }.into();
+
+		let (app_id, moderator) =
+			<EnsureAppModerator<Test> as EnsureOrigin<RuntimeOrigin>>::try_origin(origin)
+				.expect("AppModerator origin should be accepted");
+
+		assert_eq!(app_id, 7);
+		assert_eq!(moderator, 42);
+	});
+}
+
+#[test]
+fn ensure_app_moderator_rejects_signed_origin() {
+	new_test_ext().execute_with(|| {
+		let origin: RuntimeOrigin = RuntimeOrigin::signed(1);
+
+		assert!(
+			<EnsureAppModerator<Test> as EnsureOrigin<RuntimeOrigin>>::try_origin(origin)
+				.is_err(),
+			"EnsureAppModerator must reject plain signed origins",
+		);
+	});
+}
+
+#[test]
+fn ensure_app_moderator_rejects_root_origin() {
+	new_test_ext().execute_with(|| {
+		let origin: RuntimeOrigin = RuntimeOrigin::root();
+
+		assert!(
+			<EnsureAppModerator<Test> as EnsureOrigin<RuntimeOrigin>>::try_origin(origin)
+				.is_err(),
+			"EnsureAppModerator must reject root origins",
+		);
 	});
 }
