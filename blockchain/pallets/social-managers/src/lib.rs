@@ -300,7 +300,18 @@ pub mod pallet {
 			let info =
 				ProfileManagers::<T>::take(&owner, &manager).ok_or(Error::<T>::ManagerNotFound)?;
 
-			T::Currency::unreserve(&owner, info.deposit);
+			// `unreserve` returns the portion it could not release. Our
+			// bookkeeping invariant (`info.deposit` was reserved at
+			// `add_manager`) makes this always zero — a non-zero value
+			// signals state corruption (e.g. external slash) worth flagging.
+			let not_unreserved = T::Currency::unreserve(&owner, info.deposit);
+			if !not_unreserved.is_zero() {
+				log::warn!(
+					target: "social-managers",
+					"⚠️ remove_manager could not unreserve full deposit for owner={:?} manager={:?}: {:?} remaining",
+					owner, manager, not_unreserved,
+				);
+			}
 			ManagerCount::<T>::mutate(&owner, |c| *c = c.saturating_sub(1));
 
 			Self::deposit_event(Event::ManagerRemoved {
@@ -330,8 +341,15 @@ pub mod pallet {
 					.map(|(manager, info)| (manager, info.deposit))
 					.collect();
 
-			for (_manager, deposit) in &removed_entries {
-				T::Currency::unreserve(&owner, *deposit);
+			for (manager, deposit) in &removed_entries {
+				let not_unreserved = T::Currency::unreserve(&owner, *deposit);
+				if !not_unreserved.is_zero() {
+					log::warn!(
+						target: "social-managers",
+						"⚠️ remove_all_managers could not unreserve full deposit for owner={:?} manager={:?}: {:?} remaining",
+						owner, manager, not_unreserved,
+					);
+				}
 				total_released = total_released.saturating_add(*deposit);
 				removed = removed.saturating_add(1);
 			}
@@ -463,7 +481,14 @@ pub mod pallet {
 				}
 
 				if let Some(info) = ProfileManagers::<T>::take(&owner, &manager) {
-					T::Currency::unreserve(&owner, info.deposit);
+					let not_unreserved = T::Currency::unreserve(&owner, info.deposit);
+					if !not_unreserved.is_zero() {
+						log::warn!(
+							target: "social-managers",
+							"⚠️ on_idle purge could not unreserve full deposit for owner={:?} manager={:?}: {:?} remaining",
+							owner, manager, not_unreserved,
+						);
+					}
 					ManagerCount::<T>::mutate(&owner, |c| *c = c.saturating_sub(1));
 
 					Self::deposit_event(Event::ExpiredManagerPurged {

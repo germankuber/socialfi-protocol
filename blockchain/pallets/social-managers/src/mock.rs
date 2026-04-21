@@ -42,12 +42,28 @@ pub mod dummy_feeds {
 		PostCreated { author: T::AccountId },
 	}
 
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Test-only: returned when `create_post` is called with
+		/// `should_fail = true`, so `act_as_manager` can exercise its
+		/// inner-error bookkeeping without needing a real pallet failure.
+		ForceFailed,
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// `should_fail` exists purely so tests can drive `act_as_manager`
+		/// down its `result.is_err()` arm. The dispatch must stay under
+		/// the `SocialFeeds::create_post` metadata key so `required_scope`
+		/// still maps it to `ManagerScope::Post` and the dynamic filter
+		/// lets it through.
 		#[pallet::call_index(0)]
 		#[pallet::weight(Weight::from_parts(10_000, 0))]
-		pub fn create_post(origin: OriginFor<T>) -> DispatchResult {
+		pub fn create_post(origin: OriginFor<T>, should_fail: bool) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+			if should_fail {
+				return Err(Error::<T>::ForceFailed.into());
+			}
 			LastAuthor::<T>::put(who.clone());
 			Self::deposit_event(Event::PostCreated { author: who });
 			Ok(())
@@ -166,7 +182,7 @@ impl crate::BenchmarkHelper<Test> for TestBenchmarkHelper {
 	fn scoped_call() -> RuntimeCall {
 		// dummy_feeds is wired under the "SocialFeeds" pallet_index so
 		// `required_scope` maps its `create_post` to `ManagerScope::Post`.
-		RuntimeCall::SocialFeeds(dummy_feeds::Call::create_post {})
+		RuntimeCall::SocialFeeds(dummy_feeds::Call::create_post { should_fail: false })
 	}
 	fn scope_for_scoped_call() -> crate::types::ScopeMask {
 		crate::types::ScopeMask::from_scopes(&[crate::types::ManagerScope::Post])

@@ -12,6 +12,7 @@ publish = false
 [dependencies]
 codec = { features = ["derive"], workspace = true }
 frame = { workspace = true, features = ["experimental", "runtime"], default-features = false }
+log = { workspace = true }
 scale-info = { features = ["derive"], workspace = true }
 
 [dev-dependencies]
@@ -24,6 +25,7 @@ default = ["std"]
 std = [
 	"codec/std",
 	"frame/std",
+	"log/std",
 	"scale-info/std",
 ]
 runtime-benchmarks = [

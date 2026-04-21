@@ -10569,6 +10569,7 @@ dependencies = [
 name = "pallet-social-managers"
 version = "0.1.0"
 dependencies = [
+ "log",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
