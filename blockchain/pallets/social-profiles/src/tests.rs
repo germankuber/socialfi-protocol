@@ -279,6 +279,19 @@ fn set_follow_fee_emits_event() {
 }
 
 #[test]
+fn set_follow_fee_unsigned_origin_rejected() {
+	// Simetría con los otros 3 extrinsics: todos exigen `ensure_signed`
+	// y el test de BadOrigin ya cubre create_profile, update_metadata y
+	// delete_profile. set_follow_fee completa la matriz.
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			SocialProfiles::set_follow_fee(RuntimeOrigin::none(), 100),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn create_profile_with_follow_fee() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(SocialProfiles::create_profile(RuntimeOrigin::signed(1), test_metadata(), 250));

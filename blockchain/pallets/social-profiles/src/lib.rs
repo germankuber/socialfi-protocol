@@ -85,8 +85,6 @@ pub mod pallet {
 		ProfileNotFound,
 		/// The caller does not have enough balance to cover the profile bond.
 		InsufficientBond,
-		/// The provided metadata exceeds the maximum allowed length.
-		MetadataTooLong,
 	}
 
 	impl<T: Config> ProfileProvider<T::AccountId, BalanceOf<T>> for Pallet<T> {
