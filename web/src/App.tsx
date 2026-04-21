@@ -7,6 +7,7 @@ import { useProfileGate } from "./hooks/social/useProfileGate";
 import { useWallet } from "./hooks/social/useWallet";
 import { getClient } from "./hooks/useChain";
 import ThemeToggle from "./components/social/ThemeToggle";
+import NotificationsBell from "./components/social/NotificationsBell";
 
 export default function App() {
 	const location = useLocation();
@@ -46,6 +47,7 @@ export default function App() {
 
 					<div className="ml-auto flex items-center gap-3">
 						<ThemeToggle />
+						{account && <NotificationsBell />}
 						<ChainIndicator connected={connected} blockNumber={blockNumber} />
 						<WalletButton />
 					</div>
