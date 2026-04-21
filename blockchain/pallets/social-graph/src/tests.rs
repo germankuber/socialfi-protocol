@@ -3,7 +3,7 @@ use crate::{
 	pallet::{Error, FollowerCount, FollowingCount, Follows},
 	GraphProvider,
 };
-use frame::testing_prelude::*;
+use frame::{testing_prelude::*, traits::Currency};
 
 fn setup_profiles(accounts: &[u64]) {
 	for &acc in accounts {
@@ -138,6 +138,29 @@ fn follow_fails_insufficient_balance() {
 }
 
 #[test]
+fn follow_fails_when_fee_leaves_caller_below_ed() {
+	// Paying the full fee would leave the caller with 0, which violates
+	// `KeepAlive` under the mock's `TestDefaultConfig` (ED = 1). The
+	// extrinsic maps every transfer error to `InsufficientBalance`, so
+	// this test pins that mapping: a user with balance EXACTLY equal to
+	// the fee cannot follow, even though literal `balance < fee` is false.
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		MockProfileProvider::set_follow_fee(2, 100);
+		// Caller has exactly `fee` — paying it would drop them below ED.
+		Balances::make_free_balance_be(&1, 100);
+
+		assert_noop!(
+			SocialGraph::follow(RuntimeOrigin::signed(1), 2),
+			Error::<Test>::InsufficientBalance,
+		);
+		// Storage untouched — same invariants as the literal-underfunded test.
+		assert!(!Follows::<Test>::contains_key(1, 2));
+		assert_eq!(FollowerCount::<Test>::get(2), 0);
+	});
+}
+
+#[test]
 fn follow_insufficient_balance_does_not_mutate_storage() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[4, 2]);
@@ -210,6 +233,18 @@ fn unfollow_fails_not_following() {
 		assert_noop!(
 			SocialGraph::unfollow(RuntimeOrigin::signed(1), 2),
 			Error::<Test>::NotFollowing,
+		);
+	});
+}
+
+#[test]
+fn unfollow_unsigned_origin_rejected() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialGraph::follow(RuntimeOrigin::signed(1), 2));
+		assert_noop!(
+			SocialGraph::unfollow(RuntimeOrigin::none(), 2),
+			DispatchError::BadOrigin,
 		);
 	});
 }
