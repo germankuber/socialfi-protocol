@@ -303,6 +303,76 @@ fn on_idle_purges_expired_entries() {
 }
 
 #[test]
+fn on_idle_bills_scan_weight_for_non_expired_entries() {
+	// Regression guard: the hook used to only bill weight for purges,
+	// letting an attacker fill storage with non-expired entries and drain
+	// reads for free. The scan reads MUST count toward `used` weight.
+	new_test_ext().execute_with(|| {
+		System::set_block_number(5);
+		let scopes = ScopeMask::from_scopes(&[ManagerScope::Post]);
+		// Alice adds 3 never-expiring managers (BOB, CAROL, and a third).
+		assert_ok!(SocialManagers::add_manager(RuntimeOrigin::signed(ALICE), BOB, scopes, None));
+		assert_ok!(SocialManagers::add_manager(RuntimeOrigin::signed(ALICE), CAROL, scopes, None));
+		assert_ok!(SocialManagers::add_manager(RuntimeOrigin::signed(ALICE), 4u64, scopes, None));
+
+		System::set_block_number(10);
+		let used = <SocialManagers as Hooks<u64>>::on_idle(
+			10,
+			Weight::from_parts(1_000_000_000, 1_000_000),
+		);
+		// 3 entries scanned, 0 purged. Used weight must be non-zero and
+		// equal to exactly 3 DB reads.
+		let expected = <Test as frame_system::Config>::DbWeight::get().reads(3);
+		assert_eq!(used, expected);
+		// All 3 still present.
+		assert_eq!(ManagerCount::<Test>::get(ALICE), 3);
+	});
+}
+
+#[test]
+fn on_idle_respects_scan_budget() {
+	// When scan budget is the binding constraint, the hook must stop
+	// after `MaxExpiryScanPerBlock` reads — regardless of whether it
+	// found enough expirables to hit the purge budget.
+	new_test_ext().execute_with(|| {
+		// Reduce MaxExpiryScanPerBlock by bypassing the Config type: we
+		// instead verify the *invariant* that used weight never exceeds
+		// `scan_budget * 1_read + purge_budget * 2_writes` even with
+		// many entries. With budgets 32/8, that's a known ceiling.
+		System::set_block_number(1);
+		let scopes = ScopeMask::from_scopes(&[ManagerScope::Post]);
+		// Insert MaxManagersPerOwner (4) entries for each of 10 owners —
+		// 40 total, comfortably above the scan budget of 32.
+		for owner in 10u64..20 {
+			// Fund owner so add_manager's reserve succeeds.
+			let _ = pallet_balances::Pallet::<Test>::force_set_balance(
+				RuntimeOrigin::root(),
+				owner,
+				1_000,
+			);
+			for mgr in 100u64..104 {
+				assert_ok!(SocialManagers::add_manager(
+					RuntimeOrigin::signed(owner),
+					owner * 1000 + mgr,
+					scopes,
+					None,
+				));
+			}
+		}
+
+		let used = <SocialManagers as Hooks<u64>>::on_idle(
+			5,
+			Weight::from_parts(1_000_000_000, 1_000_000),
+		);
+
+		let db = <Test as frame_system::Config>::DbWeight::get();
+		let max_possible = db.reads(32);
+		// used must be EXACTLY 32 reads — scan budget saturated, no purges.
+		assert_eq!(used, max_possible);
+	});
+}
+
+#[test]
 fn scope_mask_contains_semantics() {
 	let mask = ScopeMask::from_scopes(&[ManagerScope::Post, ManagerScope::Comment]);
 	assert!(mask.contains(ManagerScope::Post));

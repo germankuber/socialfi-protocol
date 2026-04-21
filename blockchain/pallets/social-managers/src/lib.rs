@@ -51,6 +51,21 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+
+/// Runtime-supplied helpers for the benchmark suite. See the doc comment
+/// on `Config::BenchmarkHelper` for why this exists.
+#[cfg(feature = "runtime-benchmarks")]
+pub trait BenchmarkHelper<T: pallet::Config> {
+	/// A `RuntimeCall` that maps to a valid `ManagerScope` under the
+	/// pallet's `required_scope` filter, so `act_as_manager` benchmarks
+	/// exercise the full dispatch path.
+	fn scoped_call() -> <T as frame::deps::frame_system::Config>::RuntimeCall;
+	/// The scope that authorizes `scoped_call()`.
+	fn scope_for_scoped_call() -> types::ScopeMask;
+}
+
 #[frame::pallet]
 pub mod pallet {
 	use crate::{
@@ -108,7 +123,25 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxExpiryPurgePerBlock: Get<u32>;
 
+		/// Maximum number of `ProfileManagers` entries the `on_idle` hook
+		/// may *scan* per block while looking for expired entries. This is
+		/// the real cap on the hook's worst-case cost — without it, a
+		/// large store of non-expired entries would force the scan to
+		/// read every key before finding enough expirables to fill the
+		/// purge budget. Typical value: `MaxExpiryPurgePerBlock * 8`.
+		#[pallet::constant]
+		type MaxExpiryScanPerBlock: Get<u32>;
+
 		type WeightInfo: WeightInfo;
+
+		/// Benchmark-only helpers. `act_as_manager` dispatches an inner
+		/// `RuntimeCall`; benchmarks need one that passes the pallet's
+		/// scope filter (see `required_scope`), which means it must map
+		/// to a social scope in the concrete runtime. Returning it from
+		/// a helper lets each runtime pick a call shape that fits its
+		/// own registered pallets.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::BenchmarkHelper<Self>;
 	}
 
 	/// Active manager authorizations, keyed by `(owner, manager)`.
@@ -384,28 +417,48 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		/// Lazily reclaim deposits from expired authorizations.
 		///
-		/// We iterate at most [`Config::MaxExpiryPurgePerBlock`] entries per
-		/// block and stop early if the remaining weight budget cannot cover
-		/// another purge. This keeps the block-production path responsive and
-		/// avoids the common pitfall of an `on_idle` hook that consumes every
-		/// leftover weight unit.
+		/// Scans at most [`Config::MaxExpiryScanPerBlock`] entries per
+		/// block, purging up to [`Config::MaxExpiryPurgePerBlock`] of the
+		/// expired ones it finds. Stops early if the remaining weight
+		/// budget cannot cover another purge. This double cap is the
+		/// important part: without `MaxExpiryScanPerBlock`, a large pool
+		/// of non-expired entries could force the scan to touch every
+		/// key in storage while only billing the weight of the few items
+		/// actually purged — an easy griefing vector.
 		fn on_idle(now: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
-			let per_purge = T::DbWeight::get().reads(1) + T::DbWeight::get().writes(2);
-			let budget = T::MaxExpiryPurgePerBlock::get();
+			let per_scan = T::DbWeight::get().reads(1);
+			let per_purge = per_scan + T::DbWeight::get().writes(2);
+			let purge_budget = T::MaxExpiryPurgePerBlock::get();
+			let scan_budget = T::MaxExpiryScanPerBlock::get();
 
 			let mut used = Weight::zero();
 			let mut purged: u32 = 0;
+			let mut scanned: u32 = 0;
 
-			let expired: scale_info::prelude::vec::Vec<(T::AccountId, T::AccountId)> =
-				ProfileManagers::<T>::iter()
-					.filter_map(|(owner, manager, info)| {
-						info.expires_at.filter(|exp| now >= *exp).map(|_| (owner, manager))
-					})
-					.take(budget as usize)
-					.collect();
+			for (owner, manager, info) in ProfileManagers::<T>::iter() {
+				if scanned >= scan_budget {
+					break;
+				}
+				// Bill the scan read regardless of whether this entry is
+				// expired — the hook really did touch it.
+				if used.saturating_add(per_scan).any_gt(remaining_weight) {
+					break;
+				}
+				used = used.saturating_add(per_scan);
+				scanned = scanned.saturating_add(1);
 
-			for (owner, manager) in expired {
-				if used.saturating_add(per_purge).any_gt(remaining_weight) {
+				let is_expired = info.expires_at.is_some_and(|exp| now >= exp);
+				if !is_expired {
+					continue;
+				}
+
+				if purged >= purge_budget {
+					break;
+				}
+				// The purge itself adds 2 writes on top of the scan read
+				// already counted above.
+				let per_purge_extra = per_purge.saturating_sub(per_scan);
+				if used.saturating_add(per_purge_extra).any_gt(remaining_weight) {
 					break;
 				}
 
@@ -420,7 +473,7 @@ pub mod pallet {
 					});
 				}
 
-				used = used.saturating_add(per_purge);
+				used = used.saturating_add(per_purge_extra);
 				purged = purged.saturating_add(1);
 			}
 

@@ -280,10 +280,9 @@ validate_zombienet_toolchain() {
 }
 
 validate_full_external_toolchain() {
-    ensure_local_sdk_binaries polkadot polkadot-prepare-worker polkadot-execute-worker polkadot-omni-node eth-rpc
+    ensure_local_sdk_binaries polkadot polkadot-prepare-worker polkadot-execute-worker polkadot-omni-node
     validate_chain_spec_builder_version
     validate_zombienet_node_binaries
-    require_cmd_semver_exact eth-rpc "$STACK_EXPECTED_ETH_RPC_SEMVER" "eth-rpc (pallet-revive-eth-rpc)"
 }
 
 validate_solo_dev_toolchain() {
@@ -774,7 +773,6 @@ run_zombienet_foreground() {
 
 start_eth_rpc_background() {
     ensure_local_sdk_binaries eth-rpc
-    require_cmd_semver_exact eth-rpc "$STACK_EXPECTED_ETH_RPC_SEMVER" "eth-rpc (pallet-revive-eth-rpc)"
     require_port_free "$STACK_ETH_RPC_PORT"
 
     local eth_rpc_log

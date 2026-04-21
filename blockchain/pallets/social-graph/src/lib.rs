@@ -27,6 +27,15 @@ pub trait GraphProvider<AccountId> {
 	fn following_count(account: &AccountId) -> u32;
 }
 
+/// Runtime-supplied helpers for the benchmark suite. `follow` gates on
+/// `ProfileProvider::exists` for both participants; the runtime hands
+/// this in so benchmarks can register the profiles directly instead of
+/// paying the `create_profile` cost every iteration.
+#[cfg(feature = "runtime-benchmarks")]
+pub trait BenchmarkHelper<AccountId> {
+	fn register_profile(who: &AccountId);
+}
+
 #[frame::pallet]
 pub mod pallet {
 	use crate::{types::FollowInfo, weights::WeightInfo, GraphProvider};
@@ -36,7 +45,7 @@ pub mod pallet {
 	};
 	use pallet_social_profiles::ProfileProvider;
 
-	type BalanceOf<T> =
+	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	#[pallet::pallet]
@@ -52,6 +61,9 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::BenchmarkHelper<Self::AccountId>;
 	}
 
 	/// Follow relationship: (follower, followed) -> FollowInfo.
@@ -133,18 +145,16 @@ pub mod pallet {
 			ensure!(T::ProfileProvider::exists(&target), Error::<T>::ProfileNotFound);
 			ensure!(!Follows::<T>::contains_key(&who, &target), Error::<T>::AlreadyFollowing);
 
-			// Storage writes first (atomicity).
-			let block_number = frame_system::Pallet::<T>::block_number();
-			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
-			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
-			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
-
-			// Transfer per-profile follow fee to target (if > 0).
 			let fee = T::ProfileProvider::follow_fee(&target);
 			if fee > Zero::zero() {
 				T::Currency::transfer(&who, &target, fee, ExistenceRequirement::KeepAlive)
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
+
+			let block_number = frame_system::Pallet::<T>::block_number();
+			Follows::<T>::insert(&who, &target, FollowInfo { created_at: block_number });
+			FollowerCount::<T>::mutate(&target, |c| *c = c.saturating_add(1));
+			FollowingCount::<T>::mutate(&who, |c| *c = c.saturating_add(1));
 
 			Self::deposit_event(Event::Followed { follower: who, followed: target, fee_paid: fee });
 			Ok(())

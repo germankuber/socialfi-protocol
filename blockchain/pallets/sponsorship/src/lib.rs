@@ -34,12 +34,16 @@
 
 pub use pallet::*;
 pub mod extension;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
 
 #[frame::pallet]
 pub mod pallet {
@@ -127,6 +131,11 @@ pub mod pallet {
 		InsufficientFunds,
 		/// Requested withdrawal exceeds the sponsor's pot balance.
 		WithdrawalExceedsPot,
+		/// The on-chain pot bookkeeping diverged from the pallet account's
+		/// free balance. Indicates a bug or state corruption — the
+		/// extrinsic refuses to proceed rather than panicking, so the
+		/// sponsor can surface it via governance.
+		PotAccountingMismatch,
 	}
 
 	#[pallet::call]
@@ -238,13 +247,18 @@ pub mod pallet {
 				Ok(())
 			})?;
 
+			// The bookkeeping invariant says SponsorPots ≤ free_balance of
+			// the pallet account, so this transfer *should* succeed. If it
+			// doesn't (e.g. after a slash or ED-related adjustment on the
+			// pallet account), surface it as a recoverable error instead
+			// of panicking — a panic here would halt the node.
 			T::Currency::transfer(
 				&Self::pallet_account(),
 				&sponsor,
 				amount,
 				ExistenceRequirement::AllowDeath,
 			)
-			.expect("pot is tracked alongside the account balance; transfer cannot fail");
+			.map_err(|_| Error::<T>::PotAccountingMismatch)?;
 
 			Self::deposit_event(Event::PotWithdrawn { sponsor, amount });
 			Ok(())

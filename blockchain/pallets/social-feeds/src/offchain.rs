@@ -39,6 +39,7 @@ use frame::{
 };
 use frame::deps::frame_system::offchain::{SendUnsignedTransaction, Signer};
 use rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
+use scale_info::prelude::vec::Vec;
 
 /// Max pending unlocks processed per block — prevents a pathological
 /// backlog from stalling block production.
@@ -76,19 +77,23 @@ pub fn run<T: Config>(block_number: BlockNumberFor<T>) {
 	// a TEE-backed oracle, or a DKG-shared secret.
 	let sk = dev_key::secret_key();
 
-	let pending_count = PendingUnlocks::<T>::iter().count();
-	if pending_count == 0 {
+	// Materialize the pending set once. The previous version iterated
+	// twice (once to count, once to process), doubling scan cost on
+	// the offchain DB for every block tick.
+	let pending: Vec<(T::PostId, T::AccountId)> =
+		PendingUnlocks::<T>::iter().map(|((p, v), _)| (p, v)).collect();
+	if pending.is_empty() {
 		log::trace!(target: "social-feeds::ocw", "nothing to deliver at block {:?}", block_number);
 		return;
 	}
 	log::info!(
 		target: "social-feeds::ocw",
 		"🛰️ OCW tick block={:?} pending={} key_service_version={}",
-		block_number, pending_count, ks.version,
+		block_number, pending.len(), ks.version,
 	);
 
 	let mut delivered = 0usize;
-	for ((post_id, viewer), _) in PendingUnlocks::<T>::iter() {
+	for (post_id, viewer) in pending {
 		if delivered >= MAX_DELIVERIES_PER_BLOCK {
 			break;
 		}
@@ -139,20 +144,20 @@ fn try_deliver<T: Config>(
 	let post = Posts::<T>::get(post_id).ok_or(OcwError::Gone)?;
 	let capsule_bytes = post.capsule.as_ref().ok_or(OcwError::Gone)?.to_vec();
 
-	// 1. Open capsule → k_content.
-	let k_content = sk.unseal(&capsule_bytes).map_err(|_| OcwError::DecryptFailed)?;
+	// 1. Open capsule → k_content. Wrap in `Zeroizing` so the key is
+	//    scrubbed from memory on *every* exit path — including the
+	//    `SealFailed` and length-mismatch returns below, which the
+	//    previous version skipped.
+	use zeroize::Zeroizing;
+	let k_content: Zeroizing<Vec<u8>> =
+		Zeroizing::new(sk.unseal(&capsule_bytes).map_err(|_| OcwError::DecryptFailed)?);
 
 	// 2. Re-seal to the viewer's ephemeral pk.
 	let buyer_pk = CboxPublic::from(record.buyer_pk);
 	let mut rng = ChaCha20Rng::from_seed(sp_io::offchain::random_seed());
-	let wrapped = buyer_pk.seal(&mut rng, &k_content).map_err(|_| OcwError::SealFailed)?;
-
-	// 3. Zeroize k_content before leaving the scope.
-	{
-		use zeroize::Zeroize;
-		let mut k = k_content;
-		k.zeroize();
-	}
+	let wrapped = buyer_pk
+		.seal(&mut rng, k_content.as_slice())
+		.map_err(|_| OcwError::SealFailed)?;
 
 	if wrapped.len() as u32 != SEALED_KEY_LEN {
 		return Err(OcwError::SealFailed);

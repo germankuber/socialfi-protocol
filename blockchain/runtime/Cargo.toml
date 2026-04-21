@@ -1,6 +1,6 @@
 [package]
 name = "stack-template-runtime"
-description = "A parachain runtime template for the Polkadot Stack, with EVM and PVM contract support."
+description = "A parachain runtime template for the Polkadot Stack."
 version = "0.1.0"
 license.workspace = true
 authors.workspace = true
@@ -42,7 +42,6 @@ polkadot-sdk = { workspace = true, features = [
 	"pallet-collator-selection",
 	"pallet-identity",
 	"pallet-message-queue",
-	"pallet-revive",
 	"pallet-session",
 	"pallet-statement",
 	"pallet-sudo",

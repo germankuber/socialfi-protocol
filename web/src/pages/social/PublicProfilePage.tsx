@@ -8,6 +8,7 @@ import { useIdentity } from "../../hooks/social/useIdentity";
 import ConfirmModal from "../../components/social/ConfirmModal";
 import VerifiedBadge from "../../components/social/VerifiedBadge";
 import TxToast from "../../components/social/TxToast";
+import AuthorFeedSection from "../../components/social/AuthorFeedSection";
 
 interface ProfileData {
 	name: string;
@@ -226,6 +227,8 @@ export default function PublicProfilePage() {
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 				</div>
 			</ConfirmModal>
+
+			<AuthorFeedSection address={targetAddress} pageSize={5} />
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>

@@ -101,6 +101,18 @@ impl crate::Config for Test {
 	type Currency = Balances;
 	type ProfileProvider = MockProfileProvider;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = TestBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct TestBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<u64> for TestBenchmarkHelper {
+	fn register_profile(who: &u64) {
+		MockProfileProvider::add_profile(*who);
+	}
 }
 
 /// Build genesis storage with pre-funded accounts for testing.

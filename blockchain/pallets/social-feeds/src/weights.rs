@@ -14,26 +14,56 @@ pub trait WeightInfo {
 	fn create_post() -> Weight;
 	fn create_reply() -> Weight;
 	fn unlock_post() -> Weight;
+	fn set_key_service() -> Weight;
+	fn deliver_unlock_unsigned() -> Weight;
+	fn redact_post() -> Weight;
 }
 
 /// Weights for pallet_social_feeds using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn create_post() -> Weight {
-		Weight::from_parts(20_000_000, 2000)
+		// Reads: NextPostId, PostsByAuthor, KeyService (optional, counted worst-case)
+		// Writes: NextPostId, Posts, PostsByAuthor, PostsTimeline
+		Weight::from_parts(22_000_000, 2000)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
-			.saturating_add(T::DbWeight::get().writes(3_u64))
-	}
-
-	fn create_reply() -> Weight {
-		Weight::from_parts(25_000_000, 2500)
-			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
+	fn create_reply() -> Weight {
+		// Reads: Posts (parent), NextPostId, PostsByAuthor, Replies
+		// Writes: NextPostId, Posts, PostsByAuthor, PostsTimeline, Replies
+		Weight::from_parts(27_000_000, 2500)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
+	}
+
 	fn unlock_post() -> Weight {
+		// Reads: Posts, Unlocks
+		// Writes: Unlocks, PendingUnlocks
 		Weight::from_parts(15_000_000, 1600)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+
+	fn set_key_service() -> Weight {
+		// Reads: KeyService (for version bump). Writes: KeyService.
+		Weight::from_parts(10_000_000, 1200)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+
+	fn deliver_unlock_unsigned() -> Weight {
+		// Reads: Unlocks (inside try_mutate). Writes: Unlocks, PendingUnlocks.
+		Weight::from_parts(14_000_000, 1600)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+
+	fn redact_post() -> Weight {
+		// Reads: Posts (inside try_mutate). Writes: Posts.
+		Weight::from_parts(11_000_000, 1400)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
@@ -41,20 +71,38 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 /// For backwards compatibility and tests.
 impl WeightInfo for () {
 	fn create_post() -> Weight {
-		Weight::from_parts(20_000_000, 2000)
+		Weight::from_parts(22_000_000, 2000)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
-			.saturating_add(RocksDbWeight::get().writes(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn create_reply() -> Weight {
-		Weight::from_parts(25_000_000, 2500)
+		Weight::from_parts(27_000_000, 2500)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
-			.saturating_add(RocksDbWeight::get().writes(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 
 	fn unlock_post() -> Weight {
 		Weight::from_parts(15_000_000, 1600)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+
+	fn set_key_service() -> Weight {
+		Weight::from_parts(10_000_000, 1200)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	fn deliver_unlock_unsigned() -> Weight {
+		Weight::from_parts(14_000_000, 1600)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+
+	fn redact_post() -> Weight {
+		Weight::from_parts(11_000_000, 1400)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

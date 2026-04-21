@@ -121,8 +121,12 @@ impl pallet_balances::Config for Test {
 parameter_types! {
 	pub const PostFee: u64 = 10;
 	pub const MaxContentLen: u32 = 128;
-	pub const MaxPostsPerAuthor: u32 = 100;
-	pub const MaxRepliesPerPost: u32 = 100;
+	// Small values so boundary tests can exercise the bounds without
+	// creating thousands of posts. MaxPostsPerAuthor is larger than
+	// MaxRepliesPerPost so the reply-limit test can saturate replies
+	// from a single author without hitting the posts-per-author cap.
+	pub const MaxPostsPerAuthor: u32 = 10;
+	pub const MaxRepliesPerPost: u32 = 5;
 	pub TreasuryAccount: u64 = 99;
 }
 
@@ -160,6 +164,23 @@ impl crate::Config for Test {
 	type UnsignedValidityWindow = ConstU64<16>;
 	type UnsignedPriority = ConstU64<1_000>;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = TestBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct TestBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<u64, u32> for TestBenchmarkHelper {
+	fn register_profile(who: &u64) {
+		MockProfileProvider::add_profile(*who);
+	}
+	fn register_app(owner: &u64) -> u32 {
+		let next_id = APPS.with(|v| v.borrow().len() as u32);
+		MockAppProvider::add_app(next_id, *owner);
+		next_id
+	}
 }
 
 /// Test-only AppCrypto wrapper. Bridges `UintAuthorityId` / `TestSignature`

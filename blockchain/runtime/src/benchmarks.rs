@@ -9,8 +9,11 @@ polkadot_sdk::frame_benchmarking::define_benchmarks!(
 	[cumulus_pallet_parachain_system, ParachainSystem]
 	[cumulus_pallet_xcmp_queue, XcmpQueue]
 	[cumulus_pallet_weight_reclaim, WeightReclaim]
+	[pallet_template, TemplatePallet]
 	[pallet_social_app_registry, SocialAppRegistry]
 	[pallet_social_profiles, SocialProfiles]
 	[pallet_social_graph, SocialGraph]
 	[pallet_social_feeds, SocialFeeds]
+	[pallet_social_managers, SocialManagers]
+	[pallet_sponsorship, Sponsorship]
 );

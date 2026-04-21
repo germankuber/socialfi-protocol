@@ -144,6 +144,7 @@ parameter_types! {
 	pub const ManagerDepositBase: u64 = 10;
 	pub const MaxManagersPerOwner: u32 = 4;
 	pub const MaxExpiryPurgePerBlock: u32 = 8;
+	pub const MaxExpiryScanPerBlock: u32 = 32;
 }
 
 impl crate::Config for Test {
@@ -151,7 +152,25 @@ impl crate::Config for Test {
 	type ManagerDepositBase = ManagerDepositBase;
 	type MaxManagersPerOwner = MaxManagersPerOwner;
 	type MaxExpiryPurgePerBlock = MaxExpiryPurgePerBlock;
+	type MaxExpiryScanPerBlock = MaxExpiryScanPerBlock;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = TestBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct TestBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<Test> for TestBenchmarkHelper {
+	fn scoped_call() -> RuntimeCall {
+		// dummy_feeds is wired under the "SocialFeeds" pallet_index so
+		// `required_scope` maps its `create_post` to `ManagerScope::Post`.
+		RuntimeCall::SocialFeeds(dummy_feeds::Call::create_post {})
+	}
+	fn scope_for_scoped_call() -> crate::types::ScopeMask {
+		crate::types::ScopeMask::from_scopes(&[crate::types::ManagerScope::Post])
+	}
 }
 
 /// Well-known accounts used across the test suite.

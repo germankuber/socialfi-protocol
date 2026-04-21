@@ -1,9 +1,10 @@
 use crate::{
 	mock::*,
-	pallet::{Error, NextPostId, Posts, PostsByAuthor, Replies, Unlocks},
+	pallet::{Error, NextPostId, Posts, PostsByAuthor, PostsTimeline, Replies, Unlocks},
 	types::PostVisibility,
 	PostProvider,
 };
+use frame::deps::frame_system;
 use frame::testing_prelude::*;
 
 fn test_content() -> BoundedVec<u8, MaxContentLen> {
@@ -487,5 +488,510 @@ fn unlock_post_author_does_not_write_storage() {
 		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0, [1u8; 32]));
 		// No entry in Unlocks — author has implicit access.
 		assert!(!Unlocks::<Test>::contains_key(0, 1));
+	});
+}
+
+// ── PostsTimeline index ────────────────────────────────────────────────
+//
+// Secondary index keyed by (author, (block, post_id)) that enables:
+//   * Feed pagination in block-order without downloading the full
+//     `PostsByAuthor` vec
+//   * Range queries by block window (e.g. "last 7 days")
+//   * Newest-first iteration via `iter_prefix` with reverse traversal
+//
+// Inserted on every `create_post` and `create_reply`. No deletion path
+// yet — posts are immutable per the pallet's contract.
+
+fn set_block(n: u64) {
+	frame_system::Pallet::<Test>::set_block_number(n);
+}
+
+fn timeline_keys(author: u64) -> Vec<(u64, u64)> {
+	PostsTimeline::<Test>::iter_key_prefix(&author).collect()
+}
+
+#[test]
+fn timeline_populated_on_create_post() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		set_block(7);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		assert!(PostsTimeline::<Test>::contains_key(1, (7u64, 0u64)));
+	});
+}
+
+#[test]
+fn timeline_populated_on_create_reply() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		set_block(3);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		set_block(5);
+		assert_ok!(SocialFeeds::create_reply(
+			RuntimeOrigin::signed(2),
+			0,
+			test_content(),
+			None,
+		));
+		assert!(PostsTimeline::<Test>::contains_key(2, (5u64, 1u64)));
+	});
+}
+
+#[test]
+fn timeline_isolated_per_author() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		set_block(10);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(2),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		let a1 = timeline_keys(1);
+		let a2 = timeline_keys(2);
+		assert_eq!(a1.len(), 1);
+		assert_eq!(a2.len(), 1);
+		assert_eq!(a1[0].1, 0);
+		assert_eq!(a2[0].1, 1);
+	});
+}
+
+#[test]
+fn posts_timeline_returns_newest_first() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		set_block(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		set_block(4);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		set_block(9);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		let result = crate::Pallet::<Test>::posts_timeline(&1, None, None, 10);
+		let ids: Vec<u64> = result.iter().map(|(_, id)| *id).collect();
+		assert_eq!(ids, vec![2, 1, 0]);
+	});
+}
+
+#[test]
+fn posts_timeline_respects_limit() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		for block in 1..=5 {
+			set_block(block);
+			assert_ok!(SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			));
+		}
+		let result = crate::Pallet::<Test>::posts_timeline(&1, None, None, 2);
+		assert_eq!(result.len(), 2);
+		let ids: Vec<u64> = result.iter().map(|(_, id)| *id).collect();
+		assert_eq!(ids, vec![4, 3]);
+	});
+}
+
+#[test]
+fn posts_timeline_filters_by_block_range() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		for block in [2u64, 5, 8, 12, 20] {
+			set_block(block);
+			assert_ok!(SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			));
+		}
+		// Window [5, 12] inclusive → posts at blocks 5, 8, 12.
+		let result = crate::Pallet::<Test>::posts_timeline(&1, Some(5), Some(12), 10);
+		let blocks: Vec<u64> = result.iter().map(|(b, _)| *b).collect();
+		assert_eq!(blocks, vec![12, 8, 5]);
+	});
+}
+
+// ── Boundary + event tests ─────────────────────────────────────────────
+
+#[test]
+fn create_post_fails_when_max_posts_reached() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		for _ in 0..MaxPostsPerAuthor::get() {
+			assert_ok!(SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			));
+		}
+		assert_noop!(
+			SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			),
+			Error::<Test>::TooManyPosts
+		);
+	});
+}
+
+#[test]
+fn create_reply_fails_when_max_replies_reached() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		for _ in 0..MaxRepliesPerPost::get() {
+			assert_ok!(SocialFeeds::create_reply(
+				RuntimeOrigin::signed(2),
+				0,
+				test_content(),
+				None,
+			));
+		}
+		assert_noop!(
+			SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, test_content(), None,),
+			Error::<Test>::TooManyReplies
+		);
+	});
+}
+
+#[test]
+fn create_post_emits_event_with_all_fields() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		frame_system::Pallet::<Test>::set_block_number(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::PostCreated {
+				post_id: 0,
+				author: 1,
+				app_id: None,
+				visibility: PostVisibility::Public,
+				post_fee: 10,
+				fee_recipient: 99,
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn create_reply_emits_event_with_all_fields() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		frame_system::Pallet::<Test>::set_block_number(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			7,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		assert_ok!(SocialFeeds::create_reply(
+			RuntimeOrigin::signed(2),
+			0,
+			test_content(),
+			None,
+		));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::ReplyCreated {
+				post_id: 1,
+				parent_post_id: 0,
+				author: 2,
+				parent_author: 1,
+				app_id: None,
+				reply_fee_paid: 7,
+				post_fee_paid: 10,
+				fee_recipient: 99,
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn set_key_service_emits_previous_account_on_rotation() {
+	new_test_ext().execute_with(|| {
+		frame_system::Pallet::<Test>::set_block_number(1);
+		// `new_test_ext` pre-registers account 42 as the initial key
+		// service — rotating to 43 must surface 42 as previous_account.
+		assert_ok!(SocialFeeds::set_key_service(RuntimeOrigin::root(), 43u64, [9u8; 32]));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::KeyServiceUpdated {
+				version: 2,
+				account: 43,
+				previous_account: Some(42),
+			}
+			.into(),
+		);
+	});
+}
+
+#[test]
+fn unlock_post_by_author_emits_acknowledgement_event() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		frame_system::Pallet::<Test>::set_block_number(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Private,
+			50,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
+		));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(1), 0, [1u8; 32]));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::AuthorSelfUnlockAcknowledged { post_id: 0, author: 1 }.into(),
+		);
+	});
+}
+
+#[test]
+fn unlock_post_emits_event() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1, 2]);
+		frame_system::Pallet::<Test>::set_block_number(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			25,
+			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
+		));
+		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]));
+		frame_system::Pallet::<Test>::assert_last_event(
+			crate::Event::PostUnlocked {
+				post_id: 0,
+				viewer: 2,
+				author: 1,
+				fee_paid: 25,
+			}
+			.into(),
+		);
+	});
+}
+
+// ── View Functions ─────────────────────────────────────────────────────
+//
+// `#[pallet::view_functions]` exposes typed read queries that off-chain
+// clients call via the `RuntimeViewFunction` runtime API without paying
+// fees or landing in a block. Under tests they are just regular methods
+// on `Pallet<T>` — we invoke them directly. The goal is to verify the
+// shape and content of the response; the RPC wiring is exercised by the
+// runtime's `execute_view_function` in integration.
+
+#[test]
+fn view_post_by_id_returns_full_info() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		set_block(11);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		let info = crate::Pallet::<Test>::post_by_id(0).expect("post must exist");
+		assert_eq!(info.author, 1);
+		assert_eq!(info.visibility, PostVisibility::Public);
+		assert_eq!(info.created_at, 11);
+	});
+}
+
+#[test]
+fn view_post_by_id_returns_none_for_missing() {
+	new_test_ext().execute_with(|| {
+		assert!(crate::Pallet::<Test>::post_by_id(999).is_none());
+	});
+}
+
+#[test]
+fn view_author_post_count_reflects_storage() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		assert_eq!(crate::Pallet::<Test>::author_post_count(1), 0);
+		for _ in 0..3 {
+			assert_ok!(SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			));
+		}
+		assert_eq!(crate::Pallet::<Test>::author_post_count(1), 3);
+	});
+}
+
+#[test]
+fn view_feed_by_author_hydrates_posts_newest_first() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		set_block(1);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		set_block(5);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+		set_block(10);
+		assert_ok!(SocialFeeds::create_post(
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Public,
+			0,
+			None,
+		));
+
+		let feed = crate::Pallet::<Test>::feed_by_author(1, None, None, 10);
+		// Full response — newest first: blocks 10, 5, 1 with ids 2, 1, 0.
+		assert_eq!(feed.len(), 3);
+		assert_eq!(feed[0].0, 2);
+		assert_eq!(feed[0].1.created_at, 10);
+		assert_eq!(feed[1].0, 1);
+		assert_eq!(feed[1].1.created_at, 5);
+		assert_eq!(feed[2].0, 0);
+		assert_eq!(feed[2].1.created_at, 1);
+	});
+}
+
+#[test]
+fn view_feed_by_author_filters_and_limits() {
+	new_test_ext().execute_with(|| {
+		setup_profiles(&[1]);
+		for block in [2u64, 7, 12, 20] {
+			set_block(block);
+			assert_ok!(SocialFeeds::create_post(
+				RuntimeOrigin::signed(1),
+				test_content(),
+				None,
+				0,
+				PostVisibility::Public,
+				0,
+				None,
+			));
+		}
+		// Range [5, 15] limit 1 → newest in window = block 12.
+		let feed = crate::Pallet::<Test>::feed_by_author(1, Some(5), Some(15), 1);
+		assert_eq!(feed.len(), 1);
+		assert_eq!(feed[0].1.created_at, 12);
+	});
+}
+
+#[test]
+fn view_feed_by_author_empty_for_unknown() {
+	new_test_ext().execute_with(|| {
+		let feed = crate::Pallet::<Test>::feed_by_author(999, None, None, 10);
+		assert!(feed.is_empty());
 	});
 }
