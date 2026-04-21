@@ -57,12 +57,16 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		frame_system::CheckEra<Runtime>,
 		frame_system::CheckNonce<Runtime>,
 		frame_system::CheckWeight<Runtime>,
-		// Runs BEFORE `ChargeTransactionPayment`: when the signer opted
-		// into sponsorship, this extension tops the signer up from the pot
-		// so the native charge extension that follows debits a balance
-		// that effectively came out of the pot.
-		pallet_sponsorship::extension::ChargeSponsored<Runtime>,
-		pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+		// Wraps `ChargeTransactionPayment`. When the signer has a
+		// sponsor with a funded pot, the wrapper skips the inner
+		// extension entirely and settles the fee against the pot in
+		// `prepare`. Otherwise the inner extension runs normally. Both
+		// identifier and metadata forward to the inner extension, so
+		// this wrapper is invisible to PAPI / PJS-style wallets.
+		pallet_sponsorship::extension::ChargeSponsored<
+			Runtime,
+			pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+		>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 	),
 >;

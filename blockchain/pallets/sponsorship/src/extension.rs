@@ -1,25 +1,34 @@
-//! `ChargeSponsored` — transaction extension that redirects fee payment
-//! from the signer to a sponsor the signer is registered under.
+//! `ChargeSponsored` — wrapper transaction extension that transparently
+//! redirects fee payment from the signer to their registered sponsor.
 //!
-//! The extension intentionally carries **zero bytes** in the signed
-//! payload. The opt-in lives entirely in on-chain state (`SponsorOf`), so
-//! the signer's wallet never needs to know about this extension — any
-//! PJS-compatible wallet (Talisman, SubWallet, Polkadot.js) signs the
-//! transaction like any other.
+//! ## Why a wrapper, not a standalone extension
 //!
-//! Lifecycle per transaction:
+//! A standalone extension that modifies balances before
+//! `ChargeTransactionPayment` runs has two hard problems:
 //!
-//! 1. `validate` — cheap read of `SponsorOf[signer]` and `SponsorPots`.
-//!    Returns `Val::Skip` when the signer has no sponsor or the pot is
-//!    under-funded, and the regular `ChargeTransactionPayment`
-//!    extension bills the signer as usual.
-//! 2. `prepare` — when `Val::Apply` was set, debit the sponsor's pot and
-//!    deposit the fee into the beneficiary's free balance. Emits
-//!    `FeeSponsored { sponsor, beneficiary, fee }`. The next extension
-//!    in the pipeline then withdraws the same amount from the
-//!    beneficiary, netting their balance to zero.
-//! 3. `post_dispatch_details` — no refund path in the MVP; any
-//!    over-estimation stays with the beneficiary.
+//! 1. The native `ChargeTransactionPayment.validate` calls
+//!    `can_withdraw_fee` on the signer. A beneficiary with balance `0`
+//!    (e.g. a freshly onboarded user) fails that check in the pool, so
+//!    the sponsorship never gets a chance to kick in.
+//! 2. Any extension that carries non-zero SCALE bytes in its signed
+//!    payload breaks `@polkadot-api/pjs-signer`, which only understands
+//!    a fixed whitelist of canonical signed extensions.
+//!
+//! The canonical fix in polkadot-sdk is the `SkipCheckIfFeeless`
+//! pattern (`substrate/frame/transaction-payment/skip-feeless-payment`).
+//! We replicate it here: wrap `ChargeTransactionPayment` in a generic
+//! `ChargeSponsored<T, S>` that forwards every piece of metadata to the
+//! inner extension `S`, so from the outside the tx looks exactly like a
+//! plain native-fee tx. Inside the wrapper, `validate` checks `SponsorOf`
+//! *first*:
+//!
+//! - If there is a sponsor with a funded pot, skip `S` entirely — we
+//!   settle the fee against the pot in `prepare` and never touch the
+//!   signer's balance.
+//! - Otherwise, delegate to `S` exactly as if the wrapper was not there.
+//!
+//! The extension therefore remains PJS-compatible (it inherits `S`'s
+//! identifier) *and* supports beneficiaries with balance zero.
 
 use crate::{BalanceOf, Config, Pallet};
 use codec::{Decode, DecodeWithMemTracking, Encode};
@@ -34,139 +43,212 @@ use frame::{
 				DispatchInfoOf, Dispatchable, Implication, PostDispatchInfoOf,
 				TransactionExtension, ValidateResult,
 			},
-			transaction_validity::{
-				InvalidTransaction, TransactionValidityError, ValidTransaction,
-			},
+			transaction_validity::{InvalidTransaction, TransactionValidityError},
 		},
 	},
 	prelude::*,
 };
-use scale_info::TypeInfo;
+use scale_info::{StaticTypeInfo, TypeInfo};
 
-/// Zero-sized extension. See the module docs for why.
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, Default, TypeInfo,
-)]
-#[scale_info(skip_type_params(T))]
-pub struct ChargeSponsored<T: Config>(core::marker::PhantomData<T>);
+/// Wrapper extension. `S` is the inner extension we forward to when no
+/// sponsorship applies — typically `ChargeTransactionPayment`.
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq)]
+pub struct ChargeSponsored<T, S>(pub S, core::marker::PhantomData<T>);
 
-impl<T: Config> ChargeSponsored<T> {
-	pub fn new() -> Self {
-		Self(core::marker::PhantomData)
+impl<T, S> ChargeSponsored<T, S> {
+	pub fn new(inner: S) -> Self {
+		Self(inner, core::marker::PhantomData)
 	}
 }
 
-impl<T: Config> core::fmt::Debug for ChargeSponsored<T> {
+// Forward TypeInfo to `S` so the extension is invisible in metadata —
+// PAPI/PJS see only the inner extension and never learn about the
+// wrapper.
+impl<T, S: StaticTypeInfo> TypeInfo for ChargeSponsored<T, S> {
+	type Identity = S;
+	fn type_info() -> scale_info::Type {
+		S::type_info()
+	}
+}
+
+impl<T, S: Encode> core::fmt::Debug for ChargeSponsored<T, S> {
+	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-		write!(f, "ChargeSponsored")
+		write!(f, "ChargeSponsored<{:?}>", self.0.encode())
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
+		Ok(())
 	}
 }
 
-/// Intermediate value passed from `validate` to `prepare`.
-pub enum Val<T: Config> {
-	/// No applicable sponsor — the native charge extension handles the fee.
-	Skip,
-	/// A sponsor was resolved; `prepare` will settle on their pot.
-	Apply { sponsor: T::AccountId, beneficiary: T::AccountId, fee: BalanceOf<T> },
+/// Intermediate value carried from `validate` to `prepare`. The
+/// `Apply` variant stores the inner extension's own `Val`; the
+/// `SponsorPay` variant records the resolved sponsor + fee for
+/// settlement in `prepare`.
+pub enum Val<T: Config, V> {
+	Apply(V),
+	SponsorPay { sponsor: T::AccountId, beneficiary: T::AccountId, fee: BalanceOf<T> },
 }
 
-/// Result of `prepare`. Tagged so a future `post_dispatch_details` can
-/// distinguish a sponsored tx from a native one for refund logic.
-pub enum Pre<T: Config> {
-	Skipped,
-	Settled(core::marker::PhantomData<T>),
+/// Analogous `Pre` tag, used by `post_dispatch_details`.
+pub enum Pre<P> {
+	Apply(P),
+	Sponsored,
 }
 
-impl<T> TransactionExtension<<T as frame_system::Config>::RuntimeCall> for ChargeSponsored<T>
+impl<T, S> TransactionExtension<<T as frame_system::Config>::RuntimeCall> for ChargeSponsored<T, S>
 where
 	T: Config + Send + Sync,
 	<T as frame_system::Config>::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync,
+	S: TransactionExtension<<T as frame_system::Config>::RuntimeCall>,
 {
-	const IDENTIFIER: &'static str = "ChargeSponsored";
-	type Implicit = ();
-	type Val = Val<T>;
-	type Pre = Pre<T>;
+	// Forward identifier + metadata to the inner extension. This is what
+	// makes the wrapper invisible to the outside world.
+	const IDENTIFIER: &'static str = S::IDENTIFIER;
+	type Implicit = S::Implicit;
+	type Val = Val<T, S::Val>;
+	type Pre = Pre<S::Pre>;
 
-	fn weight(
-		&self,
-		_call: &<T as frame_system::Config>::RuntimeCall,
-	) -> Weight {
-		// Two reads (SponsorOf + SponsorPots) on the skip path, plus one
-		// write (SponsorPots) + one currency transfer on the apply path.
-		// We charge for the apply path always; the skip path just
-		// over-reserves a small amount that the fee multiplier amortises.
-		T::DbWeight::get().reads_writes(2, 1)
+	fn metadata() -> scale_info::prelude::vec::Vec<
+		frame::deps::sp_runtime::traits::TransactionExtensionMetadata,
+	> {
+		S::metadata()
+	}
+
+	fn implicit(&self) -> Result<Self::Implicit, TransactionValidityError> {
+		self.0.implicit()
+	}
+
+	fn weight(&self, call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
+		// Sponsorship adds a pot read + pot write + a currency transfer
+		// on top of the inner extension's own weight.
+		self.0
+			.weight(call)
+			.saturating_add(T::DbWeight::get().reads_writes(2, 2))
 	}
 
 	fn validate(
 		&self,
 		origin: <<T as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin,
-		_call: &<T as frame_system::Config>::RuntimeCall,
+		call: &<T as frame_system::Config>::RuntimeCall,
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		_len: usize,
-		_self_implicit: Self::Implicit,
-		_inherited: &impl Implication,
-		_source: TransactionSource,
+		len: usize,
+		self_implicit: Self::Implicit,
+		inherited_implication: &impl Implication,
+		source: TransactionSource,
 	) -> ValidateResult<Self::Val, <T as frame_system::Config>::RuntimeCall> {
-		let beneficiary = match origin.as_system_ref() {
-			Some(raw) => match raw.clone().as_signed() {
-				Some(acc) => acc.clone(),
-				// Unsigned / root origins cannot be sponsored.
-				None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
-			},
-			None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
+		// Only signed origins are eligible. Unsigned / root txs fall
+		// straight through to the inner extension.
+		let beneficiary: Option<T::AccountId> = match origin.as_system_ref() {
+			Some(raw) => raw.clone().as_signed().cloned(),
+			None => None,
 		};
 
-		// Conservative upper bound on the fee: ref_time of the call, 1
-		// planck per unit. The actual fee is settled by the native
-		// ChargeTransactionPayment extension that runs next — it is free
-		// to compute a different number; we pay the upper bound anyway
-		// and accept the over-reservation as a hackathon simplification.
-		let fee: BalanceOf<T> = info.call_weight.ref_time().saturated_into();
+		if let Some(beneficiary) = beneficiary {
+			// Conservative upper bound on the fee, same heuristic the
+			// previous standalone extension used. The real fee polynomial
+			// lives inside `ChargeTransactionPayment`; benchmarks will
+			// refine this later if needed.
+			let fee: BalanceOf<T> = info.call_weight.ref_time().saturated_into();
 
-		let sponsor = match Pallet::<T>::resolve_sponsor(&beneficiary, fee) {
-			Some(s) => s,
-			// No sponsor or insufficient pot: fall through to native.
-			None => return Ok((ValidTransaction::default(), Val::Skip, origin)),
-		};
+			if let Some(sponsor) = Pallet::<T>::resolve_sponsor(&beneficiary, fee) {
+				// Skip the inner extension entirely. The fee does NOT
+				// pass through `ChargeTransactionPayment`, which means
+				// `can_withdraw_fee` is never called on the beneficiary
+				// — solving the balance-zero onboarding case.
+				log::info!(
+					target: "sponsorship::ext",
+					"🎟️ validate SKIP inner: beneficiary={:?} sponsor={:?} fee={:?}",
+					beneficiary, sponsor, fee,
+				);
+				return Ok((
+					Default::default(),
+					Val::SponsorPay { sponsor, beneficiary, fee },
+					origin,
+				));
+			}
 
-		Ok((
-			ValidTransaction::default(),
-			Val::Apply { sponsor, beneficiary, fee },
+			log::trace!(
+				target: "sponsorship::ext",
+				"validate APPLY inner: beneficiary={:?} fee={:?} (no sponsor or empty pot)",
+				beneficiary, fee,
+			);
+		}
+
+		// No sponsorship applies: delegate to the inner extension.
+		let (valid, inner_val, origin) = self.0.validate(
 			origin,
-		))
+			call,
+			info,
+			len,
+			self_implicit,
+			inherited_implication,
+			source,
+		)?;
+		Ok((valid, Val::Apply(inner_val), origin))
 	}
 
 	fn prepare(
 		self,
 		val: Self::Val,
-		_origin: &<<T as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin,
-		_call: &<T as frame_system::Config>::RuntimeCall,
-		_info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		_len: usize,
+		origin: &<<T as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
 		match val {
-			Val::Skip => Ok(Pre::Skipped),
-			Val::Apply { sponsor, beneficiary, fee } => {
-				Pallet::<T>::settle_sponsorship(&sponsor, &beneficiary, fee)
+			Val::Apply(inner_val) => {
+				let pre = self.0.prepare(inner_val, origin, call, info, len)?;
+				Ok(Pre::Apply(pre))
+			},
+			Val::SponsorPay { sponsor, beneficiary, fee } => {
+				log::info!(
+					target: "sponsorship::ext",
+					"⚡ prepare settling: sponsor={:?} beneficiary={:?} fee={:?}",
+					sponsor, beneficiary, fee,
+				);
+				// Debit the sponsor's pot and burn the fee out of the
+				// pallet account. We do NOT credit a specific destination
+				// (validator / treasury) here — matching the MVP shape
+				// of the previous extension and avoiding a circular
+				// dependency on `OnChargeTransaction`. Production should
+				// route the fee to the same destination as the native
+				// extension via a runtime-wired handler.
+				Pallet::<T>::settle_sponsorship(&sponsor, &Self::fee_destination(), fee)
 					.map_err(|_| InvalidTransaction::Payment)?;
-				Ok(Pre::Settled(core::marker::PhantomData))
+				Ok(Pre::Sponsored)
 			},
 		}
 	}
 
 	fn post_dispatch_details(
-		_pre: Self::Pre,
-		_info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		_post_info: &PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		_len: usize,
-		_result: &DispatchResult,
+		pre: Self::Pre,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		post_info: &PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+		result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
-		// Over-estimation stays with the beneficiary in the MVP. A
-		// production version would recompute the actual fee here and
-		// refund the delta to the sponsor's pot.
-		Ok(Weight::zero())
+		match pre {
+			Pre::Apply(inner_pre) => S::post_dispatch_details(inner_pre, info, post_info, len, result),
+			// No refund in the sponsored path yet — over-estimation
+			// remains in the fee destination rather than being returned
+			// to the sponsor's pot. Matches the previous MVP behaviour.
+			Pre::Sponsored => Ok(Weight::zero()),
+		}
 	}
 }
+
+impl<T: Config, S> ChargeSponsored<T, S> {
+	/// Where sponsored fees land once the pot has been debited. Using
+	/// the pallet account itself keeps the bookkeeping local: the fee
+	/// just moves within the sponsorship pallet's sovereign account and
+	/// is effectively burned relative to the sponsor's pot without
+	/// leaking into the beneficiary's free balance.
+	fn fee_destination() -> T::AccountId {
+		Pallet::<T>::pallet_account()
+	}
+}
+

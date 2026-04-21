@@ -10527,6 +10527,7 @@ dependencies = [
 name = "pallet-social-app-registry"
 version = "0.1.0"
 dependencies = [
+ "log",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
@@ -10579,6 +10580,7 @@ dependencies = [
 name = "pallet-social-profiles"
 version = "0.1.0"
 dependencies = [
+ "log",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",
@@ -10608,6 +10610,7 @@ dependencies = [
 name = "pallet-sponsorship"
 version = "0.1.0"
 dependencies = [
+ "log",
  "parity-scale-codec",
  "polkadot-sdk 2512.3.3",
  "polkadot-sdk-frame",

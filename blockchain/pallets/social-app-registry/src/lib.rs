@@ -250,6 +250,12 @@ pub mod pallet {
 			Apps::<T>::insert(app_id, app);
 			AppsByOwner::<T>::insert(&who, owner_apps);
 
+			log::info!(
+				target: "social-app-registry",
+				"🏗️ register_app owner={:?} app_id={:?} has_images={}",
+				who, app_id, has_images,
+			);
+
 			Self::deposit_event(Event::AppRegistered { app_id, owner: who });
 			Ok(())
 		}
@@ -278,6 +284,12 @@ pub mod pallet {
 			AppsByOwner::<T>::mutate(&who, |apps| {
 				apps.retain(|id| *id != app_id);
 			});
+
+			log::info!(
+				target: "social-app-registry",
+				"💤 deregister_app owner={:?} app_id={:?}",
+				who, app_id,
+			);
 
 			Self::deposit_event(Event::AppDeregistered { app_id, owner: who });
 			Ok(())

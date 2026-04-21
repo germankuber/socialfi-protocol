@@ -166,6 +166,12 @@ pub mod pallet {
 
 			SponsorOf::<T>::insert(&beneficiary, &sponsor);
 
+			log::info!(
+				target: "sponsorship",
+				"🤝 register_beneficiary sponsor={:?} beneficiary={:?} previous={:?}",
+				sponsor, beneficiary, previous_sponsor,
+			);
+
 			Self::deposit_event(Event::BeneficiaryRegistered {
 				sponsor,
 				beneficiary,
@@ -192,6 +198,12 @@ pub mod pallet {
 			SponsorOf::<T>::remove(&beneficiary);
 			BeneficiaryCount::<T>::mutate(&sponsor, |c| *c = c.saturating_sub(1));
 
+			log::info!(
+				target: "sponsorship",
+				"✂️ revoke_beneficiary sponsor={:?} beneficiary={:?}",
+				sponsor, beneficiary,
+			);
+
 			Self::deposit_event(Event::BeneficiaryRevoked { sponsor, beneficiary });
 			Ok(())
 		}
@@ -207,6 +219,12 @@ pub mod pallet {
 			let sponsor = SponsorOf::<T>::take(&beneficiary)
 				.ok_or(Error::<T>::NoActiveSponsor)?;
 			BeneficiaryCount::<T>::mutate(&sponsor, |c| *c = c.saturating_sub(1));
+
+			log::info!(
+				target: "sponsorship",
+				"🏃 revoke_my_sponsor beneficiary={:?} sponsor={:?}",
+				beneficiary, sponsor,
+			);
 
 			Self::deposit_event(Event::SponsorAbandoned { sponsor, beneficiary });
 			Ok(())
@@ -230,6 +248,13 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::InsufficientFunds)?;
 
 			SponsorPots::<T>::mutate(&sponsor, |b| *b = b.saturating_add(amount));
+
+			log::info!(
+				target: "sponsorship",
+				"💰 top_up sponsor={:?} amount={:?} pot={:?}",
+				sponsor, amount, SponsorPots::<T>::get(&sponsor),
+			);
+
 			Self::deposit_event(Event::PotToppedUp { sponsor, amount });
 			Ok(())
 		}
@@ -259,6 +284,12 @@ pub mod pallet {
 				ExistenceRequirement::AllowDeath,
 			)
 			.map_err(|_| Error::<T>::PotAccountingMismatch)?;
+
+			log::info!(
+				target: "sponsorship",
+				"🏦 withdraw sponsor={:?} amount={:?} pot_remaining={:?}",
+				sponsor, amount, SponsorPots::<T>::get(&sponsor),
+			);
 
 			Self::deposit_event(Event::PotWithdrawn { sponsor, amount });
 			Ok(())
@@ -318,6 +349,12 @@ pub mod pallet {
 				ExistenceRequirement::KeepAlive,
 			)
 			.map_err(|_| ())?;
+
+			log::info!(
+				target: "sponsorship",
+				"💸 settle_sponsorship sponsor={:?} beneficiary={:?} fee={:?} pot_remaining={:?}",
+				sponsor, beneficiary, fee, SponsorPots::<T>::get(sponsor),
+			);
 
 			Self::deposit_event(Event::FeeSponsored {
 				sponsor: sponsor.clone(),

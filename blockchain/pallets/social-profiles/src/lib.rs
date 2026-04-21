@@ -126,6 +126,12 @@ pub mod pallet {
 
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_add(1));
 
+			log::info!(
+				target: "social-profiles",
+				"👤 create_profile account={:?} follow_fee={:?}",
+				who, follow_fee,
+			);
+
 			Self::deposit_event(Event::ProfileCreated { account: who });
 			Ok(())
 		}
@@ -145,6 +151,7 @@ pub mod pallet {
 				Ok(())
 			})?;
 
+			log::info!(target: "social-profiles", "📝 update_metadata account={:?}", who);
 			Self::deposit_event(Event::ProfileUpdated { account: who });
 			Ok(())
 		}
@@ -161,6 +168,7 @@ pub mod pallet {
 			T::Currency::unreserve(&who, T::ProfileBond::get());
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_sub(1));
 
+			log::info!(target: "social-profiles", "🗑️ delete_profile account={:?}", who);
 			Self::deposit_event(Event::ProfileDeleted { account: who });
 			Ok(())
 		}
@@ -182,6 +190,11 @@ pub mod pallet {
 				Ok(())
 			})?;
 
+			log::info!(
+				target: "social-profiles",
+				"💸 set_follow_fee account={:?} fee={:?}",
+				who, fee,
+			);
 			Self::deposit_event(Event::FollowFeeUpdated { account: who.clone(), fee });
 			Ok(())
 		}
