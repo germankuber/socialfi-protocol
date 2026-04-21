@@ -27,17 +27,27 @@ mod benchmarks {
 	fn metadata<T: Config>() -> BoundedVec<u8, T::MaxMetadataLen> {
 		// Worst case is the maximum-length CID. Using the bound here
 		// forces any storage-hashing cost tied to metadata length to be
-		// measured at the top of the curve.
+		// measured at the top of the curve. Reused by benchmarks that
+		// do not parametrize on metadata length (e.g. `deregister_app`).
 		let max = T::MaxMetadataLen::get() as usize;
 		let bytes = vec![b'x'; max];
 		BoundedVec::try_from(bytes).expect("metadata length == bound")
 	}
 
+	fn metadata_of<T: Config>(len: u32) -> BoundedVec<u8, T::MaxMetadataLen> {
+		let clamped = (len as usize).min(T::MaxMetadataLen::get() as usize);
+		BoundedVec::try_from(vec![b'x'; clamped]).expect("clamped ≤ bound")
+	}
+
+	/// Parametrized on `m` = metadata byte length. The weight function
+	/// then captures the per-byte encoding/hashing cost and the
+	/// constant base cost independently, matching how
+	/// `pallet-nfts::set_metadata` and peers model string-like inputs.
 	#[benchmark]
-	fn register_app() {
+	fn register_app(m: Linear<0, { T::MaxMetadataLen::get() }>) {
 		let caller: T::AccountId = whitelisted_caller();
 		fund::<T>(&caller);
-		let md = metadata::<T>();
+		let md = metadata_of::<T>(m);
 
 		#[extrinsic_call]
 		register_app(RawOrigin::Signed(caller.clone()), md, false);

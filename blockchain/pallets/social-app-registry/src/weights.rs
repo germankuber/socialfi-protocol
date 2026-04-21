@@ -29,7 +29,10 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_social_app_registry.
 pub trait WeightInfo {
-	fn register_app() -> Weight;
+	/// Weight of `register_app` as a function of the metadata length
+	/// in bytes. Matches the `Linear<0, MaxMetadataLen>` component in
+	/// the benchmark.
+	fn register_app(m: u32) -> Weight;
 	fn deregister_app() -> Weight;
 	fn act_as_moderator() -> Weight;
 }
@@ -40,10 +43,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `SocialAppRegistry::NextAppId` (r:1 w:1)
 	/// Storage: `SocialAppRegistry::AppsByOwner` (r:1 w:1)
 	/// Storage: `SocialAppRegistry::Apps` (r:0 w:1)
-	fn register_app() -> Weight {
-		// Measured: `76`  Estimated: `3554`  Min time: 17_000_000 ps.
-		Weight::from_parts(19_000_000, 0)
+	/// The range of component `m` is `[0, T::MaxMetadataLen::get()]`.
+	fn register_app(m: u32) -> Weight {
+		// Measured: `76`  Estimated: `3554`  Min time: 25_000_000 ps.
+		// Per-byte slope: ~281 ps (dominated by SCALE encoding).
+		Weight::from_parts(26_546_457, 0)
 			.saturating_add(Weight::from_parts(0, 3554))
+			.saturating_add(Weight::from_parts(281, 0).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -67,9 +73,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 /// For backwards compatibility and tests.
 impl WeightInfo for () {
-	fn register_app() -> Weight {
-		Weight::from_parts(19_000_000, 0)
+	fn register_app(m: u32) -> Weight {
+		Weight::from_parts(26_546_457, 0)
 			.saturating_add(Weight::from_parts(0, 3554))
+			.saturating_add(Weight::from_parts(281, 0).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}

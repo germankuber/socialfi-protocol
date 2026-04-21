@@ -294,7 +294,11 @@ impl pallet_template::Config for Runtime {
 parameter_types! {
 	pub const AppBond: Balance = 10 * EXISTENTIAL_DEPOSIT;
 	pub const MaxMetadataLen: u32 = 128;
-	pub const MaxAppsPerOwner: u32 = 10;
+	/// Hard cap on apps a single account can register. Chosen deliberately
+	/// low (5) because the owner-index `AppsByOwner` stores every id as a
+	/// `BoundedVec`; each `register_app` / `deregister_app` rewrites the
+	/// whole vec, so PoV scales linearly with this constant.
+	pub const MaxAppsPerOwner: u32 = 5;
 }
 
 /// Configure the social app registry pallet.

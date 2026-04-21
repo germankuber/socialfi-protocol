@@ -68,6 +68,55 @@ fn register_app_emits_event() {
 }
 
 #[test]
+fn register_app_emits_owner_limit_reached_on_last_slot() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		Balances::make_free_balance_be(&2, 2_000);
+		let cap = MaxAppsPerOwner::get();
+
+		// Registrations before the cap must NOT emit the limit event.
+		for _ in 0..cap - 1 {
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
+			// The latest event is AppRegistered, not OwnerAppLimitReached.
+			let events = System::events();
+			let last = events.last().expect("at least one event");
+			assert!(
+				!matches!(last.event, RuntimeEvent::SocialAppRegistry(crate::Event::OwnerAppLimitReached { .. })),
+				"cap event fired prematurely"
+			);
+		}
+
+		// The last allowed registration hits the cap exactly — must emit.
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
+		System::assert_last_event(
+			crate::Event::OwnerAppLimitReached { owner: 2, cap }.into(),
+		);
+	});
+}
+
+#[test]
+fn register_app_does_not_reemit_owner_limit_after_deregister_register() {
+	// After deregistering an app and re-registering, the owner once again
+	// fills the last slot — the cap event must fire on that re-fill too.
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		Balances::make_free_balance_be(&2, 2_000);
+		let cap = MaxAppsPerOwner::get();
+
+		for _ in 0..cap {
+			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
+		}
+		// Free slot by deregistering the first app.
+		assert_ok!(SocialAppRegistry::deregister_app(RuntimeOrigin::signed(2), 0));
+		// Re-register — fills the last slot again.
+		assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
+		System::assert_last_event(
+			crate::Event::OwnerAppLimitReached { owner: 2, cap }.into(),
+		);
+	});
+}
+
+#[test]
 fn register_app_records_block_number() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(42);
@@ -92,10 +141,11 @@ fn register_app_fails_insufficient_bond() {
 #[test]
 fn register_app_fails_too_many_apps() {
 	new_test_ext().execute_with(|| {
-		// Give account 2 enough balance for 11 bonds.
+		// Give account 2 enough balance for (cap + 1) bonds.
 		Balances::make_free_balance_be(&2, 2_000);
 
-		for _ in 0..10 {
+		let cap = MaxAppsPerOwner::get();
+		for _ in 0..cap {
 			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		assert_noop!(
@@ -111,7 +161,8 @@ fn register_app_too_many_apps_does_not_lock_bond() {
 		// CRITICAL fix test: when TooManyApps is hit, bond must NOT be reserved.
 		Balances::make_free_balance_be(&2, 2_000);
 
-		for _ in 0..10 {
+		let cap = MaxAppsPerOwner::get();
+		for _ in 0..cap {
 			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		let reserved_before = Balances::reserved_balance(2);
@@ -200,7 +251,8 @@ fn deregister_app_frees_owner_slot() {
 		// register a new app in the freed slot.
 		Balances::make_free_balance_be(&2, 2_000);
 
-		for _ in 0..10 {
+		let cap = MaxAppsPerOwner::get();
+		for _ in 0..cap {
 			assert_ok!(SocialAppRegistry::register_app(RuntimeOrigin::signed(2), test_metadata(), false));
 		}
 		// At limit — cannot register more.

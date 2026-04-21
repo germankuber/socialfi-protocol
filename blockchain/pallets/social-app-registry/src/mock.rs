@@ -52,7 +52,7 @@ impl pallet_balances::Config for Test {
 parameter_types! {
 	pub const AppBond: u64 = 100;
 	pub const MaxMetadataLen: u32 = 128;
-	pub const MaxAppsPerOwner: u32 = 10;
+	pub const MaxAppsPerOwner: u32 = 5;
 }
 
 impl crate::Config for Test {

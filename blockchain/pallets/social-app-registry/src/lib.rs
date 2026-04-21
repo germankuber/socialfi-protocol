@@ -185,6 +185,11 @@ pub mod pallet {
 		/// downstream call's own event carries the effect — this one
 		/// simply records the moderation fact for audit tooling.
 		ModeratorDispatched { app_id: T::AppId, moderator: T::AccountId },
+		/// Emitted on the registration that fills the owner's last
+		/// available slot. Signals to indexers / front-ends that any
+		/// further `register_app` from this account will fail with
+		/// `TooManyApps` until a deregister frees a slot.
+		OwnerAppLimitReached { owner: T::AccountId, cap: u32 },
 	}
 
 	#[pallet::error]
@@ -230,7 +235,7 @@ pub mod pallet {
 		/// Reserves `T::AppBond`, assigns the next available AppId, stores the
 		/// app record, and updates the owner's app list.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::register_app())]
+		#[pallet::weight(T::WeightInfo::register_app(metadata.len() as u32))]
 		pub fn register_app(
 			origin: OriginFor<T>,
 			metadata: BoundedVec<u8, T::MaxMetadataLen>,
@@ -262,15 +267,24 @@ pub mod pallet {
 
 			NextAppId::<T>::put(next_id);
 			Apps::<T>::insert(app_id, app);
+			let slots_used = owner_apps.len() as u32;
 			AppsByOwner::<T>::insert(&who, owner_apps);
 
 			log::info!(
 				target: "social-app-registry",
-				"🏗️ register_app owner={:?} app_id={:?} has_images={}",
-				who, app_id, has_images,
+				"🏗️ register_app owner={:?} app_id={:?} has_images={} slots={}",
+				who, app_id, has_images, slots_used,
 			);
 
-			Self::deposit_event(Event::AppRegistered { app_id, owner: who });
+			Self::deposit_event(Event::AppRegistered { app_id, owner: who.clone() });
+
+			// Owner just filled the last slot — surface it for UX/indexers.
+			// Next register_app from the same account will fail with
+			// `TooManyApps` until a deregister reopens a slot.
+			let cap = T::MaxAppsPerOwner::get();
+			if slots_used == cap {
+				Self::deposit_event(Event::OwnerAppLimitReached { owner: who, cap });
+			}
 			Ok(())
 		}
 
@@ -283,21 +297,37 @@ pub mod pallet {
 		pub fn deregister_app(origin: OriginFor<T>, app_id: T::AppId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			// 1. `try_mutate` only touches `Apps`. Keep the closure pure over
+			//    that storage item — no currency / cross-pallet calls inside,
+			//    so the closure stays trivially refundable and free of lock
+			//    coupling.
 			Apps::<T>::try_mutate(app_id, |maybe_app| -> DispatchResult {
 				let app = maybe_app.as_mut().ok_or(Error::<T>::AppNotFound)?;
 				ensure!(app.owner == who, Error::<T>::NotAppOwner);
 				ensure!(app.status != AppStatus::Inactive, Error::<T>::AppAlreadyInactive);
-
 				app.status = AppStatus::Inactive;
-				T::Currency::unreserve(&who, T::AppBond::get());
-
 				Ok(())
 			})?;
 
-			// Remove from owner index so the slot is freed.
-			AppsByOwner::<T>::mutate(&who, |apps| {
-				apps.retain(|id| *id != app_id);
-			});
+			// 2. Cross-pallet effects run AFTER `Apps` is committed, each
+			//    owning its own storage slot:
+			//    a) unreserve the bond from pallet-balances,
+			//    b) drop the app id from the owner's index.
+			//
+			//    `unreserve` returns the amount it could not release. With
+			//    our bookkeeping invariant (`AppBond` was reserved in
+			//    `register_app`) this is always zero — a non-zero value
+			//    signals state corruption and is worth logging.
+			let not_unreserved = T::Currency::unreserve(&who, T::AppBond::get());
+			if !not_unreserved.is_zero() {
+				log::warn!(
+					target: "social-app-registry",
+					"⚠️ deregister_app could not unreserve full bond for {:?}: {:?} remaining",
+					who, not_unreserved,
+				);
+			}
+
+			AppsByOwner::<T>::mutate(&who, |apps| apps.retain(|id| *id != app_id));
 
 			log::info!(
 				target: "social-app-registry",
