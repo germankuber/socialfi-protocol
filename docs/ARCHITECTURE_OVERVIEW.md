@@ -27,6 +27,9 @@ the canonical Proof-of-Existence demo.
 
 ## Top-down component map
 
+High-level flow — clients, off-chain services, and the collator. The
+pallets live inside the runtime; they get their own zoom-in below.
+
 ```mermaid
 graph TB
     subgraph Clients["👥 Clients"]
@@ -43,21 +46,9 @@ graph TB
 
     subgraph Node["🖥️ Collator node"]
         RPC["RPC endpoints<br/>9944 Substrate WS · 8545 ETH JSON-RPC"]
-        Runtime["WASM runtime<br/>stack-template-runtime"]
+        Runtime["WASM runtime<br/>stack-template-runtime<br/>(hosts FRAME pallets)"]
         OCW["Offchain workers<br/>per-pallet hooks"]
         SS["Statement Store<br/>gossip + TTL"]
-    end
-
-    subgraph Pallets["🧩 FRAME pallets"]
-        Registry[social-app-registry]
-        Profiles[social-profiles]
-        Feeds[social-feeds]
-        Graph[social-graph]
-        Managers[social-managers]
-        Sponsor[sponsorship]
-        Statement[pallet-statement]
-        Revive[pallet-revive<br/>EVM + PVM]
-        Template[pallet-template<br/>Proof of Existence]
     end
 
     subgraph Contracts["📜 Smart contracts"]
@@ -79,20 +70,74 @@ graph TB
     Indexer -->|PAPI WS| RPC
 
     RPC --> Runtime
-    Runtime -.hosts.-> Pallets
     Runtime --> OCW
     OCW --> SS
-    Revive --> EVM
-    Revive --> PVM
+    Runtime -.revive dispatches.-> EVM
+    Runtime -.revive dispatches.-> PVM
 
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
     classDef offchain fill:#075985,color:#e0f2fe,stroke:#0284c7
     classDef client fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
     classDef contract fill:#581c87,color:#f3e8ff,stroke:#a855f7
-    class RPC,Runtime,OCW,SS,Registry,Profiles,Feeds,Graph,Managers,Sponsor,Statement,Revive,Template chain
+    class RPC,Runtime,OCW,SS chain
     class Indexer,EthRpc,IPFS offchain
     class Web,CLI,Wallets client
     class EVM,PVM contract
+```
+
+### Pallet zoom-in
+
+The runtime `construct_runtime!` composition. Social pallets sit
+around the shared primitives (`social-profiles` + `social-notifications-primitives`)
+and push notifications through `pallet-statement`. `pallet-revive`
+is the EVM/PVM execution surface; `pallet-template` is the
+stand-alone Proof-of-Existence demo.
+
+```mermaid
+graph TB
+    subgraph Runtime["🧩 stack-template-runtime"]
+        direction TB
+
+        subgraph Social["SocialFi pallets"]
+            Registry[social-app-registry<br/>idx 50]
+            Profiles[social-profiles<br/>idx 51]
+            Graph[social-graph<br/>idx 52]
+            Feeds[social-feeds<br/>idx 53]
+            Managers[social-managers<br/>idx 54]
+            Sponsor[sponsorship<br/>idx 55]
+        end
+
+        subgraph Shared["Shared primitives"]
+            NotifPrim["social-notifications-primitives<br/>(build_statement, topics)"]
+        end
+
+        subgraph Infra["Infrastructure pallets"]
+            Statement[pallet-statement<br/>idx 60]
+            Revive[pallet-revive<br/>idx 90 · EVM + PVM]
+            Template[pallet-template<br/>idx 100 · PoE]
+        end
+
+        Registry -->|AppProvider| Feeds
+        Profiles -->|ProfileProvider| Feeds
+        Profiles -->|ProfileProvider| Graph
+        Registry -.EnsureAppModerator.-> Feeds
+        Managers -.scoped origin.-> Feeds
+        Managers -.scoped origin.-> Graph
+        Managers -.scoped origin.-> Profiles
+        Sponsor -.ChargeSponsored TxExt.-> Social
+
+        Feeds --> NotifPrim
+        Graph --> NotifPrim
+        Registry --> NotifPrim
+        NotifPrim -->|NotificationSubmitter adapter| Statement
+    end
+
+    classDef social fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
+    classDef shared fill:#7c2d12,color:#fed7aa,stroke:#ea580c
+    classDef infra fill:#1e293b,color:#e2e8f0,stroke:#475569
+    class Registry,Profiles,Graph,Feeds,Managers,Sponsor social
+    class NotifPrim shared
+    class Statement,Revive,Template infra
 ```
 
 ---
