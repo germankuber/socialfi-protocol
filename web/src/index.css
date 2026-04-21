@@ -73,6 +73,93 @@
     @apply border-surface-200 bg-surface-50 text-surface-900 placeholder:text-surface-400;
   }
 
+  /* Range input styled to match the rest of the form.
+   *
+   * Progress fill: WebKit has no dedicated "progress" pseudo-element,
+   * so we paint a two-stop `linear-gradient` on the track and drive
+   * the split point through a `--range-progress` CSS variable that the
+   * component sets inline from `(value - min) / (max - min)`. Firefox
+   * does have `::-moz-range-progress`, so we use it directly there.
+   *
+   * `accent-color` is a fallback for browsers that skip our custom
+   * selectors entirely; it tints the native control to brand magenta.
+   */
+  .input-range {
+    -webkit-appearance: none;
+    appearance: none;
+    accent-color: theme(colors.brand.500);
+    background: transparent;
+    cursor: pointer;
+    height: 28px;
+    --range-progress: 0%;
+  }
+  .input-range:focus { outline: none; }
+
+  /* Dark-mode track: filled (brand) up to the thumb, muted after. */
+  .input-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      theme(colors.brand.500) 0%,
+      theme(colors.brand.500) var(--range-progress),
+      theme(colors.surface.800) var(--range-progress),
+      theme(colors.surface.800) 100%
+    );
+  }
+  .input-range::-moz-range-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: theme(colors.surface.800);
+  }
+  .input-range::-moz-range-progress {
+    height: 6px;
+    border-radius: 9999px 0 0 9999px;
+    background: theme(colors.brand.500);
+  }
+  /* Light-mode track: same fill, softer unfilled color. */
+  html.light .input-range::-webkit-slider-runnable-track {
+    background: linear-gradient(
+      to right,
+      theme(colors.brand.500) 0%,
+      theme(colors.brand.500) var(--range-progress),
+      theme(colors.surface.200) var(--range-progress),
+      theme(colors.surface.200) 100%
+    );
+  }
+  html.light .input-range::-moz-range-track {
+    background: theme(colors.surface.200);
+  }
+
+  /* Thumb — plain brand circle, no contrast ring (the track already
+     separates it visually). Dropping the border avoids the "black dot"
+     look you get against a dark panel background. */
+  .input-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px; /* center on 6px track */
+    border-radius: 9999px;
+    background: theme(colors.brand.500);
+    border: none;
+    box-shadow: 0 0 0 3px theme(colors.brand.500 / 25%);
+    transition: transform 120ms;
+  }
+  .input-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: theme(colors.brand.500);
+    border: none;
+    box-shadow: 0 0 0 3px theme(colors.brand.500 / 25%);
+    transition: transform 120ms;
+  }
+  .input-range:hover::-webkit-slider-thumb,
+  .input-range:focus::-webkit-slider-thumb { transform: scale(1.1); }
+  .input-range:hover::-moz-range-thumb,
+  .input-range:focus::-moz-range-thumb { transform: scale(1.1); }
+
   /* ═══════════════════════════════════════
      BUTTONS
      ═══════════════════════════════════════ */

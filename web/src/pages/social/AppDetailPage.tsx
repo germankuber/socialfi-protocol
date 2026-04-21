@@ -19,6 +19,7 @@ import {
 import AddressDisplay from "../../components/social/AddressDisplay";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import ConfirmModal from "../../components/social/ConfirmModal";
+import FeeRangeInput from "../../components/social/FeeRangeInput";
 import TxToast from "../../components/social/TxToast";
 import VerifiedBadge from "../../components/social/VerifiedBadge";
 
@@ -560,13 +561,11 @@ export default function AppDetailPage() {
 							</select>
 						</div>
 						<div>
-							<label className="form-label">Reply Fee</label>
-							<input value={replyFee} onChange={(e) => setReplyFee(e.target.value)} placeholder="0" className="input" />
+							<FeeRangeInput label="Reply Fee" value={replyFee} onChange={setReplyFee} />
 						</div>
 						{visibility !== "Public" && (
 							<div>
-								<label className="form-label">Unlock Fee</label>
-								<input value={unlockFeeInput} onChange={(e) => setUnlockFeeInput(e.target.value)} placeholder="0" className="input" />
+								<FeeRangeInput label="Unlock Fee" value={unlockFeeInput} onChange={setUnlockFeeInput} />
 							</div>
 						)}
 					</div>

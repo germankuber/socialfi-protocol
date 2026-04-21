@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useIpfs } from "../../hooks/social/useIpfs";
+import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
 
@@ -36,6 +37,10 @@ interface AuthorFeedSectionProps {
 export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedSectionProps) {
 	const { getApi } = useSocialApi();
 	const { fetchPostContent } = useIpfs();
+	const { account } = useSelectedAccount();
+	// Viewer owns every post in this feed when they are looking at their
+	// own profile — obfuscated/private content must render in plain text.
+	const isOwnProfile = account?.address === address;
 
 	const [total, setTotal] = useState<number | null>(null);
 	const [page, setPage] = useState(0);
@@ -85,9 +90,13 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 			}));
 			setRows(mapped);
 
-			// Hydrate IPFS text for public posts in the background.
+			// Hydrate IPFS text in the background. Public posts always
+			// hydrate; non-public ones hydrate too when the viewer is
+			// the author (they own the keys). The content is only used
+			// when `canRead(row)` allows it to render anyway, so this
+			// is a fast-path for your own obfuscated/private posts.
 			for (const row of mapped) {
-				if (row.visibility !== "Public") continue;
+				if (row.visibility !== "Public" && !isOwnProfile) continue;
 				fetchPostContent(row.contentCid)
 					.then((result) => {
 						if (!result) return;
@@ -105,7 +114,7 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 			setLoading(false);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [address, page, pageSize]);
+	}, [address, page, pageSize, isOwnProfile]);
 
 	useEffect(() => {
 		void load();
@@ -142,7 +151,10 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 			)}
 
 			{rows.map((row) => (
-				<div key={row.id.toString()} className="rounded-xl border border-surface-800 bg-surface-900 p-3 space-y-2">
+				<div
+					key={row.id.toString()}
+					className="author-feed-card rounded-xl border border-surface-800 bg-surface-900 p-3 space-y-2"
+				>
 					<div className="flex items-center justify-between text-[11px] text-surface-500 font-mono">
 						<span>Block #{row.createdAt}</span>
 						<div className="flex items-center gap-2">
@@ -157,7 +169,7 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 							</Link>
 						</div>
 					</div>
-					{row.visibility === "Public" ? (
+					{row.visibility === "Public" || isOwnProfile ? (
 						<p className="text-sm whitespace-pre-wrap break-words">
 							{row.resolvedText ?? <span className="text-surface-500 italic">Loading content…</span>}
 						</p>
@@ -170,7 +182,7 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 			))}
 
 			{totalPages > 1 && (
-				<div className="flex items-center justify-between pt-2 border-t border-surface-800">
+				<div className="author-feed-pager flex items-center justify-between pt-2 border-t border-surface-800">
 					<button
 						onClick={() => setPage((p) => Math.max(0, p - 1))}
 						disabled={page === 0 || loading}
@@ -190,6 +202,22 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 					</button>
 				</div>
 			)}
+
+			{/*
+			 * Light-mode overrides. The surrounding `.panel` has its own
+			 * fix for light mode, but the nested post cards use darker
+			 * bg/border tokens that don't flip automatically. Match the
+			 * light-mode `.panel` palette (white bg, zinc-200 borders).
+			 */}
+			<style>{`
+				html.light .author-feed-card {
+					background: #ffffff;
+					border-color: #e4e4e7;
+				}
+				html.light .author-feed-pager {
+					border-color: #e4e4e7;
+				}
+			`}</style>
 		</section>
 	);
 }
