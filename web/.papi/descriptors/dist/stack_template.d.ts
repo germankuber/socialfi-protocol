@@ -1,5 +1,5 @@
 import { StorageDescriptor, PlainDescriptor, TxDescriptor, RuntimeDescriptor, Enum, ApisFromDef, QueryFromPalletsDef, TxFromPalletsDef, EventsFromPalletsDef, ErrorsFromPalletsDef, ConstFromPalletsDef, ViewFnsFromPalletsDef, SS58String, FixedSizeBinary, Binary, FixedSizeArray } from "polkadot-api";
-import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, I68pkjfpi8f155, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I63lqt6dl3kn9k, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, I7bp9aopskbaqi, Iafqnechp3omqg, I237rjg1gueso, I96rqo4i9p11oo, I6h44toaeg76c7, I4ftk0glls7946, I910puuahutflf, I4nfjdef0ibh44, I74af64m08r6as, Ic8ann3kre6vdm, I1j72qfgdejqsv, I60biiepd74113, Ifhq9nad1vnuqe, I834nfrf667ag1, I14i9pui8lc778, I8t4pajubp34g3, I10nrsmn0hji4l, I3oiqcurom3m43, I20ichc5j0l1u7, I1p16diuhde12h, Id4f5q01qh34o3, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, Icojujpk0849g2, I5ktm8ke5p9mj5, I8k3rnvpeeh4hv, Ifb5tfi5bo6mhm, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, Idvddvk9o5ju5a, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, Iejaamcnc7tiq6, I9lv278elt0l38, I54i58ksnkqnaq, I8qvsahrnac2tn, I62qodqf8oaocv, Ia6ds36j6alqgf, Ic6cqd9g0t65v0, I2kds5jji7slh8, Ia9mkdf6l44shb, I9l2s4klu0831o, I2ctrt5nqb8o7c, I711qahikocb1c, I6o1er683vod1j, Id6gojh30v9ib2, Ide1bahhh47lj9, Id9uqtigc0il3v, Ic68lsi7chpv5k, Iek0boln8pgnko, I452bkd71b385t, Ie83f0p0ke1f4u, Ib9nmpn9ru9aeh, Ie5l999tf7t2te, I5gn45n88f3ubg, I7ujehsqggbv5l, I91bd8jpettifs, I8ligieds2efci, I3qt1hgg4djhgb, Ida37oe44osb06, I6v02o6j4snahe, I27569neuh5t1o, Id92o6smntb9m5, I5nmb2hfkgk9ol, Iav55bcqlrqn51, Ie9o3qdsa5otge, I10ra4g1rl6k2f, I1uihehkdsggvp, Ia82mnkmeo2rhc, Iej0d7r4rnb9rd, Icbccs0ug47ilf, I855j4i3kr8ko1, I9ka1m4gfdikai, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I4fooe9dun9o0t, I2sjgp7v0b4kr7, Iq8n5b8q00vqa, Iaa6lo6ksjs4p7, Iph9c4rn81ub2, Ier2cke86dqbr2, I1bhlrbidvohln, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I8479qlmjf9la2, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, I3spiqmkfrd4nh, Ics676nkrsbu5j, Iep1lmt6q3s6r3, I1fac16213rie2, Ifjt77oc391o43, Itvt1jsipv0lc, Ick3mveut33f44, I719lqkkbtikbl, Ie4intrc3n8jfu, I2rg5btjrsqec0, Ibdqerrooruuq9, I8u2ba9jeiu6q0, I7ieadb293k6b4, I2jtkn2pq6gl93, Iavmg865r513th, I6gobf0er3s1tq, Ierjb5pcnomoun, Idkg126uvecems, I1ctqnpt9rk0bn, I5dk96r09q9b08, I34ghkccn70ma, I7svbvm6hg57aj, I8jhsbaiultviu, Ifnes92d5dilgt, I5r8t4iaend96p, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, I5mkhcuho2on49, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, I2r3783hc8f870, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I4totqt881mlti, I4s6vifaf8k998, I35p85j063s0il, Ice3o175ih8c4i, I9sijb8gfrns29, Ib0nrklsp4vt41, I6f9v7emp7t5ba, Ida7d8eqrkav55, Idmrtv8jbbitnu, Ie7ja95kragam2, I6n1aqhog5nnov, I63nhnkgg114n5, I1l7ajs6s9ur3a, Ice9mpbhevl5b7, Idt5popft6i714, I512dtcl0pn07c, I1chj8ebp0flfl } from "./common-types";
+import { I5sesotjlssv2d, Iffmde3ekjedi9, I4mddgoa69c0a2, I2utisg9hv9r7a, I95g6i7ilua7lq, Ieniouoqkq4icf, Phase, Ibgl04rn6nbfm6, I4q39t5hn830vp, I1v7jbnil3tjns, I8jgj1nhcr2dg8, Ifn6q3equiq9qi, Ia3sb0vgvovhtg, Iav8k1edbj86k7, Itom7fk49o0c9, I4i91h98n3cv1b, I4iumukclgj8ej, Iqnbvitf7a7l3, I48i407regf59r, I6r5cbv8ttrb09, I1q8tnt1cluu5j, I8ds64oj6581v0, Ia7pdug7cdsg8g, I7bhsbas6oufr6, I9bin2jc70qt6q, TransactionPaymentReleases, Ia2lhg7l2hilo3, Ifi4da1gej1fri, Ifvgo9568rpmqc, I82jm9g7pufuel, Ic5m5lp1oioo8r, I6cs1itejju2vv, Icgljjb6j82uhn, Ib77b0fp1a6mjr, I5g2vv0ckl2m8b, Ifup3lg9ro8a0f, I5qfubnuvrnqn6, I8t3u2dv73ahbd, I7vlvrrl2pnbgk, Ie0rpl5bahldfk, XcmPalletVersionMigrationStage, I7e5oaj2qi4kl1, Ie849h3gncgvok, Iat62vud7hlod2, Ict03eedr8de9s, Ici7ejds60vj52, XcmVersionedLocation, Idh2ug6ou4a8og, Iejeo53sea6n4q, I53esa2ms463bk, Ib4jhb8tt3uung, I7offqqltf3agj, Iciucmpds8ms8l, I46vkbfg9e4sk8, I2na29tt2afp0j, I7bp9aopskbaqi, Iafqnechp3omqg, Id45pp4nmmi5c3, I237rjg1gueso, I96rqo4i9p11oo, I6h44toaeg76c7, I4ftk0glls7946, I910puuahutflf, I4nfjdef0ibh44, I74af64m08r6as, Ic8ann3kre6vdm, I1j72qfgdejqsv, I60biiepd74113, Ifhq9nad1vnuqe, In7a38730s6qs, If15el53dd76v9, I9s0ave7t0vnrk, I4fo08joqmcqnm, XcmV5Junctions, Iasb8k6ash5mjn, I8ofcg5rbj0g2c, I4adgbll7gku4i, I6pjjpfvhvcfru, I9pj91mj79qekl, I39uah9nss64h9, Ik64dknsq7k08, Ib51vk42m1po4n, Ial23jn8hp0aen, Ifpj261e8s63m3, Idcr6u6361oad9, I4ktuaksf5i1gk, I9bqtpv2ii35mp, I9j7pagd6d4bda, I2h9pmio37r7fb, Ibmr18suc9ikh9, I9iq22t0burs89, I5u8olqbbvfnvf, I5utcetro501ir, I2i50r8rcfts3l, Idlcrgc3dl5usf, I8k3rnvpeeh4hv, I2am3fetaem2gu, Ifccifqltb5obi, Iadtsfv699cq8b, Ialpmgmhr3gk5r, I4cbvqmqadhrea, I3sdol54kg5jaq, I8fougodaj6di6, I81vt5eq60l4b6, I3vh014cqgmrfd, Ia5cotcvi888ln, I21jsa919m88fd, Iegif7m3upfe1k, I9kt8c221c83ln, Ic76kfh5ebqkpl, Icscpmubum33bq, I21d2olof7eb60, Ibgm4rnf22lal1, Ie68np0vpihith, I9bnv6lu0crf1q, Iauhjqifrdklq7, Ie1uso9m8rt5cf, I40pqum1mu8qg3, I1r4c2ghbtvjuc, I1jm8m1rh9e20v, I7fv0kt52b21r5, I7uphs141r660c, I8pgovs95pnrrd, I4k7i1bf6cpso8, I5vanth86cd3mt, Ib1ilbm5ipoh62, I14p0q0qs0fqbj, Iejaamcnc7tiq6, I9lv278elt0l38, I54i58ksnkqnaq, I8qvsahrnac2tn, I62qodqf8oaocv, Ia6ds36j6alqgf, Ic6cqd9g0t65v0, I2kds5jji7slh8, Ia9mkdf6l44shb, I9l2s4klu0831o, I2ctrt5nqb8o7c, I711qahikocb1c, I6o1er683vod1j, Id6gojh30v9ib2, Ide1bahhh47lj9, Id9uqtigc0il3v, Ic68lsi7chpv5k, Iek0boln8pgnko, I452bkd71b385t, Ie83f0p0ke1f4u, Ib9nmpn9ru9aeh, Ie5l999tf7t2te, I5gn45n88f3ubg, I7ujehsqggbv5l, I3ddb6lhc3jmtj, I8ligieds2efci, I3qt1hgg4djhgb, Ia82mnkmeo2rhc, Ievs0l5092qcdo, Icbccs0ug47ilf, I855j4i3kr8ko1, Ibi6cpipuph58g, Idd7hd99u0ho0n, Iafscmv8tjf0ou, I100l07kaehdlp, I6gnbnvip5vvdi, Icv68aq8841478, Ic262ibdoec56a, Iflcfm9b6nlmdd, Ijrsf4mnp3eka, Id5fm4p8lj5qgi, I8tjvj9uq4b7hi, I4fooe9dun9o0t, Ipc96b675vau1, Ifqi1snmg1eqha, I2r55jl5mh3adj, Iph9c4rn81ub2, Ier2cke86dqbr2, I6pku2di5bd8n3, I5rtkmhm2dng4u, I39t01nnod9109, I6v8sm60vvkmk7, I1qmtmbe5so8r3, Ih99m6ehpcar7, Idgorhsbgdq2ap, I9ubb2kqevnu6t, I2hq50pu2kdjpo, I9acqruh7322g2, I137t1cld92pod, I61d51nv4cou88, If8u5kl4h8070m, Ibmuil6p3vl83l, I7lul91g50ae87, Icl7nl1rfeog3i, Iasr6pj6shs0fl, I2uqmls7kcdnii, Idg69klialbkb8, I7r6b7145022pp, I30pg328m00nr3, Icmrn7bogp28cs, I7m9b5plj4h5ot, I9onhk772nfs4f, I3l6bnksrmt56r, Idh09k0l2pmdcg, I7uoiphbm0tj4r, I512p1n7qt24l8, I6s1nbislhk619, I3gghqnh2mj0is, I6iv852roh6t3h, I9oc2o6itbiopq, Ibslgga81p36aa, I1rvj4ubaplho0, Ia3uu7lqcc1q1i, I7crucfnonitkn, I7tmrp94r9sq4n, I3uua81e9uvgnp, I9p6tgcfbrrlod, Ibh7279nftp2hh, I8479qlmjf9la2, I6jm7rmcmjl45d, Ib25q8de7tg90l, I7uibdp0qbpf1m, I2crm4j70329fs, Ich1gn08cdvajd, I8pdmes4qb1slv, I3spiqmkfrd4nh, I38bk60rnerv88, Ics676nkrsbu5j, Ifv4jftsc618sl, Iep1lmt6q3s6r3, I1fac16213rie2, Ifjt77oc391o43, Itvt1jsipv0lc, Ick3mveut33f44, I719lqkkbtikbl, Ie4intrc3n8jfu, I2rg5btjrsqec0, Ibdqerrooruuq9, I8u2ba9jeiu6q0, I7ieadb293k6b4, I2jtkn2pq6gl93, Iavmg865r513th, I6gobf0er3s1tq, I52ueqm37mfa10, Idkg126uvecems, I1ctqnpt9rk0bn, I5dk96r09q9b08, I34ghkccn70ma, I5r8t4iaend96p, Ifvkaggraijrot, I4arjljr6dpflb, If4vimo9j229oc, Iaqet9jc3ihboe, Ic952bubvq4k7d, I2v50gu3s1aqk6, Iabpgqcjikia83, I4gil44d08grh, I7u915mvkdsb08, Ifgpmvcafkjte5, If7uv525tdvv7a, I2an1fs2eiebjp, TransactionValidityTransactionSource, I9ask1o4tfvcvs, Icerf8h8pdu8ss, I6spmpef2c7svf, Iei2mvq0mjvt81, Icmt859r8ealc1, Ic1d4u2opv3fst, Ico18ks790i2bl, I815pbp5omtss, I3ju6ot8lfmk90, Ie9sr1iqcg3cgm, I1mqgk2tmnn9i2, I6lr8sctk0bi4e, I33kjf48l20rf5 } from "./common-types";
 type AnonymousEnum<T extends {}> = T & {
     __anonymous: true;
 };
@@ -61,7 +61,7 @@ type IStorage = {
          * Events have a large in-memory size. Box the events to not go out-of-memory
          * just in case someone still reads them from within the runtime.
          */
-        Events: StorageDescriptor<[], Anonymize<I68pkjfpi8f155>, false, never>;
+        Events: StorageDescriptor<[], Anonymize<I2utisg9hv9r7a>, false, never>;
         /**
          * The number of events in the `Events<T>` list.
          */
@@ -361,7 +361,7 @@ type IStorage = {
         /**
          * Holds on account balances.
          */
-        Holds: StorageDescriptor<[Key: SS58String], Anonymize<I63lqt6dl3kn9k>, false, never>;
+        Holds: StorageDescriptor<[Key: SS58String], Anonymize<I7bhsbas6oufr6>, false, never>;
         /**
          * Freeze locks on account balances.
          */
@@ -698,6 +698,24 @@ type IStorage = {
          */
         Replies: StorageDescriptor<[Key: bigint], Anonymize<Iafqnechp3omqg>, false, never>;
         /**
+         * Timeline index: (author, (block_number, post_id)) -> ().
+         *
+         * Secondary index that complements `PostsByAuthor` (which stores a
+         * flat `BoundedVec` and forces callers to download everything to
+         * paginate). Using `Twox64Concat` on the inner `(block, post_id)`
+         * tuple is safe because the block-number/post-id are not user
+         * supplied and the key space is sparse per author — no second
+         * pre-image concerns, and the concat variant keeps the raw key
+         * suffix available so iteration yields the decoded tuple.
+         *
+         * Callers paginate via `Pallet::posts_timeline(author, from, to, limit)`
+         * which returns entries newest-first by collecting and sorting the
+         * keys for that author. With `MaxPostsPerAuthor` bounded, the cost is
+         * bounded too; the win is that off-chain clients can ask for just
+         * the slice they need without re-fetching the full vec.
+         */
+        PostsTimeline: StorageDescriptor<Anonymize<Id45pp4nmmi5c3>, null, true, never>;
+        /**
          * Per-viewer unlock records. Keyed by `(post_id, viewer)` — the
          * post_id first lets the OCW iterate unlocks for a given post
          * cheaply. A `None` `wrapped_key` means "payment received, waiting
@@ -811,89 +829,6 @@ type IStorage = {
          * out of the hot path.
          */
         BeneficiaryCount: StorageDescriptor<[Key: SS58String], number, false, never>;
-    };
-    Revive: {
-        /**
-         * A mapping from a contract's code hash to its code.
-         * The code's size is bounded by [`crate::limits::BLOB_BYTES`] for PVM and
-         * [`revm::primitives::eip170::MAX_CODE_SIZE`] for EVM bytecode.
-         */
-        PristineCode: StorageDescriptor<[Key: FixedSizeBinary<32>], Binary, true, never>;
-        /**
-         * A mapping from a contract's code hash to its code info.
-         */
-        CodeInfoOf: StorageDescriptor<[Key: FixedSizeBinary<32>], Anonymize<I834nfrf667ag1>, true, never>;
-        /**
-         * The data associated to a contract or externally owned account.
-         */
-        AccountInfoOf: StorageDescriptor<[Key: FixedSizeBinary<20>], Anonymize<I14i9pui8lc778>, true, never>;
-        /**
-         * The immutable data associated with a given account.
-         */
-        ImmutableDataOf: StorageDescriptor<[Key: FixedSizeBinary<20>], Binary, true, never>;
-        /**
-         * Evicted contracts that await child trie deletion.
-         *
-         * Child trie deletion is a heavy operation depending on the amount of storage items
-         * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
-         */
-        DeletionQueue: StorageDescriptor<[Key: number], Binary, true, never>;
-        /**
-         * A pair of monotonic counters used to track the latest contract marked for deletion
-         * and the latest deleted contract in queue.
-         */
-        DeletionQueueCounter: StorageDescriptor<[], Anonymize<I8t4pajubp34g3>, false, never>;
-        /**
-         * Map a Ethereum address to its original `AccountId32`.
-         *
-         * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
-         * reconstruct the original account we need to store the reverse mapping here.
-         * Register your `AccountId32` using [`Pallet::map_account`] in order to
-         * use it with this pallet.
-         */
-        OriginalAccount: StorageDescriptor<[Key: FixedSizeBinary<20>], SS58String, true, never>;
-        /**
-         * The current Ethereum block that is stored in the `on_finalize` method.
-         *
-         * # Note
-         *
-         * This could be further optimized into the future to store only the minimum
-         * information needed to reconstruct the Ethereum block at the RPC level.
-         *
-         * Since the block is convenient to have around, and the extra details are capped
-         * by a few hashes and the vector of transaction hashes, we store the block here.
-         */
-        EthereumBlock: StorageDescriptor<[], Anonymize<I10nrsmn0hji4l>, false, never>;
-        /**
-         * Mapping for block number and hashes.
-         *
-         * The maximum number of elements stored is capped by the block hash count `BLOCK_HASH_COUNT`.
-         */
-        BlockHash: StorageDescriptor<[Key: number], FixedSizeBinary<32>, false, never>;
-        /**
-         * The details needed to reconstruct the receipt info offchain.
-         *
-         * This contains valuable information about the gas used by the transaction.
-         *
-         * NOTE: The item is unbound and should therefore never be read on chain.
-         * It could otherwise inflate the PoV size of a block.
-         */
-        ReceiptInfoData: StorageDescriptor<[], Anonymize<I3oiqcurom3m43>, false, never>;
-        /**
-         * Incremental ethereum block builder.
-         */
-        EthBlockBuilderIR: StorageDescriptor<[], Anonymize<I20ichc5j0l1u7>, false, never>;
-        /**
-         * The first transaction and receipt of the ethereum block.
-         *
-         * These values are moved out of the `EthBlockBuilderIR` to avoid serializing and
-         * deserializing them on every transaction. Instead, they are loaded when needed.
-         */
-        EthBlockBuilderFirstValues: StorageDescriptor<[], Anonymize<I1p16diuhde12h>, false, never>;
-        /**
-         * Debugging settings that can be configured when DebugEnabled config is true.
-         */
-        DebugSettingsOf: StorageDescriptor<[], Anonymize<Id4f5q01qh34o3>, false, never>;
     };
 };
 type ICalls = {
@@ -1100,7 +1035,7 @@ type ICalls = {
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          */
-        sudo: TxDescriptor<Anonymize<Icojujpk0849g2>>;
+        sudo: TxDescriptor<Anonymize<I2i50r8rcfts3l>>;
         /**
          * Authenticates the sudo key and dispatches a function call with `Root` origin.
          * This function does not check the weight of the call, and instead allows the
@@ -1108,7 +1043,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_unchecked_weight: TxDescriptor<Anonymize<I5ktm8ke5p9mj5>>;
+        sudo_unchecked_weight: TxDescriptor<Anonymize<Idlcrgc3dl5usf>>;
         /**
          * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
          * key.
@@ -1120,7 +1055,7 @@ type ICalls = {
          *
          * The dispatch origin for this call must be _Signed_.
          */
-        sudo_as: TxDescriptor<Anonymize<Ifb5tfi5bo6mhm>>;
+        sudo_as: TxDescriptor<Anonymize<I2am3fetaem2gu>>;
         /**
          * Permanently removes the sudo key.
          *
@@ -1629,7 +1564,7 @@ type ICalls = {
          * inner call's weight is added to the base weight so the fee
          * reflects the full amount of work.
          */
-        act_as_moderator: TxDescriptor<Anonymize<Idvddvk9o5ju5a>>;
+        act_as_moderator: TxDescriptor<Anonymize<I8pgovs95pnrrd>>;
     };
     SocialProfiles: {
         /**
@@ -2000,7 +1935,7 @@ type ICalls = {
          * matching the pattern used by `pallet-proxy` at
          * `substrate/frame/proxy/src/lib.rs:240-262`.
          */
-        act_as_manager: TxDescriptor<Anonymize<I91bd8jpettifs>>;
+        act_as_manager: TxDescriptor<Anonymize<I3ddb6lhc3jmtj>>;
     };
     Sponsorship: {
         /**
@@ -2033,195 +1968,6 @@ type ICalls = {
          */
         withdraw: TxDescriptor<Anonymize<I3qt1hgg4djhgb>>;
     };
-    Revive: {
-        /**
-         * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
-         *
-         * # Parameters
-         *
-         * * `payload`: The encoded [`crate::evm::TransactionSigned`].
-         *
-         * # Note
-         *
-         * This call cannot be dispatched directly; attempting to do so will result in a failed
-         * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
-         * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
-         * signer and validating the transaction.
-         */
-        eth_transact: TxDescriptor<Anonymize<Ida37oe44osb06>>;
-        /**
-         * Makes a call to an account, optionally transferring some balance.
-         *
-         * # Parameters
-         *
-         * * `dest`: Address of the contract to call.
-         * * `value`: The balance to transfer from the `origin` to `dest`.
-         * * `weight_limit`: The weight limit enforced when executing the constructor.
-         * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
-         * caller to pay for the storage consumed.
-         * * `data`: The input data to pass to the contract.
-         *
-         * * If the account is a smart-contract account, the associated code will be
-         * executed and any value will be transferred.
-         * * If the account is a regular account, any value will be transferred.
-         * * If no account exists and the call value is not less than `existential_deposit`,
-         * a regular account will be created and any value will be transferred.
-         */
-        call: TxDescriptor<Anonymize<I6v02o6j4snahe>>;
-        /**
-         * Instantiates a contract from a previously deployed vm binary.
-         *
-         * This function is identical to [`Self::instantiate_with_code`] but without the
-         * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
-         * must be supplied.
-         */
-        instantiate: TxDescriptor<Anonymize<I27569neuh5t1o>>;
-        /**
-         * Instantiates a new contract from the supplied `code` optionally transferring
-         * some balance.
-         *
-         * This dispatchable has the same effect as calling [`Self::upload_code`] +
-         * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
-         * also check the documentation of [`Self::upload_code`].
-         *
-         * # Parameters
-         *
-         * * `value`: The balance to transfer from the `origin` to the newly created contract.
-         * * `weight_limit`: The weight limit enforced when executing the constructor.
-         * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
-         * from the caller to pay for the storage consumed.
-         * * `code`: The contract code to deploy in raw bytes.
-         * * `data`: The input data to pass to the contract constructor.
-         * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
-         * semantics are used. If `None` then `CRATE1` is used.
-         *
-         *
-         * Instantiation is executed as follows:
-         *
-         * - The supplied `code` is deployed, and a `code_hash` is created for that code.
-         * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
-         * - The destination address is computed based on the sender, code_hash and the salt.
-         * - The smart-contract account is created at the computed address.
-         * - The `value` is transferred to the new account.
-         * - The `deploy` function is executed in the context of the newly-created account.
-         */
-        instantiate_with_code: TxDescriptor<Anonymize<Id92o6smntb9m5>>;
-        /**
-         * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
-         * by an EVM transaction through the EVM compatibility layer.
-         *
-         * # Parameters
-         *
-         * * `value`: The balance to transfer from the `origin` to the newly created contract.
-         * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-         * payment
-         * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-         * * `code`: The contract code to deploy in raw bytes.
-         * * `data`: The input data to pass to the contract constructor.
-         * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-         * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-         * is used for building the Ethereum transaction root.
-         * * effective_gas_price: the price of a unit of gas
-         * * encoded len: the byte code size of the `eth_transact` extrinsic
-         *
-         * Calling this dispatchable ensures that the origin's nonce is bumped only once,
-         * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
-         * also bumps the nonce after contract instantiation, since it may be invoked multiple
-         * times within a batch call transaction.
-         */
-        eth_instantiate_with_code: TxDescriptor<Anonymize<I5nmb2hfkgk9ol>>;
-        /**
-         * Same as [`Self::call`], but intended to be dispatched **only**
-         * by an EVM transaction through the EVM compatibility layer.
-         *
-         * # Parameters
-         *
-         * * `dest`: The Ethereum address of the account to be called
-         * * `value`: The balance to transfer from the `origin` to the newly created contract.
-         * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-         * payment
-         * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-         * * `data`: The input data to pass to the contract constructor.
-         * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-         * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-         * is used for building the Ethereum transaction root.
-         * * effective_gas_price: the price of a unit of gas
-         * * encoded len: the byte code size of the `eth_transact` extrinsic
-         */
-        eth_call: TxDescriptor<Anonymize<Iav55bcqlrqn51>>;
-        /**
-         * Executes a Substrate runtime call from an Ethereum transaction.
-         *
-         * This dispatchable is intended to be called **only** through the EVM compatibility
-         * layer. The provided call will be dispatched using `RawOrigin::Signed`.
-         *
-         * # Parameters
-         *
-         * * `origin`: Must be an [`Origin::EthTransaction`] origin.
-         * * `call`: The Substrate runtime call to execute.
-         * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
-         */
-        eth_substrate_call: TxDescriptor<Anonymize<Ie9o3qdsa5otge>>;
-        /**
-         * Upload new `code` without instantiating a contract from it.
-         *
-         * If the code does not already exist a deposit is reserved from the caller
-         * The size of the reserve depends on the size of the supplied `code`.
-         *
-         * # Note
-         *
-         * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
-         * To avoid this situation a constructor could employ access control so that it can
-         * only be instantiated by permissioned entities. The same is true when uploading
-         * through [`Self::instantiate_with_code`].
-         *
-         * If the refcount of the code reaches zero after terminating the last contract that
-         * references this code, the code will be removed automatically.
-         */
-        upload_code: TxDescriptor<Anonymize<I10ra4g1rl6k2f>>;
-        /**
-         * Remove the code stored under `code_hash` and refund the deposit to its owner.
-         *
-         * A code can only be removed by its original uploader (its owner) and only if it is
-         * not used by any contract.
-         */
-        remove_code: TxDescriptor<Anonymize<Ib51vk42m1po4n>>;
-        /**
-         * Privileged function that changes the code of an existing contract.
-         *
-         * This takes care of updating refcounts and all other necessary operations. Returns
-         * an error if either the `code_hash` or `dest` do not exist.
-         *
-         * # Note
-         *
-         * This does **not** change the address of the contract in question. This means
-         * that the contract address is no longer derived from its code hash after calling
-         * this dispatchable.
-         */
-        set_code: TxDescriptor<Anonymize<I1uihehkdsggvp>>;
-        /**
-         * Register the callers account id so that it can be used in contract interactions.
-         *
-         * This will error if the origin is already mapped or is a eth native `Address20`. It will
-         * take a deposit that can be released by calling [`Self::unmap_account`].
-         */
-        map_account: TxDescriptor<undefined>;
-        /**
-         * Unregister the callers account id in order to free the deposit.
-         *
-         * There is no reason to ever call this function other than freeing up the deposit.
-         * This is only useful when the account should no longer be used.
-         */
-        unmap_account: TxDescriptor<undefined>;
-        /**
-         * Dispatch an `call` with the origin set to the callers fallback address.
-         *
-         * Every `AccountId32` can control its corresponding fallback account. The fallback account
-         * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
-         * recovery function in case an `AccountId20` was used without creating a mapping first.
-         */
-        dispatch_as_fallback_account: TxDescriptor<Anonymize<Icojujpk0849g2>>;
-    };
 };
 type IEvent = {
     System: {
@@ -2232,7 +1978,7 @@ type IEvent = {
         /**
          * An extrinsic failed.
          */
-        ExtrinsicFailed: PlainDescriptor<Anonymize<Iej0d7r4rnb9rd>>;
+        ExtrinsicFailed: PlainDescriptor<Anonymize<Ievs0l5092qcdo>>;
         /**
          * `:code` was updated.
          */
@@ -2256,7 +2002,7 @@ type IEvent = {
         /**
          * An invalid authorized upgrade was rejected while trying to apply it.
          */
-        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<I9ka1m4gfdikai>>;
+        RejectedInvalidAuthorizedUpgrade: PlainDescriptor<Anonymize<Ibi6cpipuph58g>>;
     };
     ParachainSystem: {
         /**
@@ -2386,23 +2132,23 @@ type IEvent = {
         /**
          * Some balance was placed on hold.
          */
-        Held: PlainDescriptor<Anonymize<I2sjgp7v0b4kr7>>;
+        Held: PlainDescriptor<Anonymize<Ipc96b675vau1>>;
         /**
          * Held balance was burned from an account.
          */
-        BurnedHeld: PlainDescriptor<Anonymize<I2sjgp7v0b4kr7>>;
+        BurnedHeld: PlainDescriptor<Anonymize<Ipc96b675vau1>>;
         /**
          * A transfer of `amount` on hold from `source` to `dest` was initiated.
          */
-        TransferOnHold: PlainDescriptor<Anonymize<Iq8n5b8q00vqa>>;
+        TransferOnHold: PlainDescriptor<Anonymize<Ifqi1snmg1eqha>>;
         /**
          * The `transferred` balance is placed on hold at the `dest` account.
          */
-        TransferAndHold: PlainDescriptor<Anonymize<Iaa6lo6ksjs4p7>>;
+        TransferAndHold: PlainDescriptor<Anonymize<I2r55jl5mh3adj>>;
         /**
          * Some balance was released from hold.
          */
-        Released: PlainDescriptor<Anonymize<I2sjgp7v0b4kr7>>;
+        Released: PlainDescriptor<Anonymize<Ipc96b675vau1>>;
         /**
          * An unexpected/defensive event was triggered.
          */
@@ -2419,7 +2165,7 @@ type IEvent = {
         /**
          * A sudo call just took place.
          */
-        Sudid: PlainDescriptor<Anonymize<I1bhlrbidvohln>>;
+        Sudid: PlainDescriptor<Anonymize<I6pku2di5bd8n3>>;
         /**
          * The sudo key has been updated.
          */
@@ -2431,7 +2177,7 @@ type IEvent = {
         /**
          * A [sudo_as](Pallet::sudo_as) call just took place.
          */
-        SudoAsDone: PlainDescriptor<Anonymize<I1bhlrbidvohln>>;
+        SudoAsDone: PlainDescriptor<Anonymize<I6pku2di5bd8n3>>;
     };
     CollatorSelection: {
         /**
@@ -2769,12 +2515,23 @@ type IEvent = {
         PostRedacted: PlainDescriptor<Anonymize<I3spiqmkfrd4nh>>;
         /**
          * The admin configured (or rotated) the key service.
+         *
+         * Observers can diff `previous_account` vs `account` to detect
+         * rotations, and bind `version` to the X25519 public key so
+         * clients know which pk to use for new capsules.
          */
-        KeyServiceUpdated: PlainDescriptor<Anonymize<I6s1nbislhk619>>;
+        KeyServiceUpdated: PlainDescriptor<Anonymize<I38bk60rnerv88>>;
         /**
          * The collator OCW delivered a wrapped key for a pending unlock.
          */
         UnlockKeyDelivered: PlainDescriptor<Anonymize<Ics676nkrsbu5j>>;
+        /**
+         * The author called `unlock_post` on their own post. No state
+         * change, no fee — they already have implicit access — but we
+         * emit so clients get a deterministic acknowledgement instead
+         * of a silent `Ok`.
+         */
+        AuthorSelfUnlockAcknowledged: PlainDescriptor<Anonymize<Ifv4jftsc618sl>>;
     };
     Identity: {
         /**
@@ -2885,7 +2642,7 @@ type IEvent = {
          * A manager successfully dispatched an inner call on the owner's
          * behalf. `result` reports whether the inner call succeeded.
          */
-        ActedAsManager: PlainDescriptor<Anonymize<Ierjb5pcnomoun>>;
+        ActedAsManager: PlainDescriptor<Anonymize<I52ueqm37mfa10>>;
         /**
          * The `on_idle` hook lazily purged an expired authorization and
          * returned the deposit to the owner.
@@ -2918,25 +2675,6 @@ type IEvent = {
          * A transaction's fee was covered by the sponsor.
          */
         FeeSponsored: PlainDescriptor<Anonymize<I34ghkccn70ma>>;
-    };
-    Revive: {
-        /**
-         * A custom event emitted by the contract.
-         */
-        ContractEmitted: PlainDescriptor<Anonymize<I7svbvm6hg57aj>>;
-        /**
-         * Contract deployed by deployer at the specified address.
-         */
-        Instantiated: PlainDescriptor<Anonymize<I8jhsbaiultviu>>;
-        /**
-         * Emitted when an Ethereum transaction reverts.
-         *
-         * Ethereum transactions always complete successfully at the extrinsic level,
-         * as even reverted calls must store their `ReceiptInfo`.
-         * To distinguish reverted calls from successful ones, this event is emitted
-         * for failed Ethereum transactions.
-         */
-        EthExtrinsicRevert: PlainDescriptor<Anonymize<Ifnes92d5dilgt>>;
     };
 };
 type IError = {
@@ -3699,261 +3437,13 @@ type IError = {
          * Requested withdrawal exceeds the sponsor's pot balance.
          */
         WithdrawalExceedsPot: PlainDescriptor<undefined>;
-    };
-    Revive: {
         /**
-         * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+         * The on-chain pot bookkeeping diverged from the pallet account's
+         * free balance. Indicates a bug or state corruption — the
+         * extrinsic refuses to proceed rather than panicking, so the
+         * sponsor can surface it via governance.
          */
-        InvalidSchedule: PlainDescriptor<undefined>;
-        /**
-         * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
-         */
-        InvalidCallFlags: PlainDescriptor<undefined>;
-        /**
-         * The executed contract exhausted its gas limit.
-         */
-        OutOfGas: PlainDescriptor<undefined>;
-        /**
-         * Performing the requested transfer failed. Probably because there isn't enough
-         * free balance in the sender's account.
-         */
-        TransferFailed: PlainDescriptor<undefined>;
-        /**
-         * Performing a call was denied because the calling depth reached the limit
-         * of what is specified in the schedule.
-         */
-        MaxCallDepthReached: PlainDescriptor<undefined>;
-        /**
-         * No contract was found at the specified address.
-         */
-        ContractNotFound: PlainDescriptor<undefined>;
-        /**
-         * No code could be found at the supplied code hash.
-         */
-        CodeNotFound: PlainDescriptor<undefined>;
-        /**
-         * No code info could be found at the supplied code hash.
-         */
-        CodeInfoNotFound: PlainDescriptor<undefined>;
-        /**
-         * A buffer outside of sandbox memory was passed to a contract API function.
-         */
-        OutOfBounds: PlainDescriptor<undefined>;
-        /**
-         * Input passed to a contract API function failed to decode as expected type.
-         */
-        DecodingFailed: PlainDescriptor<undefined>;
-        /**
-         * Contract trapped during execution.
-         */
-        ContractTrapped: PlainDescriptor<undefined>;
-        /**
-         * Event body or storage item exceeds [`limits::STORAGE_BYTES`].
-         */
-        ValueTooLarge: PlainDescriptor<undefined>;
-        /**
-         * Termination of a contract is not allowed while the contract is already
-         * on the call stack. Can be triggered by `seal_terminate`.
-         */
-        TerminatedWhileReentrant: PlainDescriptor<undefined>;
-        /**
-         * `seal_call` forwarded this contracts input. It therefore is no longer available.
-         */
-        InputForwarded: PlainDescriptor<undefined>;
-        /**
-         * The amount of topics passed to `seal_deposit_events` exceeds the limit.
-         */
-        TooManyTopics: PlainDescriptor<undefined>;
-        /**
-         * A contract with the same AccountId already exists.
-         */
-        DuplicateContract: PlainDescriptor<undefined>;
-        /**
-         * A contract self destructed in its constructor.
-         *
-         * This can be triggered by a call to `seal_terminate`.
-         */
-        TerminatedInConstructor: PlainDescriptor<undefined>;
-        /**
-         * A call tried to invoke a contract that is flagged as non-reentrant.
-         */
-        ReentranceDenied: PlainDescriptor<undefined>;
-        /**
-         * A contract called into the runtime which then called back into this pallet.
-         */
-        ReenteredPallet: PlainDescriptor<undefined>;
-        /**
-         * A contract attempted to invoke a state modifying API while being in read-only mode.
-         */
-        StateChangeDenied: PlainDescriptor<undefined>;
-        /**
-         * Origin doesn't have enough balance to pay the required storage deposits.
-         */
-        StorageDepositNotEnoughFunds: PlainDescriptor<undefined>;
-        /**
-         * More storage was created than allowed by the storage deposit limit.
-         */
-        StorageDepositLimitExhausted: PlainDescriptor<undefined>;
-        /**
-         * Code removal was denied because the code is still in use by at least one contract.
-         */
-        CodeInUse: PlainDescriptor<undefined>;
-        /**
-         * The contract ran to completion but decided to revert its storage changes.
-         * Please note that this error is only returned from extrinsics. When called directly
-         * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
-         * to determine whether a reversion has taken place.
-         */
-        ContractReverted: PlainDescriptor<undefined>;
-        /**
-         * The contract failed to compile or is missing the correct entry points.
-         *
-         * A more detailed error can be found on the node console if debug messages are enabled
-         * by supplying `-lruntime::revive=debug`.
-         */
-        CodeRejected: PlainDescriptor<undefined>;
-        /**
-         * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
-         */
-        BlobTooLarge: PlainDescriptor<undefined>;
-        /**
-         * The contract declares too much memory (ro + rw + stack).
-         */
-        StaticMemoryTooLarge: PlainDescriptor<undefined>;
-        /**
-         * The program contains a basic block that is larger than allowed.
-         */
-        BasicBlockTooLarge: PlainDescriptor<undefined>;
-        /**
-         * The program contains an invalid instruction.
-         */
-        InvalidInstruction: PlainDescriptor<undefined>;
-        /**
-         * The contract has reached its maximum number of delegate dependencies.
-         */
-        MaxDelegateDependenciesReached: PlainDescriptor<undefined>;
-        /**
-         * The dependency was not found in the contract's delegate dependencies.
-         */
-        DelegateDependencyNotFound: PlainDescriptor<undefined>;
-        /**
-         * The contract already depends on the given delegate dependency.
-         */
-        DelegateDependencyAlreadyExists: PlainDescriptor<undefined>;
-        /**
-         * Can not add a delegate dependency to the code hash of the contract itself.
-         */
-        CannotAddSelfAsDelegateDependency: PlainDescriptor<undefined>;
-        /**
-         * Can not add more data to transient storage.
-         */
-        OutOfTransientStorage: PlainDescriptor<undefined>;
-        /**
-         * The contract tried to call a syscall which does not exist (at its current api level).
-         */
-        InvalidSyscall: PlainDescriptor<undefined>;
-        /**
-         * Invalid storage flags were passed to one of the storage syscalls.
-         */
-        InvalidStorageFlags: PlainDescriptor<undefined>;
-        /**
-         * PolkaVM failed during code execution. Probably due to a malformed program.
-         */
-        ExecutionFailed: PlainDescriptor<undefined>;
-        /**
-         * Failed to convert a U256 to a Balance.
-         */
-        BalanceConversionFailed: PlainDescriptor<undefined>;
-        /**
-         * Immutable data can only be set during deploys and only be read during calls.
-         * Additionally, it is only valid to set the data once and it must not be empty.
-         */
-        InvalidImmutableAccess: PlainDescriptor<undefined>;
-        /**
-         * An `AccountID32` account tried to interact with the pallet without having a mapping.
-         *
-         * Call [`Pallet::map_account`] in order to create a mapping for the account.
-         */
-        AccountUnmapped: PlainDescriptor<undefined>;
-        /**
-         * Tried to map an account that is already mapped.
-         */
-        AccountAlreadyMapped: PlainDescriptor<undefined>;
-        /**
-         * The transaction used to dry-run a contract is invalid.
-         */
-        InvalidGenericTransaction: PlainDescriptor<undefined>;
-        /**
-         * The refcount of a code either over or underflowed.
-         */
-        RefcountOverOrUnderflow: PlainDescriptor<undefined>;
-        /**
-         * Unsupported precompile address.
-         */
-        UnsupportedPrecompileAddress: PlainDescriptor<undefined>;
-        /**
-         * The calldata exceeds [`limits::CALLDATA_BYTES`].
-         */
-        CallDataTooLarge: PlainDescriptor<undefined>;
-        /**
-         * The return data exceeds [`limits::CALLDATA_BYTES`].
-         */
-        ReturnDataTooLarge: PlainDescriptor<undefined>;
-        /**
-         * Invalid jump destination. Dynamic jumps points to invalid not jumpdest opcode.
-         */
-        InvalidJump: PlainDescriptor<undefined>;
-        /**
-         * Attempting to pop a value from an empty stack.
-         */
-        StackUnderflow: PlainDescriptor<undefined>;
-        /**
-         * Attempting to push a value onto a full stack.
-         */
-        StackOverflow: PlainDescriptor<undefined>;
-        /**
-         * Too much deposit was drawn from the shared txfee and deposit credit.
-         *
-         * This happens if the passed `gas` inside the ethereum transaction is too low.
-         */
-        TxFeeOverdraw: PlainDescriptor<undefined>;
-        /**
-         * When calling an EVM constructor `data` has to be empty.
-         *
-         * EVM constructors do not accept data. Their input data is part of the code blob itself.
-         */
-        EvmConstructorNonEmptyData: PlainDescriptor<undefined>;
-        /**
-         * Tried to construct an EVM contract via code hash.
-         *
-         * EVM contracts can only be instantiated via code upload as no initcode is
-         * stored on-chain.
-         */
-        EvmConstructedFromHash: PlainDescriptor<undefined>;
-        /**
-         * The contract does not have enough balance to refund the storage deposit.
-         *
-         * This is a bug and should never happen. It means the accounting got out of sync.
-         */
-        StorageRefundNotEnoughFunds: PlainDescriptor<undefined>;
-        /**
-         * This means there are locks on the contracts storage deposit that prevents refunding it.
-         *
-         * This would be the case if the contract used its storage deposits for governance
-         * or other pallets that allow creating locks over held balance.
-         */
-        StorageRefundLocked: PlainDescriptor<undefined>;
-        /**
-         * Called a pre-compile that is not allowed to be delegate called.
-         *
-         * Some pre-compile functions will trap the caller context if being delegate
-         * called or if their caller was being delegate called.
-         */
-        PrecompileDelegateDenied: PlainDescriptor<undefined>;
-        /**
-         * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
-         */
-        EcdsaRecoveryFailed: PlainDescriptor<undefined>;
+        PotAccountingMismatch: PlainDescriptor<undefined>;
     };
 };
 type IConstants = {
@@ -4329,6 +3819,15 @@ type IConstants = {
          * opportunistic work.
          */
         MaxExpiryPurgePerBlock: PlainDescriptor<number>;
+        /**
+         * Maximum number of `ProfileManagers` entries the `on_idle` hook
+         * may *scan* per block while looking for expired entries. This is
+         * the real cap on the hook's worst-case cost — without it, a
+         * large store of non-expired entries would force the scan to
+         * read every key before finding enough expirables to fill the
+         * purge budget. Typical value: `MaxExpiryPurgePerBlock * 8`.
+         */
+        MaxExpiryScanPerBlock: PlainDescriptor<number>;
     };
     Sponsorship: {
         /**
@@ -4339,110 +3838,36 @@ type IConstants = {
          */
         MinimumPotBalance: PlainDescriptor<bigint>;
     };
-    Revive: {
+};
+type IViewFns = {
+    SocialFeeds: {
         /**
-         * The amount of balance a caller has to pay for each byte of storage.
-         *
-         * # Note
-         *
-         * It is safe to change this value on a live chain as all refunds are pro rata.
+         * Fetch a single post with all its metadata. Returns `None` when
+         * the post does not exist or was never created.
          */
-        DepositPerByte: PlainDescriptor<bigint>;
+        post_by_id: RuntimeDescriptor<[post_id: bigint], Anonymize<Ifvkaggraijrot>>;
         /**
-         * The amount of balance a caller has to pay for each storage item.
-         *
-         * # Note
-         *
-         * It is safe to change this value on a live chain as all refunds are pro rata.
+         * How many posts the author has ever created (including replies).
+         * Cheap — reads the `PostsByAuthor` length without hydrating the
+         * actual post records. View function args must implement
+         * `Decode` so the SCALE runtime API can dispatch them, which is
+         * why this takes `AccountId` by value rather than by reference.
          */
-        DepositPerItem: PlainDescriptor<bigint>;
+        author_post_count: RuntimeDescriptor<[author: SS58String], number>;
         /**
-         * The amount of balance a caller has to pay for each child trie storage item.
+         * Paginated author feed, newest first, with posts hydrated in a
+         * single round-trip. The off-chain client picks a block window
+         * (`from`, `to`) and a page size (`limit`) and receives the full
+         * `PostInfo` alongside each id — no second call needed.
          *
-         * Those are the items created by a contract. In Solidity each value is a single
-         * storage item. This is why we need to set a lower value here than for the main
-         * trie items. Otherwise the storage deposit is too high.
-         *
-         * # Note
-         *
-         * It is safe to change this value on a live chain as all refunds are pro rata.
+         * Unknown authors return an empty vec. Holes (post_id present in
+         * the timeline index but missing from `Posts`) are skipped
+         * silently; that state is not reachable in this pallet today
+         * but the filter keeps the view robust to future cleanup paths.
          */
-        DepositPerChildTrieItem: PlainDescriptor<bigint>;
-        /**
-         * The percentage of the storage deposit that should be held for using a code hash.
-         * Instantiating a contract, protects the code from being removed. In order to prevent
-         * abuse these actions are protected with a percentage of the code deposit.
-         */
-        CodeHashLockupDepositPercent: PlainDescriptor<number>;
-        /**
-         * Make contract callable functions marked as `#[unstable]` available.
-         *
-         * Contracts that use `#[unstable]` functions won't be able to be uploaded unless
-         * this is set to `true`. This is only meant for testnets and dev nodes in order to
-         * experiment with new features.
-         *
-         * # Warning
-         *
-         * Do **not** set to `true` on productions chains.
-         */
-        UnsafeUnstableInterface: PlainDescriptor<boolean>;
-        /**
-         * Allow EVM bytecode to be uploaded and instantiated.
-         */
-        AllowEVMBytecode: PlainDescriptor<boolean>;
-        /**
-         * The [EIP-155](https://eips.ethereum.org/EIPS/eip-155) chain ID.
-         *
-         * This is a unique identifier assigned to each blockchain network,
-         * preventing replay attacks.
-         */
-        ChainId: PlainDescriptor<bigint>;
-        /**
-         * The ratio between the decimal representation of the native token and the ETH token.
-         */
-        NativeToEthRatio: PlainDescriptor<number>;
-        /**
-         * The fraction the maximum extrinsic weight `eth_transact` extrinsics are capped to.
-         *
-         * This is not a security measure but a requirement due to how we map gas to `(Weight,
-         * StorageDeposit)`. The mapping might derive a `Weight` that is too large to fit into an
-         * extrinsic. In this case we cap it to the limit specified here.
-         *
-         * `eth_transact` transactions that use more weight than specified will fail with an out of
-         * gas error during execution. Larger fractions will allow more transactions to run.
-         * Smaller values waste less block space: Choose as small as possible and as large as
-         * necessary.
-         *
-         * Default: `0.5`.
-         */
-        MaxEthExtrinsicWeight: PlainDescriptor<bigint>;
-        /**
-         * Allows debug-mode configuration, such as enabling unlimited contract size.
-         */
-        DebugEnabled: PlainDescriptor<boolean>;
-        /**
-         * This determines the relative scale of our gas price and gas estimates.
-         *
-         * By default, the gas price (in wei) is `FeeInfo::next_fee_multiplier()` multiplied by
-         * `NativeToEthRatio`. `GasScale` allows to scale this value: the actual gas price is the
-         * default gas price multiplied by `GasScale`.
-         *
-         * As a consequence, gas cost (gas estimates and actual gas usage during transaction) is
-         * scaled down by the same factor. Thus, the total transaction cost is not affected by
-         * `GasScale` – apart from rounding differences: the transaction cost is always a multiple
-         * of the gas price and is derived by rounded up, so that with higher `GasScales` this can
-         * lead to higher gas cost as the rounding difference would be larger.
-         *
-         * The main purpose of changing the `GasScale` is to tune the gas cost so that it is closer
-         * to standard EVM gas cost and contracts will not run out of gas when tools or code
-         * assume hard coded gas limits.
-         *
-         * Requirement: `GasScale` must not be 0
-         */
-        GasScale: PlainDescriptor<number>;
+        feed_by_author: RuntimeDescriptor<[author: SS58String, from: Anonymize<I4arjljr6dpflb>, to: Anonymize<I4arjljr6dpflb>, limit: number], Anonymize<If4vimo9j229oc>>;
     };
 };
-type IViewFns = {};
 type IRuntimeCalls = {
     /**
      * API necessary for block authorship with aura.
@@ -4547,7 +3972,7 @@ type IRuntimeCalls = {
          * Returns an inclusion outcome which specifies if this extrinsic is included in
          * this block or not.
          */
-        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<I5mkhcuho2on49>>;
+        apply_extrinsic: RuntimeDescriptor<[extrinsic: Binary], Anonymize<Ifgpmvcafkjte5>>;
         /**
          * Finish the current block.
          */
@@ -4645,11 +4070,11 @@ type IRuntimeCalls = {
         /**
          * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
          */
-        query_call_info: RuntimeDescriptor<[call: Anonymize<I2r3783hc8f870>, len: number], Anonymize<I6spmpef2c7svf>>;
+        query_call_info: RuntimeDescriptor<[call: Anonymize<Icmt859r8ealc1>, len: number], Anonymize<I6spmpef2c7svf>>;
         /**
          * Query fee details of a given encoded `Call`.
          */
-        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<I2r3783hc8f870>, len: number], Anonymize<Iei2mvq0mjvt81>>;
+        query_call_fee_details: RuntimeDescriptor<[call: Anonymize<Icmt859r8ealc1>, len: number], Anonymize<Iei2mvq0mjvt81>>;
         /**
          * Query the output of the current `WeightToFee` given some input.
          */
@@ -4726,144 +4151,14 @@ type IRuntimeCalls = {
          */
         preset_names: RuntimeDescriptor<[], Anonymize<I6lr8sctk0bi4e>>;
     };
-    /**
-     * The API used to dry-run contract interactions.
-     */
-    ReviveApi: {
-        /**
-         * Returns the current ETH block.
-         *
-         * This is one block behind the substrate block.
-         */
-        eth_block: RuntimeDescriptor<[], Anonymize<I10nrsmn0hji4l>>;
-        /**
-         * Returns the ETH block hash for the given block number.
-         */
-        eth_block_hash: RuntimeDescriptor<[number: Anonymize<I4totqt881mlti>], Anonymize<I4s6vifaf8k998>>;
-        /**
-         * The details needed to reconstruct the receipt information offchain.
-         *
-         * # Note
-         *
-         * Each entry corresponds to the appropriate Ethereum transaction in the current block.
-         */
-        eth_receipt_data: RuntimeDescriptor<[], Anonymize<I3oiqcurom3m43>>;
-        /**
-         * Returns the block gas limit.
-         */
-        block_gas_limit: RuntimeDescriptor<[], Anonymize<I4totqt881mlti>>;
-        /**
-         * Returns the free balance of the given `[H160]` address, using EVM decimals.
-         */
-        balance: RuntimeDescriptor<[address: FixedSizeBinary<20>], Anonymize<I4totqt881mlti>>;
-        /**
-         * Returns the gas price.
-         */
-        gas_price: RuntimeDescriptor<[], Anonymize<I4totqt881mlti>>;
-        /**
-         * Returns the nonce of the given `[H160]` address.
-         */
-        nonce: RuntimeDescriptor<[address: FixedSizeBinary<20>], number>;
-        /**
-         * Perform a call from a specified account to a given contract.
-         *
-         * See [`crate::Pallet::bare_call`].
-         */
-        call: RuntimeDescriptor<[origin: SS58String, dest: FixedSizeBinary<20>, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, input_data: Binary], Anonymize<Ice3o175ih8c4i>>;
-        /**
-         * Instantiate a new contract.
-         *
-         * See `[crate::Pallet::bare_instantiate]`.
-         */
-        instantiate: RuntimeDescriptor<[origin: SS58String, value: bigint, gas_limit: Anonymize<Iasb8k6ash5mjn>, storage_deposit_limit: Anonymize<I35p85j063s0il>, code: Anonymize<I9sijb8gfrns29>, data: Binary, salt: Anonymize<I4s6vifaf8k998>], Anonymize<Ib0nrklsp4vt41>>;
-        /**
-         * Perform an Ethereum call.
-         *
-         * Deprecated use `v2` version instead.
-         * See [`crate::Pallet::dry_run_eth_transact`]
-         */
-        eth_transact: RuntimeDescriptor<[tx: Anonymize<I6f9v7emp7t5ba>], Anonymize<Ida7d8eqrkav55>>;
-        /**
-         * Perform an Ethereum call.
-         *
-         * See [`crate::Pallet::dry_run_eth_transact`]
-         */
-        eth_transact_with_config: RuntimeDescriptor<[tx: Anonymize<I6f9v7emp7t5ba>, config: Anonymize<Idmrtv8jbbitnu>], Anonymize<Ida7d8eqrkav55>>;
-        /**
-         * Upload new code without instantiating a contract from it.
-         *
-         * See [`crate::Pallet::bare_upload_code`].
-         */
-        upload_code: RuntimeDescriptor<[origin: SS58String, code: Binary, storage_deposit_limit: Anonymize<I35p85j063s0il>], Anonymize<Ie7ja95kragam2>>;
-        /**
-         * Query a given storage key in a given contract.
-         *
-         * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
-         * specified account and `Ok(None)` if it doesn't. If the account specified by the address
-         * doesn't exist, or doesn't have a contract then `Err` is returned.
-         */
-        get_storage: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: FixedSizeBinary<32>], Anonymize<I6n1aqhog5nnov>>;
-        /**
-         * Query a given variable-sized storage key in a given contract.
-         *
-         * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
-         * specified account and `Ok(None)` if it doesn't. If the account specified by the address
-         * doesn't exist, or doesn't have a contract then `Err` is returned.
-         */
-        get_storage_var_key: RuntimeDescriptor<[address: FixedSizeBinary<20>, key: Binary], Anonymize<I6n1aqhog5nnov>>;
-        /**
-         * Traces the execution of an entire block and returns call traces.
-         *
-         * This is intended to be called through `state_call` to replay the block from the
-         * parent block.
-         *
-         * See eth-rpc `debug_traceBlockByNumber` for usage.
-         */
-        trace_block: RuntimeDescriptor<[block: Anonymize<Iaqet9jc3ihboe>, config: Anonymize<I63nhnkgg114n5>], Anonymize<I1l7ajs6s9ur3a>>;
-        /**
-         * Traces the execution of a specific transaction within a block.
-         *
-         * This is intended to be called through `state_call` to replay the block from the
-         * parent hash up to the transaction.
-         *
-         * See eth-rpc `debug_traceTransaction` for usage.
-         */
-        trace_tx: RuntimeDescriptor<[block: Anonymize<Iaqet9jc3ihboe>, tx_index: number, config: Anonymize<I63nhnkgg114n5>], Anonymize<Ice9mpbhevl5b7>>;
-        /**
-         * Dry run and return the trace of the given call.
-         *
-         * See eth-rpc `debug_traceCall` for usage.
-         */
-        trace_call: RuntimeDescriptor<[tx: Anonymize<I6f9v7emp7t5ba>, config: Anonymize<I63nhnkgg114n5>], Anonymize<Idt5popft6i714>>;
-        /**
-         * The address of the validator that produced the current block.
-         */
-        block_author: RuntimeDescriptor<[], FixedSizeBinary<20>>;
-        /**
-         * Get the H160 address associated to this account id
-         */
-        address: RuntimeDescriptor<[account_id: SS58String], FixedSizeBinary<20>>;
-        /**
-         * Get the account id associated to this H160 address.
-         */
-        account_id: RuntimeDescriptor<[address: FixedSizeBinary<20>], SS58String>;
-        /**
-         * The address used to call the runtime's pallets dispatchables
-         */
-        runtime_pallets_address: RuntimeDescriptor<[], FixedSizeBinary<20>>;
-        /**
-         * The code at the specified address taking pre-compiles into account.
-         */
-        code: RuntimeDescriptor<[address: FixedSizeBinary<20>], Binary>;
-        /**
-         * Construct the new balance and dust components of this EVM balance.
-         */
-        new_balance_with_dust: RuntimeDescriptor<[balance: Anonymize<I4totqt881mlti>], Anonymize<I512dtcl0pn07c>>;
+};
+export type Stack_templateDispatchError = Anonymize<I33kjf48l20rf5>;
+type IAsset = PlainDescriptor<void>;
+export type Stack_templateExtensions = {
+    "ChargeSponsored": {
+        value: bigint;
     };
 };
-export type Stack_templateDispatchError = Anonymize<I1chj8ebp0flfl>;
-type IAsset = PlainDescriptor<void>;
-export type Stack_templateExtensions = {};
 type PalletsTypedef = {
     __storage: IStorage;
     __tx: ICalls;
@@ -4892,7 +4187,7 @@ export type Stack_templateEvents = EventsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateErrors = ErrorsFromPalletsDef<PalletsTypedef>;
 export type Stack_templateConstants = ConstFromPalletsDef<PalletsTypedef>;
 export type Stack_templateViewFns = ViewFnsFromPalletsDef<PalletsTypedef>;
-export type Stack_templateCallData = Anonymize<I2r3783hc8f870> & {
+export type Stack_templateCallData = Anonymize<Icmt859r8ealc1> & {
     value: {
         type: string;
     };
@@ -4918,11 +4213,10 @@ type AllInteractions = {
         SocialAppRegistry: ['NextAppId', 'Apps', 'AppsByOwner'];
         SocialProfiles: ['ProfileCount', 'Profiles'];
         SocialGraph: ['Follows', 'FollowerCount', 'FollowingCount'];
-        SocialFeeds: ['NextPostId', 'Posts', 'PostsByAuthor', 'Replies', 'Unlocks', 'PendingUnlocks', 'KeyService'];
+        SocialFeeds: ['NextPostId', 'Posts', 'PostsByAuthor', 'Replies', 'PostsTimeline', 'Unlocks', 'PendingUnlocks', 'KeyService'];
         Identity: ['IdentityOf', 'UsernameOf', 'SuperOf', 'SubsOf', 'Registrars', 'AuthorityOf', 'UsernameInfoOf', 'PendingUsernames', 'UnbindingUsernames'];
         SocialManagers: ['ProfileManagers', 'ManagerCount'];
         Sponsorship: ['SponsorOf', 'SponsorPots', 'BeneficiaryCount'];
-        Revive: ['PristineCode', 'CodeInfoOf', 'AccountInfoOf', 'ImmutableDataOf', 'DeletionQueue', 'DeletionQueueCounter', 'OriginalAccount', 'EthereumBlock', 'BlockHash', 'ReceiptInfoData', 'EthBlockBuilderIR', 'EthBlockBuilderFirstValues', 'DebugSettingsOf'];
     };
     tx: {
         System: ['remark', 'set_heap_pages', 'set_code', 'set_code_without_checks', 'set_storage', 'kill_storage', 'kill_prefix', 'remark_with_event', 'authorize_upgrade', 'authorize_upgrade_without_checks', 'apply_authorized_upgrade'];
@@ -4943,7 +4237,6 @@ type AllInteractions = {
         Identity: ['add_registrar', 'set_identity', 'set_subs', 'clear_identity', 'request_judgement', 'cancel_request', 'set_fee', 'set_account_id', 'set_fields', 'provide_judgement', 'kill_identity', 'add_sub', 'rename_sub', 'remove_sub', 'quit_sub', 'add_username_authority', 'remove_username_authority', 'set_username_for', 'accept_username', 'remove_expired_approval', 'set_primary_username', 'unbind_username', 'remove_username', 'kill_username'];
         SocialManagers: ['add_manager', 'remove_manager', 'remove_all_managers', 'act_as_manager'];
         Sponsorship: ['register_beneficiary', 'revoke_beneficiary', 'revoke_my_sponsor', 'top_up', 'withdraw'];
-        Revive: ['eth_transact', 'call', 'instantiate', 'instantiate_with_code', 'eth_instantiate_with_code', 'eth_call', 'eth_substrate_call', 'upload_code', 'remove_code', 'set_code', 'map_account', 'unmap_account', 'dispatch_as_fallback_account'];
     };
     events: {
         System: ['ExtrinsicSuccess', 'ExtrinsicFailed', 'CodeUpdated', 'NewAccount', 'KilledAccount', 'Remarked', 'UpgradeAuthorized', 'RejectedInvalidAuthorizedUpgrade'];
@@ -4962,11 +4255,10 @@ type AllInteractions = {
         SocialAppRegistry: ['AppRegistered', 'AppDeregistered', 'ModeratorDispatched'];
         SocialProfiles: ['ProfileCreated', 'ProfileUpdated', 'FollowFeeUpdated', 'ProfileDeleted'];
         SocialGraph: ['Followed', 'Unfollowed'];
-        SocialFeeds: ['PostCreated', 'ReplyCreated', 'PostUnlocked', 'PostRedacted', 'KeyServiceUpdated', 'UnlockKeyDelivered'];
+        SocialFeeds: ['PostCreated', 'ReplyCreated', 'PostUnlocked', 'PostRedacted', 'KeyServiceUpdated', 'UnlockKeyDelivered', 'AuthorSelfUnlockAcknowledged'];
         Identity: ['IdentitySet', 'IdentityCleared', 'IdentityKilled', 'JudgementRequested', 'JudgementUnrequested', 'JudgementGiven', 'RegistrarAdded', 'SubIdentityAdded', 'SubIdentitiesSet', 'SubIdentityRenamed', 'SubIdentityRemoved', 'SubIdentityRevoked', 'AuthorityAdded', 'AuthorityRemoved', 'UsernameSet', 'UsernameQueued', 'PreapprovalExpired', 'PrimaryUsernameSet', 'DanglingUsernameRemoved', 'UsernameUnbound', 'UsernameRemoved', 'UsernameKilled'];
         SocialManagers: ['ManagerAdded', 'ManagerRemoved', 'AllManagersRemoved', 'ActedAsManager', 'ExpiredManagerPurged'];
         Sponsorship: ['BeneficiaryRegistered', 'BeneficiaryRevoked', 'SponsorAbandoned', 'PotToppedUp', 'PotWithdrawn', 'FeeSponsored'];
-        Revive: ['ContractEmitted', 'Instantiated', 'EthExtrinsicRevert'];
     };
     errors: {
         System: ['InvalidSpecName', 'SpecVersionNeedsToIncrease', 'FailedToExtractRuntimeVersion', 'NonDefaultComposite', 'NonZeroRefCount', 'CallFiltered', 'MultiBlockMigrationsOngoing', 'NothingAuthorized', 'Unauthorized'];
@@ -4985,8 +4277,7 @@ type AllInteractions = {
         SocialFeeds: ['ProfileNotFound', 'AppNotFound', 'ParentPostNotFound', 'InsufficientBalance', 'ContentTooLong', 'TooManyPosts', 'TooManyReplies', 'PostIdOverflow', 'PostNotFound', 'AlreadyUnlocked', 'PostIsPublic', 'PostNotInApp', 'AlreadyRedacted', 'CapsuleInvalid', 'InvalidBuyerPk', 'KeyServiceNotConfigured', 'WrappedKeyInvalid', 'UnlockNotPending'];
         Identity: ['TooManySubAccounts', 'NotFound', 'NotNamed', 'EmptyIndex', 'FeeChanged', 'NoIdentity', 'StickyJudgement', 'JudgementGiven', 'InvalidJudgement', 'InvalidIndex', 'InvalidTarget', 'TooManyRegistrars', 'AlreadyClaimed', 'NotSub', 'NotOwned', 'JudgementForDifferentIdentity', 'JudgementPaymentFailed', 'InvalidSuffix', 'NotUsernameAuthority', 'NoAllocation', 'InvalidSignature', 'RequiresSignature', 'InvalidUsername', 'UsernameTaken', 'NoUsername', 'NotExpired', 'TooEarly', 'NotUnbinding', 'AlreadyUnbinding', 'InsufficientPrivileges'];
         SocialManagers: ['ManagerNotFound', 'ManagerAlreadyExists', 'TooManyManagers', 'ManagerExpired', 'ScopeNotAuthorized', 'CallNotDelegatable', 'EmptyScopeSet', 'ExpirationInPast', 'InsufficientDeposit', 'ManagerCannotBeSelf'];
-        Sponsorship: ['CannotSponsorSelf', 'NoActiveSponsor', 'NotYourBeneficiary', 'InsufficientFunds', 'WithdrawalExceedsPot'];
-        Revive: ['InvalidSchedule', 'InvalidCallFlags', 'OutOfGas', 'TransferFailed', 'MaxCallDepthReached', 'ContractNotFound', 'CodeNotFound', 'CodeInfoNotFound', 'OutOfBounds', 'DecodingFailed', 'ContractTrapped', 'ValueTooLarge', 'TerminatedWhileReentrant', 'InputForwarded', 'TooManyTopics', 'DuplicateContract', 'TerminatedInConstructor', 'ReentranceDenied', 'ReenteredPallet', 'StateChangeDenied', 'StorageDepositNotEnoughFunds', 'StorageDepositLimitExhausted', 'CodeInUse', 'ContractReverted', 'CodeRejected', 'BlobTooLarge', 'StaticMemoryTooLarge', 'BasicBlockTooLarge', 'InvalidInstruction', 'MaxDelegateDependenciesReached', 'DelegateDependencyNotFound', 'DelegateDependencyAlreadyExists', 'CannotAddSelfAsDelegateDependency', 'OutOfTransientStorage', 'InvalidSyscall', 'InvalidStorageFlags', 'ExecutionFailed', 'BalanceConversionFailed', 'InvalidImmutableAccess', 'AccountUnmapped', 'AccountAlreadyMapped', 'InvalidGenericTransaction', 'RefcountOverOrUnderflow', 'UnsupportedPrecompileAddress', 'CallDataTooLarge', 'ReturnDataTooLarge', 'InvalidJump', 'StackUnderflow', 'StackOverflow', 'TxFeeOverdraw', 'EvmConstructorNonEmptyData', 'EvmConstructedFromHash', 'StorageRefundNotEnoughFunds', 'StorageRefundLocked', 'PrecompileDelegateDenied', 'EcdsaRecoveryFailed'];
+        Sponsorship: ['CannotSponsorSelf', 'NoActiveSponsor', 'NotYourBeneficiary', 'InsufficientFunds', 'WithdrawalExceedsPot', 'PotAccountingMismatch'];
     };
     constants: {
         System: ['BlockWeights', 'BlockLength', 'BlockHashCount', 'DbWeight', 'Version', 'SS58Prefix'];
@@ -5005,11 +4296,12 @@ type AllInteractions = {
         SocialProfiles: ['ProfileBond', 'MaxMetadataLen'];
         SocialFeeds: ['PostFee', 'MaxContentLen', 'MaxPostsPerAuthor', 'MaxRepliesPerPost', 'UnsignedValidityWindow', 'UnsignedPriority'];
         Identity: ['BasicDeposit', 'ByteDeposit', 'UsernameDeposit', 'SubAccountDeposit', 'MaxSubAccounts', 'MaxRegistrars', 'PendingUsernameExpiration', 'UsernameGracePeriod', 'MaxSuffixLength', 'MaxUsernameLength'];
-        SocialManagers: ['ManagerDepositBase', 'MaxManagersPerOwner', 'MaxExpiryPurgePerBlock'];
+        SocialManagers: ['ManagerDepositBase', 'MaxManagersPerOwner', 'MaxExpiryPurgePerBlock', 'MaxExpiryScanPerBlock'];
         Sponsorship: ['MinimumPotBalance'];
-        Revive: ['DepositPerByte', 'DepositPerItem', 'DepositPerChildTrieItem', 'CodeHashLockupDepositPercent', 'UnsafeUnstableInterface', 'AllowEVMBytecode', 'ChainId', 'NativeToEthRatio', 'MaxEthExtrinsicWeight', 'DebugEnabled', 'GasScale'];
     };
-    viewFns: {};
+    viewFns: {
+        SocialFeeds: ['post_by_id', 'author_post_count', 'feed_by_author'];
+    };
     apis: {
         AuraApi: ['slot_duration', 'authorities'];
         AuraUnincludedSegmentApi: ['can_build_upon'];
@@ -5026,7 +4318,6 @@ type AllInteractions = {
         CollectCollationInfo: ['collect_collation_info'];
         ValidateStatement: ['validate_statement'];
         GenesisBuilder: ['build_state', 'get_preset', 'preset_names'];
-        ReviveApi: ['eth_block', 'eth_block_hash', 'eth_receipt_data', 'block_gas_limit', 'balance', 'gas_price', 'nonce', 'call', 'instantiate', 'eth_transact', 'eth_transact_with_config', 'upload_code', 'get_storage', 'get_storage_var_key', 'trace_block', 'trace_tx', 'trace_call', 'block_author', 'address', 'account_id', 'runtime_pallets_address', 'code', 'new_balance_with_dust'];
     };
 };
 export type Stack_templateWhitelistEntry = PalletKey | `query.${NestedKey<AllInteractions['storage']>}` | `tx.${NestedKey<AllInteractions['tx']>}` | `event.${NestedKey<AllInteractions['events']>}` | `error.${NestedKey<AllInteractions['errors']>}` | `const.${NestedKey<AllInteractions['constants']>}` | `view.${NestedKey<AllInteractions['viewFns']>}` | `api.${NestedKey<AllInteractions['apis']>}`;

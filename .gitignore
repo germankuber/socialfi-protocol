@@ -54,3 +54,8 @@ indexer/data.json
 web/*.mjs
 !web/verify-encrypted-ipfs.mjs
 !web/verify-unlock-state.mjs
+
+# Local-only deploy scripts (tunnel, direct host). Keep them out of
+# the repo until we agree on a canonical deploy flow.
+scripts/deploy-local.sh
+scripts/deploy-with-tunnel.sh
