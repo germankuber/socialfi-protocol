@@ -43,7 +43,9 @@ flowchart TB
     DotLi -- "fetch CID" --> Bulletin
     DotLi -- "serves bundle in iframe" --> Front
 
-    Front <--> Wallet
+    DotLi <--> Wallet
+    Front <-- "sign req / signed tx<br/>(postMessage)" --> DotLi
+
     Front <--> IPFS
     Front <--> Indexer
 
@@ -77,7 +79,7 @@ flowchart TB
 
 - **Delivery path (how the app reaches the user)**: The user opens `https://socialfi.dot.li`. **dot.li** looks the name up on **DotNS** (running on Polkadot Hub TestNet) and gets the `contenthash` pointing at the latest bundle CID. It then fetches that CID from **Bulletin chain's IPFS-compatible gateway** (`paseo-ipfs.polkadot.io`) — *not* a generic gateway like `ipfs.io`, which doesn't know how to talk to Bulletin. dot.li mounts the bundle inside a **sandboxed iframe** in the user's browser and serves it. From there on, the frontend behaves like any other PAPI dapp — the iframe just isolates it from the dot.li host page.
 - **Read path**: The frontend pulls live state **straight from the node** over PAPI WS (storage + view functions + statement-store subscriptions) and denormalised tx/event history **from the indexer HTTP API** (`:3001`). IPFS is hit directly from the browser to materialise post/profile media referenced by on-chain CIDs.
-- **Write path**: The frontend asks the **wallet** (PJS / Talisman / SubWallet) to sign the extrinsic; the wallet returns the signed bytes and the **frontend submits them to the node** via PAPI. The node propagates the tx, the runtime dispatches it, and both the frontend (via its own PAPI subscription) and the indexer (via its event watcher) observe the resulting events.
+- **Write path**: The iframe-embedded frontend doesn't touch the wallet directly — it `postMessage`s the extrinsic up to the **dot.li host**, which owns the connection to the user's wallet (PJS / Talisman / SubWallet / mobile signer). The host asks the wallet to sign, the wallet returns the signed bytes, and the signature comes back into the iframe. The frontend (or the wallet itself) then submits to the node. The node propagates the tx, the runtime dispatches it, and both the frontend (via its own PAPI subscription) and the indexer (via its event watcher) observe the resulting events.
 - **Encrypted read path**: Viewer pays `unlock_post` → OCW reads `PendingUnlocks` and **calls the external Key Service** over HTTP. The service custodies the X25519 keypair, opens the capsule, re-seals the content key for the viewer, and signs the delivery payload. OCW submits `deliver_unlock_unsigned` → viewer polls `Unlocks` and decrypts locally. The in-repo `dev_key.rs` is a dev-only stub that inlines the key inside the collator; production moves it behind the Key Service.
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
