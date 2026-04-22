@@ -8,34 +8,18 @@
 
 # Architecture Overview
 
-A whole-stack view of the Polkadot Stack Template: pallets, runtime,
-collator, clients, indexer, wallets, and the offchain workers that
-glue privacy features together.
-
-The template is a **SocialFi reference** for the Polkadot tech stack:
-profiles, posts, follows, apps, sponsored transactions, delegated
-managers, encrypted-post delivery, and real-time notifications.
+Canonical deep-dive for the whole stack. Assumes you have seen the root `README.md` diagram; this doc explains **how the pieces talk, what lives where, and which invariants they uphold**.
 
 ## 10-second mental model
 
-- The **chain** is a parachain runtime that embeds the FRAME social
-  pallets plus `pallet-statement` and runs inside a **collator** node.
-- Anything that needs trustless consensus lives **on-chain**: profile
-  registrations, posts, follow edges, app registry entries, fee pots,
-  encrypted capsules, moderation records.
-- Anything that would be wasteful to put in a block lives **off-chain**:
-  full post content (IPFS), real-time notifications (Statement Store),
-  presence/unlock delivery (offchain worker + statement gossip),
-  denormalised feed views (local indexer).
-- Clients (browser dApp, Rust CLI) talk to the chain via RPC — PAPI
-  for Substrate extrinsics from the browser, subxt from the CLI.
+- **Chain**: parachain runtime embedding the FRAME social pallets plus `pallet-statement`, run inside a **collator**.
+- **On-chain**: profiles, posts, follow edges, app registry, fee pots, encrypted capsules, moderation records.
+- **Off-chain**: post bodies (IPFS), real-time notifications (Statement Store gossip), capsule unlocks (OCW + external key service), denormalised views (local indexer).
+- Clients talk RPC: PAPI from the browser, subxt from the CLI.
 
 ## Top-down component map
 
-High-level flow — clients, off-chain services, this template's
-collator, **and the Polkadot People system parachain** that owns
-on-chain identity. The SocialFi pallets live inside the runtime; they
-get their own zoom-in below.
+The frontend opens **two PAPI connections in parallel**: one to this chain for SocialFi data, one to **Polkadot People** for identity. The same sr25519 keypair signs against either chain.
 
 ```mermaid
 graph TB
@@ -88,18 +72,7 @@ graph TB
     class Web,CLI,Wallets client
 ```
 
-The frontend opens **two PAPI connections in parallel**: one to this
-project's chain for SocialFi data (profiles, posts, follows,
-sponsorship), and one to Polkadot People for identity state. The same
-sr25519 keypair signs against either chain, so the user doesn't need
-separate wallets — but they do need DOT on People to cover the
-identity deposit when they register.
-
 ### Pallet zoom-in
-
-The runtime `construct_runtime!` composition. Social pallets sit
-around the shared primitives (`social-notifications-primitives`)
-and push notifications through `pallet-statement`.
 
 ```mermaid
 graph TB
@@ -146,165 +119,62 @@ graph TB
     class Statement infra
 ```
 
+Pallet indices above are pinned in `construct_runtime!` and not re-listed elsewhere in this doc.
+
 ---
 
 ## Layer by layer
 
 ### 1. Pallets (on-chain business logic)
 
-Each pallet is a single-responsibility FRAME module that owns a
-storage domain and exposes extrinsics.
-
-| Pallet | Role | Key extrinsics |
-|---|---|---|
-| `social-app-registry` | Permissionless registry of "apps" (front-ends) that consume the shared protocol. Each app locks a bond. | `register_app`, `deregister_app`, `act_as_moderator` |
-| `social-profiles` | Global profile registry (1 per account). Holds metadata CID + per-account follow fee. | `create_profile`, `update_metadata`, `set_follow_fee`, `delete_profile` |
-| `social-graph` | Follow / unfollow edges between accounts. Fee per-edge goes to the followed user. | `follow`, `unfollow` |
-| `social-feeds` | Posts, replies, visibility (public/obfuscated/private), moderation, encrypted-post delivery. | `create_post`, `create_reply`, `unlock_post`, `redact_post`, `set_key_service`, `deliver_unlock_unsigned` |
-| `social-managers` | Scoped delegation (Lens-style): let another account act on your behalf for a subset of scopes. | `add_manager`, `remove_manager`, `act_as_manager` |
-| `sponsorship` | Sponsor pots + `ChargeSponsored` TransactionExtension that pays fees for pre-authorised beneficiaries. | `register_beneficiary`, `top_up`, `withdraw`, (+ signed-ext hooks) |
-| `pallet-statement` | Parity's Statement Store pallet. Its OCW turns on-chain `NewStatement` events into gossiped statements. | (no extrinsics; driven by events) |
-
-All pallets live in `blockchain/pallets/`. Shared helpers (the
-notifications crate) live in `blockchain/primitives/`.
+Each pallet is a single-responsibility FRAME module owning a storage domain; extrinsic lists live in each pallet's `lib.rs` under `blockchain/pallets/`. Cross-pallet wiring (per diagram): `social-feeds` consumes `AppProvider` from the registry and `ProfileProvider` from profiles; `social-managers` injects a synthetic scoped origin into feeds/graph/profiles; `sponsorship` attaches as a `TransactionExtension` over all social extrinsics. Shared notification helpers live in `blockchain/primitives/social-notifications/`.
 
 ### 2. Runtime (the WASM blob)
 
-`blockchain/runtime/` composes the pallets into a single
-`construct_runtime!`, wires pallet Configs, defines runtime APIs
-(including `ValidateStatement`) and emits the WASM blob the collator
-executes. Pallet indices are pinned:
-
-| Index | Pallet |
-|---|---|
-| 40 | `pallet-statement` |
-| 51 | `social-app-registry` |
-| 52 | `social-profiles` |
-| 53 | `social-graph` |
-| 54 | `social-feeds` |
-| 55 | `social-managers` |
-| 56 | `sponsorship` |
-
-The runtime also owns cross-pallet adapters — e.g.
-`NotificationStatementSubmitter` bridges social pallets to
-`pallet-statement` without making each pallet depend on statement-store
-directly.
+`blockchain/runtime/` composes pallets into `construct_runtime!`, wires Configs, defines runtime APIs (including `ValidateStatement`), and emits the WASM the collator executes. It also owns cross-pallet adapters — notably `NotificationStatementSubmitter`, which bridges social pallets to `pallet-statement` so no social pallet depends on statement-store directly.
 
 ### 3. Offchain workers (OCW)
 
-OCWs are runtime functions that run **after each imported block, off
-the consensus path**. They can call host functions the regular
-dispatch path can't — HTTP, local storage, signing. This project runs
-two meaningful OCWs today:
+OCWs run **after each imported block, off the consensus path**, and can call host functions unavailable in dispatch (HTTP, local storage, signing). Two run today:
 
-- **`pallet-statement` OCW** — scans `System::events()` for
-  `NewStatement`, attaches `Proof::OnChain`, hands the statement to
-  the Statement Store host function. Notifications (replies, follows,
-  new-app broadcasts) ride on this.
-- **`social-feeds` OCW** (`src/offchain.rs`) — for encrypted posts,
-  reads pending unlocks and **calls out to an external Key Service**
-  that custodies the X25519 keypair; the service opens the capsule,
-  re-seals the content key to the viewer's ephemeral public key, and
-  signs the payload. The OCW then submits `deliver_unlock_unsigned`.
-  The in-repo code still ships a dev stub (`dev_key.rs`) where this
-  lives inside the collator — production moves it behind the
-  external service. See [`KEY_MANAGEMENT.md`](./KEY_MANAGEMENT.md) for
-  the migration plan.
+- **`pallet-statement` OCW** — scans events for `NewStatement`, attaches `Proof::OnChain`, hands off to the Statement Store.
+- **`social-feeds` OCW** (`src/offchain.rs`) — processes pending capsule unlocks by calling an **external Key Service** sidecar that custodies the X25519 keypair; the service opens the capsule, re-seals the content key to the viewer's ephemeral public key, and signs. The OCW then submits `deliver_unlock_unsigned`. In-repo code ships a dev stub (`dev_key.rs`) that inlines this into the collator; production moves it behind the external service.
 
 ### 4. Collator node
 
-The bin produced by `polkadot-parachain`-compatible wrapper logic
-(Docker image built from `docker/Dockerfile.node`). Exposes:
-
-- **9944** — Substrate JSON-RPC over WebSocket. PAPI, subxt, and the
-  Statement Store subscription hit this.
-- **30333** — libp2p peer port.
-
-Statement Store gossip also flows through libp2p, separately from
-block gossip.
+Polkadot-parachain-compatible binary, built by `docker/Dockerfile.node`. Exposes **9944** (Substrate JSON-RPC over WS — PAPI, subxt, Statement Store) and **30333** (libp2p). Statement Store gossip rides libp2p separately from block gossip.
 
 ### 5. Statement Store
 
-An off-chain, signed, TTL-bounded pub/sub network piggy-backing on
-libp2p. Different from block storage in three ways:
-
-1. Statements **never enter a block**. They gossip between nodes.
-2. Each statement has up to 4 topics — we use two (app namespace +
-   routing key) and use a JSON payload for max cross-language
-   portability.
-3. Clients subscribe via `statement_subscribeStatement(TopicFilter)`
-   and receive WebSocket pushes the moment a matching statement
-   arrives.
-
-See [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md) for the
-end-to-end sequence and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
-for the exact topic layout.
+Off-chain, signed, TTL-bounded pub/sub riding libp2p. Statements **never enter a block** — they gossip between nodes. Each carries up to 4 topics (we use two: app namespace + routing key) plus a JSON payload for cross-language portability. Clients subscribe via `statement_subscribeStatement(TopicFilter)` for WebSocket push.
 
 ### 6. Off-chain services
 
-- **`indexer/`** — tiny TypeScript service (Express + lowdb) that
-  subscribes to the chain via PAPI, denormalises transfers and pallet
-  events into a JSON file, and exposes `/api/events`,
-  `/api/txs-by-address`, `/api/earnings/:post_id` to the frontend.
-  Non-authoritative: the chain remains the source of truth; the
-  indexer is pure query acceleration. Listens on localhost only.
-- **IPFS** — storage for post bodies and profile metadata. The chain
-  stores only CIDs; the frontend pins/reads real content from IPFS.
+- **`indexer/`** — TypeScript (Express + lowdb), subscribes via PAPI, denormalises events into JSON, exposes `/api/events`, `/api/txs-by-address`, `/api/earnings/:post_id`. Non-authoritative query acceleration; localhost-only.
+- **IPFS** — stores post bodies and profile metadata; the chain holds only CIDs.
 
 ### 7. Clients
 
-- **`web/`** — React 18 + Vite + Tailwind + PAPI + zustand. Main
-  surface for end users. Connects wallets, renders the feed, submits
-  extrinsics, subscribes to notifications.
-- **`cli/`** — Rust binary built on subxt + clap. Scriptable
-  access to the Substrate side (chain info, Statement Store submit /
-  dump). Used by the smoke test scripts.
+- **`web/`** — React 18 + Vite + Tailwind + PAPI + zustand. Connects wallets, renders the feed, submits extrinsics, subscribes to notifications.
+- **`cli/`** — Rust binary on subxt + clap. Chain info + Statement Store submit/dump; used by smoke tests.
 
 ### 8. Wallets
 
-Three entry points are supported:
+Three entry points, normalised behind a single `WalletAccount` store entry:
 
 | Wallet | Transport | Where it runs |
 |---|---|---|
 | Polkadot.js / SubWallet / Talisman | Browser extension API | Browser |
-| Polkadot Host | `@novasamatech/product-sdk` | Inside a container (desktop/mobile) |
+| Polkadot Host | `@novasamatech/product-sdk` | Container (desktop/mobile) |
 | Dev-mode seeds | HDKD in-memory | Browser (dev only) |
-
-The frontend normalises all three behind a single `WalletAccount`
-store entry and lets the user switch per-tab.
 
 ### 9. Notifications
 
-A real-time bell in the header that pushes events without polling.
-See the dedicated docs:
-
-- [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md) — end-to-end
-  sequence.
-- [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — topic +
-  payload contract.
+Real-time header bell, no polling. Design choice: **no social pallet depends on `pallet-statement` directly** — pallets emit through `social-notifications-primitives::build_statement` and the runtime's `NotificationStatementSubmitter` adapter forwards to `pallet-statement`, keeping pallets reusable outside this runtime. Sequence: [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md); topic + payload contract: [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md).
 
 ### 10. Identity (Polkadot People parachain)
 
-Display names, websites, Twitter handles and registrar judgements
-live on the **Polkadot People system parachain**, not on this chain.
-This project deliberately does not embed `pallet-identity` locally so
-the protocol can piggyback on the identity records users already hold
-in Polkadot.
-
-- The frontend opens a second PAPI connection to the endpoint
-  configured in `VITE_PEOPLE_WS_URL` (see `web/src/config/network.ts`).
-- `useIdentity(address)` reads `Identity.IdentityOf(address)` from
-  People and exposes a three-state result (`verified` / `pending` /
-  `none`) via the `<VerificationBadge />` component.
-- `<IdentityPanel />` on the profile editor submits
-  `set_identity` / `request_judgement` / `clear_identity` **directly
-  to People chain** using the user's wallet. The same sr25519 keypair
-  that signs local SocialFi extrinsics signs the People txs; the user
-  needs DOT on People to cover the deposit (~0.02 DOT total).
-- `pallet-social-profiles` stays as the source of truth for
-  SocialFi-specific data (metadata CID + follow fee). Identity and
-  profile are complementary — identity is universal across Polkadot
-  UIs; profile is app-specific.
+Display names, websites, social handles and registrar judgements live on the **Polkadot People system parachain**, not on this chain — the protocol piggybacks on identity users already hold across Polkadot UIs. The frontend opens a second PAPI connection to `VITE_PEOPLE_WS_URL`; `useIdentity(address)` reads `Identity.IdentityOf` and surfaces a three-state badge (`verified` / `pending` / `none`). `<IdentityPanel />` submits `set_identity` / `request_judgement` / `clear_identity` directly to People using the same sr25519 keypair (user needs DOT on People for the deposit). `pallet-social-profiles` remains source of truth for SocialFi-specific data (metadata CID + follow fee). Identity is universal; profile is app-specific.
 
 ---
 
@@ -334,14 +204,7 @@ sequenceDiagram
     Web-->>User: renders feed
 ```
 
-Notes:
-
-- Reads go directly to the chain for canonical data; the indexer is
-  only consulted when its denormalised view is useful (earnings
-  rollups, timeline-by-address).
-- PAPI generates typed descriptors from the runtime metadata
-  (checked-in under `web/.papi/`), so every storage read is type-
-  safe at the browser level.
+Reads hit the chain directly for canonical data; the indexer is only consulted for denormalised views (earnings rollups, timeline-by-address). PAPI generates typed descriptors from runtime metadata (`web/.papi/`), so every storage read is type-safe at the browser.
 
 ### Posting an encrypted reply with sponsored fees
 
@@ -376,27 +239,16 @@ sequenceDiagram
     Bob->>Bob: bell +1
 
     Note over OCW,KeyService: If reply had its own capsule later unlocked by a viewer
-    OCW->>KeyService: open(capsule) + sign (external service, currently stubbed in-node)
+    OCW->>KeyService: open(capsule) + sign (external sidecar)
     KeyService-->>OCW: content_key + signature
     OCW->>PFeeds: deliver_unlock_unsigned(viewer_key)
 ```
 
-Three things to notice:
-
-1. **Alice pays nothing in fees** — `ChargeSponsored` redirects the
-   fee to a sponsor pot before `ChargeTransactionPayment` ever
-   charges her. See [`SPONSORSHIP.md`](./SPONSORSHIP.md) if/when that
-   doc exists.
-2. **Notifications are automatic** — no pallet emits a statement
-   directly; `build_statement` → `submit_statement` → OCW gossip.
-3. **Encryption key handling is the known soft spot** — see the
-   bottom of this doc.
+Alice pays nothing: `ChargeSponsored` redirects the fee to a sponsor pot before `ChargeTransactionPayment` ever charges her. Notifications are emitted indirectly via `build_statement` — no pallet touches statement-store by hand. The Key Service sidecar is the same decision as §3: capsule decryption does not live in the collator process.
 
 ---
 
 ## Deployment topology
-
-A realistic deploy looks like this:
 
 ```mermaid
 graph LR
@@ -441,53 +293,16 @@ graph LR
     Para --> Relay
 ```
 
-The template ships a docker-compose for a single-node dev cluster
-(`docker-compose.yml`) and zombienet configs under `scripts/` for
-multi-collator testing. Neither reflects a production deploy — that
-would use a relay chain + multiple collators + RPC load balancers +
-observability stack — but every moving part you'd need is already in
-the source.
-
----
-
-## Source-of-truth cheat sheet
-
-If you ever get lost about **which layer owns what**:
-
-| Data | Source of truth | Denormalised copy |
-|---|---|---|
-| Account balances | pallet-balances storage (this chain) | — |
-| Profile metadata CID | pallet-social-profiles storage | — |
-| Post bodies | IPFS | web PAPI cache |
-| Post metadata | pallet-social-feeds storage | indexer (`/api/events`) |
-| Follow edges | pallet-social-graph storage | — |
-| Notifications | Statement Store (transient) | browser state (local) |
-| Encrypted post content key | off-chain (custodial key service, TBD) | — |
-| **Identity (display name, judgement, username)** | **pallet-identity on Polkadot People parachain** | — |
-
-The rule: **if you can read it from the chain, read it from the
-chain**. The indexer exists to make specific queries cheaper, never
-to replace the chain as the authoritative source.
+The repo ships single-node docker-compose and zombienet configs for multi-collator testing — neither is a production topology. Real deploys add a relay chain, multiple collators, RPC load balancers and observability, but every moving part is already in source.
 
 ---
 
 ## Known rough edges
 
-- **Encryption key management** — the X25519 secret used by the
-  feeds OCW to decrypt capsules is currently a compile-time constant
-  (`pallet-social-feeds::dev_key::DEV_SEED`). Anyone with access to
-  the WASM or the repo can decrypt every obfuscated/private post.
-  Migration plan: load the key from the collator's offchain local
-  storage (keystore-backed), with dev mode falling back to the
-  existing constant behind a feature flag.
-- **Indexer is single-node** — fine for dev, needs to move to
-  Postgres + a proper job runner for production.
-- **Sponsorship fee calculation** ignores `proof_size` and length
-  fees (documented MVP limitation in `extension.rs`). In practice
-  sponsors over-approve budget; revisit when a real fee model is
-  needed.
-- **Deployment addresses are a JSON file** — racy when multiple
-  environments deploy in parallel.
+- **Encryption key management** — the X25519 secret used by the feeds OCW is a compile-time constant (`dev_key::DEV_SEED`); anyone with the WASM can decrypt every capsule. Migration plan: keystore-backed loading, dev falls back behind a feature flag. The external Key Service sidecar in the diagrams is the target endpoint.
+- **Indexer is single-node** — fine for dev, needs Postgres + a job runner for production.
+- **Sponsorship fee calculation** ignores `proof_size` and length fees (MVP limitation, documented in `extension.rs`).
+- **Deployment addresses in a JSON file** — racy under parallel env deploys.
 
 ---
 
@@ -495,8 +310,6 @@ to replace the chain as the authoritative source.
 
 - [`INSTALL.md`](./INSTALL.md) — local setup.
 - [`DEPLOYMENT.md`](./DEPLOYMENT.md) — production-lite deployment.
-- [`ENCRYPTED_POSTS_WORKFLOW.md`](./ENCRYPTED_POSTS_WORKFLOW.md) —
-  step-by-step of a single encrypted unlock.
-- [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
-  + [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — real-
-  time notifications.
+- [`ENCRYPTED_POSTS_WORKFLOW.md`](./ENCRYPTED_POSTS_WORKFLOW.md) — single encrypted unlock, end to end.
+- [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md) — notification sequence.
+- [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — topic + payload contract.
