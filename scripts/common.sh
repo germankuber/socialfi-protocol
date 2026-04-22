@@ -616,14 +616,27 @@ fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
 update_papi_descriptors() {
     require_command node
 
-    local papi_config
-    papi_config="$(mktemp "$ROOT_DIR/web/papi.local.XXXXXX.json")"
+    # Both BSD (macOS) and GNU `mktemp` require the `X`s to be at the
+    # END of the template — an extension after them is treated as a
+    # literal and the Xs are never replaced. That left behind
+    # `papi.local.XXXXXX.json` on aborted runs, blocking the next call.
+    # Create without extension, then rename.
+    local papi_config_base papi_config
+    papi_config_base="$(mktemp "$ROOT_DIR/web/papi.local.XXXXXX")"
+    papi_config="${papi_config_base}.json"
+    mv "$papi_config_base" "$papi_config"
+    # Make sure the temp is removed even if the user Ctrl-C's during
+    # `papi update` / `papi` — otherwise future invocations fail the
+    # same way.
+    trap 'rm -f "$papi_config"' EXIT INT TERM
+
     write_papi_config "$papi_config"
 
     npm run update-types -- --config "$papi_config"
     npm run codegen -- --config "$papi_config"
 
     rm -f "$papi_config"
+    trap - EXIT INT TERM
 }
 
 export_frontend_runtime_env() {
