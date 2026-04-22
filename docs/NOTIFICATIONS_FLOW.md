@@ -122,6 +122,6 @@ presence — would need a different primitive.
   polling fallback (every 10s by default) so reconnection recovers
   missed statements until their TTL expires (30s default).
 
-See [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
-for the static view and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
+See [`ARCHITECTURE_OVERVIEW.md`](./ARCHITECTURE_OVERVIEW.md) §9 for
+the static view and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
 for the exact topic derivation.

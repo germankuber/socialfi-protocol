@@ -170,6 +170,6 @@ hood — see `web/src/hooks/social/useNotifications.ts`.
   attachments must stay off the notification and live in the normal
   on-chain storage; `entity` is a pointer, not a payload.
 
-See [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
-for the static system view and [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
+See [`ARCHITECTURE_OVERVIEW.md`](./ARCHITECTURE_OVERVIEW.md) §9 for
+the static system view and [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
 for the step-by-step sequence of a single notification.

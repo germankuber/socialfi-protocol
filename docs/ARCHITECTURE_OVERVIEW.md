@@ -236,8 +236,8 @@ libp2p. Different from block storage in three ways:
    and receive WebSocket pushes the moment a matching statement
    arrives.
 
-See [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
-for the specific wiring and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
+See [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md) for the
+end-to-end sequence and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
 for the exact topic layout.
 
 ### 6. Off-chain services
@@ -278,8 +278,6 @@ store entry and lets the user switch per-tab.
 A real-time bell in the header that pushes events without polling.
 See the dedicated docs:
 
-- [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
-  — component map.
 - [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md) — end-to-end
   sequence.
 - [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — topic +
@@ -496,11 +494,9 @@ to replace the chain as the authoritative source.
 ## Where to go next
 
 - [`INSTALL.md`](./INSTALL.md) — local setup.
-- [`TOOLS.md`](./TOOLS.md) — tooling reference.
 - [`DEPLOYMENT.md`](./DEPLOYMENT.md) — production-lite deployment.
 - [`ENCRYPTED_POSTS_WORKFLOW.md`](./ENCRYPTED_POSTS_WORKFLOW.md) —
   step-by-step of a single encrypted unlock.
-- [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
-  + [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
+- [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
   + [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — real-
   time notifications.

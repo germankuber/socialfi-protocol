@@ -12,80 +12,52 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
 
 ## Architecture at a Glance
 
-```
-                                                  ┌──────────────────┐
-                                   ┌─────────────►│     Wallets      │
-                                   │  sign req    │  PJS / Talisman  │
-                                   │◄─────────────│    / SubWallet   │
-                                   │  signed tx   └──────────────────┘
-                                   │
- ┌──────────────────┐   CIDs  ┌────┴─────────────┐        HTTP :3001
- │  IPFS Gateway    │◄───────►│   Web Frontend   │◄──────────────────────────┐
- │  post / profile  │         │  React + Vite    │  /api/tx, /api/events     │
- │  media & meta    │  upload │  PAPI + Tailwind │                           │
- └──────────────────┘  fetch  └────┬─────────────┘                           │
-                                   │                                         │
-                    ┌──────────────┼──────────────┐                          │
-                    │              │              │                          │
-               read │         write│              │ subscribe                │
-               PAPI │         PAPI │              │ PAPI / statement-store   │
-                    │              │              │                          │
-    storage queries │  submit      │              │  events + statements     │
-    view functions  │  signed tx   │              │  streaming               │
-                    ▼              ▼              ▼                          │
- ┌───────────────────────────────────────────────────────────────────────────┼──┐
- │                      NODE LAYER  (ws://…:9944)                            │  │
- │                                                                           │  │
- │     polkadot-omni-node   —   RPC   ·   TxPool   ·   P2P gossip            │  │
- │                                                                           │  │
- │   ┌─────────────────────────────────────────────────────────────────┐     │  │
- │   │                        RUNTIME                                  │     │  │
- │   │                                                                 │     │  │
- │   │   TxExtension pipeline (per extrinsic):                         │     │  │
- │   │   CheckNonZeroSender → CheckSpec/Tx/Genesis/Era/Nonce/Weight    │     │  │
- │   │       → ChargeSponsored<ChargeTransactionPayment>               │     │  │
- │   │         (wrapper redirects fees to sponsor pot)                 │     │  │
- │   │       → CheckMetadataHash                                       │     │  │
- │   │                                                                 │     │  │
- │   │   SocialFi Pallets                                              │     │  │
- │   │   ─────────────────────────────────────────────────────────     │     │  │
- │   │   [51] social-app-registry   [52] social-profiles               │     │  │
- │   │        per-app bond + app          one profile / AccountId,     │     │  │
- │   │        moderator origin            metadata CID + follow fee    │     │  │
- │   │                                                                 │     │  │
- │   │   [53] social-graph          [54] social-feeds                  │     │  │
- │   │        follows, follower          posts / replies / timeline,   │     │  │
- │   │        counts, per-target fee     obfuscated + encrypted posts  │     │  │
- │   │                                   (capsule + OCW unseal)        │     │  │
- │   │                                                                 │     │  │
- │   │   [55] social-managers       [56] sponsorship                   │     │  │
- │   │        scoped delegation,         SponsorPots, ChargeSponsored  │     │  │
- │   │        expiry purge, anti-        wrapper, balance-zero         │     │  │
- │   │        escalation filter          onboarding                    │     │  │
- │   │                                                                 │     │  │
- │   │   [40] pallet-statement  —  real-time notification gossip       │     │  │
- │   └─────────────────────────────────────────────────────────────────┘     │  │
- │                                                                           │  │
- │   ┌─────────────────────────────────────────────────────────────────┐     │  │
- │   │                     OCW (Offchain Worker)                       │     │  │
- │   │                                                                 │     │  │
- │   │   • social-feeds OCW — drains `PendingUnlocks`                  │     │  │
- │   │   • statement-store OCW — attaches `Proof::OnChain`             │     │  │
- │   └──────────────────────────────────┬──────────────────────────────┘     │  │
- │                                      │                                    │  │
- └─────┬────────────────────────────────┼────────────────────────────────────┘  │
-       │                                │                                       │
-       │ PAPI WS: events subscribe      │  unseal(capsule) + sign               │
-       ▼                                │  (HTTP to external service)           │
- ┌──────────────────┐                   ▼                                       │
- │     Indexer      │         ┌──────────────────────┐                          │
- │  PAPI subscribe  │         │    Key Service       │                          │
- │  events → lowdb  │         │  (external — WIP)    │                          │
- │  HTTP API :3001  │         │  custodies X25519    │                          │
- └──────┬───────────┘         │  + sr25519; signs    │                          │
-        │                     │  on request          │                          │
-        └─────────────────────┴──────────────────────┘ ──────────────────────── │
-         serves denormalised tx / event history to the frontend (top-right) ───┘
+```mermaid
+flowchart TB
+    Wallet["🔐 Wallet<br/>PJS · Talisman · SubWallet"]
+    IPFS["📦 IPFS Gateway<br/>post / profile media"]
+    Front["🌐 Web Frontend<br/>React · Vite · PAPI"]
+    Indexer["🗂️ Indexer<br/>PAPI subscribe → lowdb<br/>HTTP API :3001"]
+    KS["🔑 Key Service<br/>external — WIP<br/>custody X25519 + sr25519"]
+
+    subgraph Node["⛓️ Node (ws://…:9944) · polkadot-omni-node"]
+        direction TB
+        subgraph RT["Runtime"]
+            direction TB
+            TxExt["TxExtension pipeline<br/>CheckNonZeroSender → … → ChargeSponsored → CheckMetadataHash"]
+            subgraph Pallets["SocialFi pallets"]
+                direction LR
+                AR["[51] app-registry"]
+                PR["[52] profiles"]
+                GR["[53] graph"]
+                FD["[54] feeds<br/>posts · capsules"]
+                MG["[55] managers"]
+                SP["[56] sponsorship"]
+                ST["[40] pallet-statement<br/>notification gossip"]
+            end
+            TxExt --> Pallets
+        end
+        OCW["OCW<br/>feeds · statement-store"]
+        RT --> OCW
+    end
+
+    Front <-- "sign req / signed tx" --> Wallet
+    Front <-- "upload / fetch (CIDs)" --> IPFS
+    Front <-- "HTTP /api/tx, /api/events" --> Indexer
+
+    Front -- "read PAPI: storage + view fns" --> Node
+    Front -- "write PAPI: submit signed tx" --> Node
+    Front -- "subscribe: events + statements" --> Node
+
+    Indexer -- "PAPI subscribe (events)" --> Node
+    OCW -- "unseal(capsule) + sign<br/>(HTTP)" --> KS
+
+    classDef user fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
+    classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
+    classDef external fill:#581c87,color:#f3e8ff,stroke:#a855f7
+    class Wallet,Front,IPFS,Indexer user
+    class Node,RT,OCW,TxExt,Pallets,AR,PR,GR,FD,MG,SP,ST chain
+    class KS external
 ```
 
 **Key dataflows**
@@ -129,10 +101,9 @@ does not touch GitHub Actions.
 ## Documentation
 
 - [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) — Whole-stack walkthrough
-- [docs/NOTIFICATIONS_ARCHITECTURE.md](docs/NOTIFICATIONS_ARCHITECTURE.md) — Real-time notifications component map
 - [docs/NOTIFICATIONS_FLOW.md](docs/NOTIFICATIONS_FLOW.md) — End-to-end notification sequence
 - [docs/NOTIFICATIONS_TOPICS.md](docs/NOTIFICATIONS_TOPICS.md) — Topic + payload contract
-- [docs/TOOLS.md](docs/TOOLS.md) — Polkadot stack components used here
+- [docs/ENCRYPTED_POSTS_WORKFLOW.md](docs/ENCRYPTED_POSTS_WORKFLOW.md) — Encrypted posts deep dive
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Deployment guide
 - [docs/INSTALL.md](docs/INSTALL.md) — Local setup
 
