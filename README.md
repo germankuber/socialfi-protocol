@@ -48,7 +48,6 @@ flowchart TB
     Front <--> Indexer
 
     Front -- "read PAPI" --> RPC
-    Front -- "write PAPI" --> RPC
     Front -- "subscribe" --> RPC
 
     Wallet -- "signs tx" --> RPC
