@@ -55,12 +55,12 @@ sequenceDiagram
     A->>Chain: create_post(cid, visibility, capsule, unlock_fee)
     V->>V: generate ephemeral X25519 keypair (buyer_pk, buyer_sk)
     V->>Chain: unlock_post(post_id, buyer_pk) + pay fee
-    Chain->>Chain: Unlocks[..].wrapped_key = None; PendingUnlocks[..] = ()
+    Chain->>Chain: Unlocks entry wrapped_key=None; PendingUnlocks enqueued
     OCW->>Chain: read PendingUnlocks + capsule
     OCW->>OCW: open capsule → k_content; seal to buyer_pk → wrapped_key
     OCW->>Chain: deliver_unlock_unsigned(DeliverUnlockPayload, signature)
     Chain->>Chain: validate_unsigned → fill wrapped_key, drop PendingUnlocks
-    V->>Chain: query Unlocks[post_id][viewer]
+    V->>Chain: query Unlocks(post_id, viewer)
     V->>IPFS: fetch ciphertext blob
     V->>V: unseal wrapped_key with buyer_sk → k_content; decrypt blob
 ```
@@ -217,7 +217,7 @@ When `deliver_unlock_unsigned` dispatches, it mutates `Unlocks` to set
 Storage items / extrinsics touched:
 
 - Read: `PendingUnlocks`, `Unlocks`, `Posts`, `KeyService`.
-- Write: `Unlocks[..].wrapped_key`, `PendingUnlocks` (removed).
+- Write: `Unlocks.wrapped_key` (filled), `PendingUnlocks` (removed).
 - Extrinsic: `deliver_unlock_unsigned` (unsigned, signed payload).
 - Event: `Event::UnlockDelivered`.
 
