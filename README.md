@@ -19,6 +19,7 @@ flowchart TB
     Front["🌐 Web Frontend<br/>React · Vite · PAPI"]
     Indexer["🗂️ Indexer<br/>PAPI subscribe to lowdb<br/>HTTP API 3001"]
     KS["🔑 Key Service<br/>external WIP<br/>custodies X25519 and sr25519"]
+    People["🪪 Polkadot People<br/>pallet-identity<br/>display · judgement · username"]
 
     subgraph Node["⛓️ Node — polkadot-omni-node ws 9944"]
         RPC["RPC / TxPool / P2P"]
@@ -50,15 +51,20 @@ flowchart TB
     Front -- "write PAPI" --> RPC
     Front -- "subscribe" --> RPC
 
+    Front -- "read identity" --> People
+    Wallet -- "signs identity tx" --> People
+
     Indexer -- "events" --> RPC
     OCW -- "unseal and sign" --> KS
 
     classDef user fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
     classDef external fill:#581c87,color:#f3e8ff,stroke:#a855f7
+    classDef people fill:#4c1d95,color:#ede9fe,stroke:#a78bfa
     class Wallet,Front,IPFS,Indexer user
     class RPC,RT,OCW,TxExt,Pallets,AR,PR,GR,FD,MG,SP,ST chain
     class KS external
+    class People people
 ```
 
 **Key dataflows**
