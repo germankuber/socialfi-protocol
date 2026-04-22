@@ -13,4 +13,6 @@ polkadot_sdk::frame_benchmarking::define_benchmarks!(
 	[pallet_social_profiles, SocialProfiles]
 	[pallet_social_graph, SocialGraph]
 	[pallet_social_feeds, SocialFeeds]
+	[pallet_social_managers, SocialManagers]
+	[pallet_sponsorship, Sponsorship]
 );

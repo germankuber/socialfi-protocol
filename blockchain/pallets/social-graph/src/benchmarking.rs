@@ -1,12 +1,10 @@
-//! Benchmarking setup for pallet-social-graph
-//!
-//! NOTE: The `follow` benchmark bypasses `ProfileProvider` checks by directly
-//! writing storage. In the real runtime, profiles must exist. Benchmark callers
-//! should ensure the `ProfileProvider` implementation used in benchmarking
-//! always returns `true`, or set up profiles in the benchmark block.
+//! Benchmarks for `pallet-social-graph`.
+
+#![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame::{deps::frame_benchmarking::v2::*, prelude::*};
+use crate::BenchmarkHelper;
+use frame::{deps::frame_benchmarking::v2::*, prelude::*, traits::Currency};
 
 #[benchmarks]
 mod benchmarks {
@@ -15,24 +13,23 @@ mod benchmarks {
 	use crate::pallet::Pallet as SocialGraph;
 	use frame_system::RawOrigin;
 
+	const SEED: u32 = 0;
+
+	fn fund<T: Config>(who: &T::AccountId) {
+		// Large enough that per-profile follow fees (set by the target
+		// through social-profiles) never run the caller out of funds.
+		let big: BalanceOf<T> = 1_000_000_000u32.into();
+		T::Currency::make_free_balance_be(who, big);
+	}
+
 	#[benchmark]
 	fn follow() {
 		let caller: T::AccountId = whitelisted_caller();
-		let target: T::AccountId = account("target", 0, 0);
-
-		let fee = T::FollowFee::get();
-		let deposit = fee.saturating_mul(10u32.into());
-		T::Currency::make_free_balance_be(&caller, deposit);
-		T::Currency::make_free_balance_be(&target, deposit);
-
-		// In mock tests, ProfileProvider is backed by a thread-local that has
-		// all accounts by default or needs setup. For real runtime benchmarks,
-		// insert profiles directly.
-		#[cfg(not(test))]
-		{
-			// Create minimal profile entries so ProfileProvider::exists returns true.
-			// This depends on the runtime's ProfileProvider implementation.
-		}
+		let target: T::AccountId = account("target", 0, SEED);
+		fund::<T>(&caller);
+		fund::<T>(&target);
+		T::BenchmarkHelper::register_profile(&caller);
+		T::BenchmarkHelper::register_profile(&target);
 
 		#[extrinsic_call]
 		follow(RawOrigin::Signed(caller.clone()), target.clone());
@@ -43,12 +40,9 @@ mod benchmarks {
 	#[benchmark]
 	fn unfollow() {
 		let caller: T::AccountId = whitelisted_caller();
-		let target: T::AccountId = account("target", 0, 0);
-
-		let fee = T::FollowFee::get();
-		let deposit = fee.saturating_mul(10u32.into());
-		T::Currency::make_free_balance_be(&caller, deposit);
-		T::Currency::make_free_balance_be(&target, deposit);
+		let target: T::AccountId = account("target", 0, SEED);
+		fund::<T>(&caller);
+		fund::<T>(&target);
 
 		let block_number = frame_system::Pallet::<T>::block_number();
 		Follows::<T>::insert(&caller, &target, types::FollowInfo { created_at: block_number });
@@ -61,5 +55,9 @@ mod benchmarks {
 		assert!(!Follows::<T>::contains_key(&caller, &target));
 	}
 
-	impl_benchmark_test_suite!(SocialGraph, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(
+		SocialGraph,
+		crate::mock::new_test_ext(),
+		crate::mock::Test,
+	);
 }

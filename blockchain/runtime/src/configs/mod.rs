@@ -16,7 +16,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned,
+	EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
@@ -33,8 +33,8 @@ use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
 	MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-	Signature, SocialAppRegistry, SocialProfiles, System, Timestamp, XcmpQueue,
-	AVERAGE_ON_INITIALIZE_RATIO, DAYS, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	SocialAppRegistry, SocialProfiles, System, XcmpQueue,
+	AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
@@ -123,12 +123,8 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
-	type WeightToFee = pallet_revive::evm::fees::BlockRatioFee<
-		{ super::MILLI_UNIT / 10 },
-		{ (100 * ExtrinsicBaseWeight::get().ref_time()) as u128 },
-		Runtime,
-		Balance,
-	>;
+	// Standard polynomial-based fee curve declared in the runtime crate.
+	type WeightToFee = super::WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = ConstU8<5>;
@@ -287,18 +283,34 @@ impl pallet_statement::Config for Runtime {
 	type MaxAllowedBytes = MaxAllowedBytes;
 }
 
-/// Configure the template proof-of-existence pallet.
-impl pallet_template::Config for Runtime {
-	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
-}
-
 parameter_types! {
 	pub const AppBond: Balance = 10 * EXISTENTIAL_DEPOSIT;
 	pub const MaxMetadataLen: u32 = 128;
-	pub const MaxAppsPerOwner: u32 = 10;
+	/// Hard cap on apps a single account can register. Chosen deliberately
+	/// low (5) because the owner-index `AppsByOwner` stores every id as a
+	/// `BoundedVec`; each `register_app` / `deregister_app` rewrites the
+	/// whole vec, so PoV scales linearly with this constant.
+	pub const MaxAppsPerOwner: u32 = 5;
 }
 
 /// Configure the social app registry pallet.
+/// Adapter that plugs the SocialFi pallets into `pallet-statement` so
+/// reply / follow / new-app events turn into live Statement Store
+/// notifications. Clients subscribed via `statement_subscribeStatement`
+/// get the update pushed immediately — no block polling, no indexer.
+pub struct NotificationStatementSubmitter;
+
+impl social_notifications_primitives::StatementSubmitter<AccountId>
+	for NotificationStatementSubmitter
+{
+	fn submit_statement(
+		account: AccountId,
+		statement: sp_statement_store::Statement,
+	) {
+		pallet_statement::Pallet::<Runtime>::submit_statement(account, statement);
+	}
+}
+
 impl pallet_social_app_registry::Config for Runtime {
 	type AppId = u32;
 	type Currency = Balances;
@@ -306,6 +318,7 @@ impl pallet_social_app_registry::Config for Runtime {
 	type MaxMetadataLen = MaxMetadataLen;
 	type MaxAppsPerOwner = MaxAppsPerOwner;
 	type WeightInfo = pallet_social_app_registry::weights::SubstrateWeight<Runtime>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
 }
 
 parameter_types! {
@@ -327,6 +340,29 @@ impl pallet_social_graph::Config for Runtime {
 	type Currency = Balances;
 	type ProfileProvider = SocialProfiles;
 	type WeightInfo = pallet_social_graph::weights::SubstrateWeight<Runtime>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = GraphBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct GraphBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_social_graph::BenchmarkHelper<AccountId> for GraphBenchmarkHelper {
+	fn register_profile(who: &AccountId) {
+		// Mirror `FeedsBenchmarkHelper::register_profile` — direct
+		// storage insert so benchmarks do not pay the cost of the
+		// social-profiles `create_profile` dispatch on every iteration.
+		use pallet_social_profiles::types::ProfileInfo;
+		use frame_support::BoundedVec;
+		let info: ProfileInfo<Runtime> = ProfileInfo {
+			metadata: BoundedVec::default(),
+			follow_fee: 0,
+			created_at: frame_system::Pallet::<Runtime>::block_number(),
+		};
+		pallet_social_profiles::Profiles::<Runtime>::insert(who, info);
+	}
 }
 
 parameter_types! {
@@ -367,45 +403,47 @@ impl pallet_social_feeds::Config for Runtime {
 	type UnsignedValidityWindow = FeedsUnsignedValidityWindow;
 	type UnsignedPriority = FeedsUnsignedPriority;
 	type WeightInfo = pallet_social_feeds::weights::SubstrateWeight<Runtime>;
-}
-
-// ── pallet-identity (on-chain identity + verification) ─────────────────
-
-parameter_types! {
-	pub const IdentityBasicDeposit: Balance = 10 * EXISTENTIAL_DEPOSIT;
-	pub const IdentityByteDeposit: Balance = EXISTENTIAL_DEPOSIT / 100;
-	pub const IdentityUsernameDeposit: Balance = EXISTENTIAL_DEPOSIT;
-	pub const IdentitySubAccountDeposit: Balance = 5 * EXISTENTIAL_DEPOSIT;
-	pub const MaxSubAccounts: u32 = 100;
-	pub const MaxAdditionalFields: u32 = 25;
-	pub const MaxRegistrars: u32 = 20;
-	pub const IdentityPendingUsernameExpiration: BlockNumber = 7 * DAYS;
-	pub const IdentityUsernameGracePeriod: BlockNumber = 30 * DAYS;
-}
-
-impl pallet_identity::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Currency = Balances;
-	type BasicDeposit = IdentityBasicDeposit;
-	type ByteDeposit = IdentityByteDeposit;
-	type UsernameDeposit = IdentityUsernameDeposit;
-	type SubAccountDeposit = IdentitySubAccountDeposit;
-	type MaxSubAccounts = MaxSubAccounts;
-	type IdentityInformation = pallet_identity::legacy::IdentityInfo<MaxAdditionalFields>;
-	type MaxRegistrars = MaxRegistrars;
-	type Slashed = ();
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type RegistrarOrigin = EnsureRoot<AccountId>;
-	type UsernameAuthorityOrigin = EnsureRoot<AccountId>;
-	type OffchainSignature = Signature;
-	type SigningPublicKey = <Signature as sp_runtime::traits::Verify>::Signer;
-	type PendingUsernameExpiration = IdentityPendingUsernameExpiration;
-	type UsernameGracePeriod = IdentityUsernameGracePeriod;
-	type MaxSuffixLength = ConstU32<7>;
-	type MaxUsernameLength = ConstU32<32>;
+	type NotificationSubmitter = NotificationStatementSubmitter;
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
-	type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+	type BenchmarkHelper = FeedsBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct FeedsBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_social_feeds::BenchmarkHelper<AccountId, u32> for FeedsBenchmarkHelper {
+	fn register_profile(who: &AccountId) {
+		use pallet_social_profiles::types::ProfileInfo;
+		use frame_support::BoundedVec;
+		// Direct storage insert. Going through `create_profile` would
+		// reserve a bond on every benchmark invocation and inflate the
+		// measured weights with pallet-social-profiles' costs.
+		let info: ProfileInfo<Runtime> = ProfileInfo {
+			metadata: BoundedVec::default(),
+			follow_fee: 0,
+			created_at: frame_system::Pallet::<Runtime>::block_number(),
+		};
+		pallet_social_profiles::Profiles::<Runtime>::insert(who, info);
+	}
+	fn register_app(owner: &AccountId) -> u32 {
+		use pallet_social_app_registry::types::{AppInfo, AppStatus};
+		use frame_support::BoundedVec;
+		let app_id = pallet_social_app_registry::NextAppId::<Runtime>::get();
+		let next = app_id.saturating_add(1);
+		pallet_social_app_registry::NextAppId::<Runtime>::put(next);
+		pallet_social_app_registry::Apps::<Runtime>::insert(
+			app_id,
+			AppInfo::<Runtime> {
+				owner: owner.clone(),
+				metadata: BoundedVec::default(),
+				has_images: false,
+				created_at: frame_system::Pallet::<Runtime>::block_number(),
+				status: AppStatus::Active,
+			},
+		);
+		app_id
+	}
 }
 
 // ── pallet-social-managers (scoped delegation) ─────────────────────────
@@ -422,6 +460,12 @@ parameter_types! {
 	/// Upper bound on expired entries swept by `on_idle` per block. Keeps
 	/// lazy reclamation predictable and prevents hook starvation.
 	pub const MaxExpiryPurgePerBlock: u32 = 16;
+	/// Upper bound on entries the `on_idle` hook may *scan* per block while
+	/// hunting for expired ones. Chosen as 8× the purge budget: a big pool
+	/// of still-valid managers cannot force the hook into an unbounded
+	/// read loop, because it will stop at `MaxExpiryScanPerBlock` reads
+	/// regardless of how many expirables are still hiding further in.
+	pub const MaxExpiryScanPerBlock: u32 = 128;
 }
 
 impl pallet_social_managers::Config for Runtime {
@@ -429,7 +473,30 @@ impl pallet_social_managers::Config for Runtime {
 	type ManagerDepositBase = ManagerDepositBase;
 	type MaxManagersPerOwner = MaxManagersPerOwner;
 	type MaxExpiryPurgePerBlock = MaxExpiryPurgePerBlock;
+	type MaxExpiryScanPerBlock = MaxExpiryScanPerBlock;
 	type WeightInfo = pallet_social_managers::weights::SubstrateWeight<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ManagersBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct ManagersBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_social_managers::BenchmarkHelper<Runtime> for ManagersBenchmarkHelper {
+	fn scoped_call() -> RuntimeCall {
+		// `required_scope` (social-managers/src/lib.rs) accepts
+		// `SocialProfiles::set_follow_fee` under `ManagerScope::UpdateProfile`.
+		// Using it sidesteps the `ProfileProvider::exists` gate that
+		// `SocialFeeds::create_post` would otherwise impose on the
+		// benchmark caller.
+		RuntimeCall::SocialProfiles(pallet_social_profiles::Call::set_follow_fee { fee: 0 })
+	}
+	fn scope_for_scoped_call() -> pallet_social_managers::types::ScopeMask {
+		pallet_social_managers::types::ScopeMask::from_scopes(&[
+			pallet_social_managers::types::ManagerScope::UpdateProfile,
+		])
+	}
 }
 
 // ── pallet-sponsorship (gasless tx via a community pot) ────────────────
@@ -445,49 +512,7 @@ parameter_types! {
 impl pallet_sponsorship::Config for Runtime {
 	type Currency = Balances;
 	type MinimumPotBalance = SponsorMinimumPotBalance;
-}
-
-// ── pallet-revive (EVM + PVM smart contracts) ──────────────────────────
-
-parameter_types! {
-	pub const DepositPerItem: Balance = EXISTENTIAL_DEPOSIT;
-	pub const DepositPerChildTrieItem: Balance = EXISTENTIAL_DEPOSIT / 10;
-	pub const DepositPerByte: Balance = EXISTENTIAL_DEPOSIT / 100;
-	pub CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
-	pub const MaxEthExtrinsicWeight: sp_runtime::FixedU128 = sp_runtime::FixedU128::from_rational(5, 10);
-}
-
-impl pallet_revive::Config for Runtime {
-	type Time = Timestamp;
-	type Balance = Balance;
-	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeOrigin = RuntimeOrigin;
-	type DepositPerItem = DepositPerItem;
-	type DepositPerChildTrieItem = DepositPerChildTrieItem;
-	type DepositPerByte = DepositPerByte;
-	type WeightInfo = pallet_revive::weights::SubstrateWeight<Self>;
-	type Precompiles = ();
-	type AddressMapper = pallet_revive::AccountId32Mapper<Self>;
-	type RuntimeMemory = ConstU32<{ 128 * 1024 * 1024 }>;
-	type PVFMemory = ConstU32<{ 512 * 1024 * 1024 }>;
-	type UnsafeUnstableInterface = ConstBool<false>;
-	type UploadOrigin = EnsureSigned<Self::AccountId>;
-	type InstantiateOrigin = EnsureSigned<Self::AccountId>;
-	type RuntimeHoldReason = RuntimeHoldReason;
-	type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
-	/// EVM chain ID for local dev. The Polkadot Hub TestNet uses 420420417; this local
-	/// value avoids collisions. Must match the chain ID expected by eth-rpc and wallets.
-	type ChainId = ConstU64<420_420_421>;
-	type NativeToEthRatio = ConstU32<1_000_000>;
-	type FindAuthor = <Runtime as pallet_authorship::Config>::FindAuthor;
-	type AllowEVMBytecode = ConstBool<true>;
-	type FeeInfo =
-		pallet_revive::evm::fees::Info<super::Address, super::Signature, super::EthExtraImpl>;
-	type MaxEthExtrinsicWeight = MaxEthExtrinsicWeight;
-	type DebugEnabled = ConstBool<true>;
-	type GasScale = ConstU32<50_000>;
+	type WeightInfo = pallet_sponsorship::weights::SubstrateWeight<Runtime>;
 }
 
 // ── OCW glue for pallet-social-feeds encrypted posts ───────────────────

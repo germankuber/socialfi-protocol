@@ -6,8 +6,10 @@ import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
 import { useIdentity } from "../../hooks/social/useIdentity";
 import ConfirmModal from "../../components/social/ConfirmModal";
-import VerifiedBadge from "../../components/social/VerifiedBadge";
 import TxToast from "../../components/social/TxToast";
+import AuthorFeedSection from "../../components/social/AuthorFeedSection";
+import VerifiedBadge from "../../components/social/VerifiedBadge";
+import VerificationBadge, { identityStatus } from "../../components/social/VerificationBadge";
 
 interface ProfileData {
 	name: string;
@@ -142,20 +144,7 @@ export default function PublicProfilePage() {
 						</h1>
 						<div className="flex items-center gap-2 mt-1">
 							<span className="text-xs font-mono text-secondary" title={targetAddress}>{truncated}</span>
-							{identity?.verified ? (
-								<span className="inline-flex items-center gap-0.5 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-									<svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" /></svg>
-									Verified
-								</span>
-							) : identity?.hasIdentity ? (
-								<span className="inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
-									Pending
-								</span>
-							) : (
-								<span className="inline-flex items-center rounded-full bg-surface-700/30 px-2 py-0.5 text-[10px] font-semibold text-surface-400">
-									Unverified
-								</span>
-							)}
+							<VerificationBadge status={identityStatus(identity)} size="md" />
 						</div>
 						{profile.bio && <p className="text-sm text-secondary mt-2">{profile.bio}</p>}
 
@@ -226,6 +215,8 @@ export default function PublicProfilePage() {
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 				</div>
 			</ConfirmModal>
+
+			<AuthorFeedSection address={targetAddress} pageSize={5} />
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 		</div>

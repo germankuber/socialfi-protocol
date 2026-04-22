@@ -15,6 +15,7 @@ import RequireProfile from "../../components/social/RequireProfile";
 import TxToast from "../../components/social/TxToast";
 import ConfirmModal from "../../components/social/ConfirmModal";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
+import FeeRangeInput from "../../components/social/FeeRangeInput";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
 const MAX_CHARS = 400;
@@ -41,6 +42,11 @@ export default function FeedPage() {
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [replies, setReplies] = useState<Record<number, PostData[]>>({});
 	const [unlocked, setUnlocked] = useState<Set<number>>(new Set());
+	// Posts the viewer has paid to unlock but for which the OCW has
+	// not yet delivered the wrapped key. While this set is non-empty
+	// the feed polls for updates so the reply button can unlock
+	// without a manual refresh.
+	const [pendingUnlocks, setPendingUnlocks] = useState<Set<number>>(new Set());
 	const [expanded, setExpanded] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(true);
 	const [uploading, setUploading] = useState(false);
@@ -97,19 +103,28 @@ export default function FeedPage() {
 
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
-				// New shape: `Unlocks` is keyed by (post_id, viewer). A post
-				// counts as unlocked only once the OCW has delivered the
-				// wrapped key.
+				// `Unlocks` is keyed by (post_id, viewer). A post counts
+				// as unlocked only once the OCW has delivered the wrapped
+				// key. Entries where the viewer matches but the key is
+				// still missing are "pending": the payment went through
+				// but the collator hasn't sealed the key yet.
 				const all = await api.query.SocialFeeds.Unlocks.getEntries();
+				const mine = all.filter(
+					(e: { keyArgs: [bigint, string]; value: { wrapped_key: unknown } }) =>
+						e.keyArgs[1].toString() === accountAddress,
+				);
 				unlockedSet = new Set(
-					all
-						.filter(
-							(e: { keyArgs: [bigint, string]; value: { wrapped_key: unknown } }) =>
-								e.keyArgs[1].toString() === accountAddress && !!e.value.wrapped_key,
-						)
-						.map((e: { keyArgs: [bigint, string] }) => Number(e.keyArgs[0])),
+					mine
+						.filter((e) => !!e.value.wrapped_key)
+						.map((e) => Number(e.keyArgs[0])),
+				);
+				const pending = new Set(
+					mine
+						.filter((e) => !e.value.wrapped_key)
+						.map((e) => Number(e.keyArgs[0])),
 				);
 				setUnlocked(unlockedSet);
+				setPendingUnlocks(pending);
 			}
 
 			// Resolve text content from IPFS in background
@@ -147,6 +162,16 @@ export default function FeedPage() {
 	}, [accountAddress]);
 
 	useEffect(() => { loadPosts(); }, [loadPosts]);
+
+	// While there are unlocks the collator OCW has not yet delivered
+	// (payment went through, wrapped_key is still None), re-poll every
+	// 3 seconds so the UI switches from "Content is private" to the
+	// reply-enabled state without requiring a manual refresh.
+	useEffect(() => {
+		if (pendingUnlocks.size === 0) return;
+		const handle = setInterval(() => loadPosts(), 3000);
+		return () => clearInterval(handle);
+	}, [pendingUnlocks, loadPosts]);
 
 	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
 
@@ -296,15 +321,9 @@ export default function FeedPage() {
 							<label className="form-label">App ID</label>
 							<input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="Optional" className="input" />
 						</div>
-						<div>
-							<label className="form-label">Reply Fee</label>
-							<input value={replyFee} onChange={(e) => setReplyFee(e.target.value)} placeholder="0" className="input" />
-						</div>
+						<FeeRangeInput label="Reply Fee" value={replyFee} onChange={setReplyFee} />
 						{visibility !== "Public" && (
-							<div>
-								<label className="form-label">Unlock Fee</label>
-								<input value={unlockFeeInput} onChange={(e) => setUnlockFeeInput(e.target.value)} placeholder="0" className="input" />
-							</div>
+							<FeeRangeInput label="Unlock Fee" value={unlockFeeInput} onChange={setUnlockFeeInput} />
 						)}
 					</div>
 

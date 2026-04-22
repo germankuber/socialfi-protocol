@@ -9,16 +9,8 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function identityDataValue(text: string): any {
-	if (!text) return { type: "None", value: undefined };
-	const bytes = new TextEncoder().encode(text.slice(0, 32));
-	const n = bytes.length;
-	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function noneData(): any { return { type: "None", value: undefined }; }
+import VerificationBadge, { identityStatus } from "../../components/social/VerificationBadge";
+import { useIdentity } from "../../hooks/social/useIdentity";
 
 interface ProfileData {
 	cid: string;
@@ -39,6 +31,7 @@ export default function EditProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 
 	const accountAddress = account?.address ?? null;
+	const { identity } = useIdentity(accountAddress);
 
 	const loadProfile = useCallback(async () => {
 		if (!accountAddress) { setProfile(null); setResolvedMetadata(null); return; }
@@ -86,16 +79,10 @@ export default function EditProfilePage() {
 				await tracker.submit(api.tx.SocialProfiles.set_follow_fee({ fee }), account.signer, "Set Follow Fee");
 			}
 
-			try {
-				await tracker.submit(api.tx.Identity.set_identity({
-					info: {
-						display: identityDataValue(metadata.name),
-						twitter: identityDataValue(metadata.links?.twitter || ""),
-						web: identityDataValue(metadata.links?.website || ""),
-						email: noneData(), additional: [], legal: noneData(), riot: noneData(), image: noneData(), pgp_fingerprint: undefined,
-					},
-				}), account.signer, "Sync Identity");
-			} catch { /* best-effort */ }
+			// Identity (display name + verification) is maintained on the
+			// Polkadot People parachain via the IdentityPanel on this page.
+			// We no longer auto-sync here because that tx lives on a
+			// different chain and requires DOT on People.
 
 			loadProfile();
 		} catch (e) {
@@ -121,6 +108,25 @@ export default function EditProfilePage() {
 					</svg>
 					Back
 				</Link>
+
+				<div className="panel flex items-center justify-between gap-4">
+					<div className="flex items-center gap-3 min-w-0">
+						<VerificationBadge status={identityStatus(identity)} size="md" showNoneLabel={false} />
+						<div className="min-w-0">
+							<div className="text-sm font-medium">Polkadot People Identity</div>
+							<div className="text-xs text-secondary truncate">
+								{identity?.hasIdentity
+									? identity.verified
+										? "Verified on the People parachain"
+										: "Registered — awaiting verification"
+									: "Register your identity on the People parachain"}
+							</div>
+						</div>
+					</div>
+					<Link to="/profile/people" className="btn-brand btn-sm whitespace-nowrap">
+						{identity?.hasIdentity ? "Manage" : "Register"}
+					</Link>
+				</div>
 
 				<h1 className="heading-1">Edit Profile</h1>
 
@@ -153,6 +159,7 @@ export default function EditProfilePage() {
 								disabled={busy}
 							/>
 						</div>
+
 					</>
 				) : (
 					<div className="panel text-center py-8">

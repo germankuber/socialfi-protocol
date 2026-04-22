@@ -34,6 +34,7 @@
 
 pub use pallet::*;
 pub mod extension;
+pub mod weights;
 
 #[cfg(test)]
 mod mock;
@@ -41,8 +42,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+
 #[frame::pallet]
 pub mod pallet {
+	use crate::weights::WeightInfo;
 	use frame::{
 		prelude::*,
 		traits::{Currency, ExistenceRequirement},
@@ -65,6 +70,9 @@ pub mod pallet {
 		/// balance is non-zero.
 		#[pallet::constant]
 		type MinimumPotBalance: Get<BalanceOf<Self>>;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	/// "Who is my sponsor?" — keyed by the **beneficiary** so the
@@ -127,6 +135,11 @@ pub mod pallet {
 		InsufficientFunds,
 		/// Requested withdrawal exceeds the sponsor's pot balance.
 		WithdrawalExceedsPot,
+		/// The on-chain pot bookkeeping diverged from the pallet account's
+		/// free balance. Indicates a bug or state corruption — the
+		/// extrinsic refuses to proceed rather than panicking, so the
+		/// sponsor can surface it via governance.
+		PotAccountingMismatch,
 	}
 
 	#[pallet::call]
@@ -135,8 +148,7 @@ pub mod pallet {
 		/// from the caller's pot. Overwrites any previous sponsor the
 		/// beneficiary had.
 		#[pallet::call_index(0)]
-		#[pallet::weight(Weight::from_parts(22_000_000, 2000)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::register_beneficiary())]
 		pub fn register_beneficiary(
 			origin: OriginFor<T>,
 			beneficiary: T::AccountId,
@@ -157,6 +169,12 @@ pub mod pallet {
 
 			SponsorOf::<T>::insert(&beneficiary, &sponsor);
 
+			log::info!(
+				target: "sponsorship",
+				"🤝 register_beneficiary sponsor={:?} beneficiary={:?} previous={:?}",
+				sponsor, beneficiary, previous_sponsor,
+			);
+
 			Self::deposit_event(Event::BeneficiaryRegistered {
 				sponsor,
 				beneficiary,
@@ -169,8 +187,7 @@ pub mod pallet {
 		/// their sponsor — we only remove the link when it still points at
 		/// the caller to avoid racy cross-account deregistration.
 		#[pallet::call_index(1)]
-		#[pallet::weight(Weight::from_parts(18_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::revoke_beneficiary())]
 		pub fn revoke_beneficiary(
 			origin: OriginFor<T>,
 			beneficiary: T::AccountId,
@@ -183,6 +200,12 @@ pub mod pallet {
 			SponsorOf::<T>::remove(&beneficiary);
 			BeneficiaryCount::<T>::mutate(&sponsor, |c| *c = c.saturating_sub(1));
 
+			log::info!(
+				target: "sponsorship",
+				"✂️ revoke_beneficiary sponsor={:?} beneficiary={:?}",
+				sponsor, beneficiary,
+			);
+
 			Self::deposit_event(Event::BeneficiaryRevoked { sponsor, beneficiary });
 			Ok(())
 		}
@@ -191,13 +214,18 @@ pub mod pallet {
 		/// sponsor. Useful if the sponsor turns hostile (e.g. tries to
 		/// shape content by threatening to cut them off).
 		#[pallet::call_index(2)]
-		#[pallet::weight(Weight::from_parts(16_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::revoke_my_sponsor())]
 		pub fn revoke_my_sponsor(origin: OriginFor<T>) -> DispatchResult {
 			let beneficiary = ensure_signed(origin)?;
 			let sponsor = SponsorOf::<T>::take(&beneficiary)
 				.ok_or(Error::<T>::NoActiveSponsor)?;
 			BeneficiaryCount::<T>::mutate(&sponsor, |c| *c = c.saturating_sub(1));
+
+			log::info!(
+				target: "sponsorship",
+				"🏃 revoke_my_sponsor beneficiary={:?} sponsor={:?}",
+				beneficiary, sponsor,
+			);
 
 			Self::deposit_event(Event::SponsorAbandoned { sponsor, beneficiary });
 			Ok(())
@@ -207,8 +235,7 @@ pub mod pallet {
 		/// sponsor pot. The pot is tracked separately from the caller's
 		/// regular balance so withdrawals are explicit.
 		#[pallet::call_index(3)]
-		#[pallet::weight(Weight::from_parts(20_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::top_up())]
 		pub fn top_up(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let sponsor = ensure_signed(origin)?;
 
@@ -221,6 +248,13 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::InsufficientFunds)?;
 
 			SponsorPots::<T>::mutate(&sponsor, |b| *b = b.saturating_add(amount));
+
+			log::info!(
+				target: "sponsorship",
+				"💰 top_up sponsor={:?} amount={:?} pot={:?}",
+				sponsor, amount, SponsorPots::<T>::get(&sponsor),
+			);
+
 			Self::deposit_event(Event::PotToppedUp { sponsor, amount });
 			Ok(())
 		}
@@ -228,8 +262,7 @@ pub mod pallet {
 		/// Take `amount` out of the caller's pot and back into their free
 		/// balance. Fails if the pot holds less than `amount`.
 		#[pallet::call_index(4)]
-		#[pallet::weight(Weight::from_parts(20_000_000, 1800)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2)))]
+		#[pallet::weight(T::WeightInfo::withdraw())]
 		pub fn withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let sponsor = ensure_signed(origin)?;
 			SponsorPots::<T>::try_mutate(&sponsor, |b| -> DispatchResult {
@@ -238,13 +271,24 @@ pub mod pallet {
 				Ok(())
 			})?;
 
+			// The bookkeeping invariant says SponsorPots ≤ free_balance of
+			// the pallet account, so this transfer *should* succeed. If it
+			// doesn't (e.g. after a slash or ED-related adjustment on the
+			// pallet account), surface it as a recoverable error instead
+			// of panicking — a panic here would halt the node.
 			T::Currency::transfer(
 				&Self::pallet_account(),
 				&sponsor,
 				amount,
 				ExistenceRequirement::AllowDeath,
 			)
-			.expect("pot is tracked alongside the account balance; transfer cannot fail");
+			.map_err(|_| Error::<T>::PotAccountingMismatch)?;
+
+			log::info!(
+				target: "sponsorship",
+				"🏦 withdraw sponsor={:?} amount={:?} pot_remaining={:?}",
+				sponsor, amount, SponsorPots::<T>::get(&sponsor),
+			);
 
 			Self::deposit_event(Event::PotWithdrawn { sponsor, amount });
 			Ok(())
@@ -304,6 +348,12 @@ pub mod pallet {
 				ExistenceRequirement::KeepAlive,
 			)
 			.map_err(|_| ())?;
+
+			log::info!(
+				target: "sponsorship",
+				"💸 settle_sponsorship sponsor={:?} beneficiary={:?} fee={:?} pot_remaining={:?}",
+				sponsor, beneficiary, fee, SponsorPots::<T>::get(sponsor),
+			);
 
 			Self::deposit_event(Event::FeeSponsored {
 				sponsor: sponsor.clone(),

@@ -11,7 +11,6 @@ CHAIN_SPEC="$ROOT_DIR/blockchain/chain_spec.json"
 RUNTIME_WASM="$ROOT_DIR/target/release/wbuild/stack-template-runtime/stack_template_runtime.compact.compressed.wasm"
 STACK_PORT_OFFSET="${STACK_PORT_OFFSET:-0}"
 STACK_SUBSTRATE_RPC_PORT="${STACK_SUBSTRATE_RPC_PORT:-$((9944 + STACK_PORT_OFFSET))}"
-STACK_ETH_RPC_PORT="${STACK_ETH_RPC_PORT:-$((8545 + STACK_PORT_OFFSET))}"
 STACK_FRONTEND_PORT="${STACK_FRONTEND_PORT:-$((5173 + STACK_PORT_OFFSET))}"
 STACK_COLLATOR_P2P_PORT="$((30333 + STACK_PORT_OFFSET))"
 STACK_COLLATOR_PROMETHEUS_PORT="$((9615 + STACK_PORT_OFFSET))"
@@ -23,7 +22,6 @@ STACK_RELAY_BOB_P2P_PORT="$((30336 + STACK_PORT_OFFSET))"
 STACK_RELAY_BOB_PROMETHEUS_PORT="$((9618 + STACK_PORT_OFFSET))"
 SUBSTRATE_RPC_HTTP="${SUBSTRATE_RPC_HTTP:-http://127.0.0.1:${STACK_SUBSTRATE_RPC_PORT}}"
 SUBSTRATE_RPC_WS="${SUBSTRATE_RPC_WS:-ws://127.0.0.1:${STACK_SUBSTRATE_RPC_PORT}}"
-ETH_RPC_HTTP="${ETH_RPC_HTTP:-http://127.0.0.1:${STACK_ETH_RPC_PORT}}"
 FRONTEND_URL="${FRONTEND_URL:-http://127.0.0.1:${STACK_FRONTEND_PORT}}"
 
 ZOMBIE_DIR="${ZOMBIE_DIR:-}"
@@ -33,28 +31,24 @@ ZOMBIE_CONFIG="${ZOMBIE_CONFIG:-}"
 NODE_DIR="${NODE_DIR:-}"
 NODE_LOG="${NODE_LOG:-}"
 NODE_PID="${NODE_PID:-}"
-ETH_RPC_PID="${ETH_RPC_PID:-}"
 
 export STACK_PORT_OFFSET
 export STACK_SUBSTRATE_RPC_PORT
-export STACK_ETH_RPC_PORT
 export STACK_FRONTEND_PORT
 export SUBSTRATE_RPC_HTTP
 export SUBSTRATE_RPC_WS
-export ETH_RPC_HTTP
 export FRONTEND_URL
 
 # Expected versions for polkadot-sdk stable2512-3 (see README "Key Versions").
 STACK_EXPECTED_POLKADOT_SEMVER="${STACK_EXPECTED_POLKADOT_SEMVER:-1.21.3}"
 STACK_EXPECTED_OMNI_NODE_SEMVER="${STACK_EXPECTED_OMNI_NODE_SEMVER:-1.21.3}"
-STACK_EXPECTED_ETH_RPC_SEMVER="${STACK_EXPECTED_ETH_RPC_SEMVER:-0.12.0}"
 STACK_EXPECTED_CHAIN_SPEC_BUILDER_SEMVER="${STACK_EXPECTED_CHAIN_SPEC_BUILDER_SEMVER:-17.0.0}"
 # zombienet prints bare semver (e.g. 1.3.138); allow any 1.3.x patch.
 STACK_EXPECTED_ZOMBIE_MAJOR_MINOR="${STACK_EXPECTED_ZOMBIE_MAJOR_MINOR:-1.3}"
 # Set to 1 to only check that commands exist (not recommended).
 STACK_SKIP_BINARY_VERSION_CHECK="${STACK_SKIP_BINARY_VERSION_CHECK:-0}"
 
-# Download polkadot / polkadot-omni-node / eth-rpc into a gitignored folder and prepend it on PATH
+# Download polkadot / polkadot-omni-node into a gitignored folder and prepend it on PATH
 # so mismatched global installs (e.g. older ~/.cargo/bin) do not break Zombienet.
 STACK_LOCAL_BIN_DIR="${STACK_LOCAL_BIN_DIR:-$ROOT_DIR/bin}"
 STACK_SDK_RELEASE_TAG="${STACK_SDK_RELEASE_TAG:-polkadot-stable2512-3}"
@@ -83,7 +77,7 @@ install_hint() {
         zombienet)
             echo "Install with: npm install -g @zombienet/cli"
             ;;
-        polkadot|polkadot-omni-node|eth-rpc)
+        polkadot|polkadot-omni-node)
             echo "Run ./scripts/download-sdk-binaries.sh to fetch stable2512-3 assets into ./bin/, or see docs/INSTALL.md."
             ;;
         curl)
@@ -130,7 +124,6 @@ stack_sdk_expected_semver() {
         polkadot) printf '%s\n' "$STACK_EXPECTED_POLKADOT_SEMVER" ;;
         polkadot-prepare-worker | polkadot-execute-worker) printf '%s\n' "$STACK_EXPECTED_POLKADOT_SEMVER" ;;
         polkadot-omni-node) printf '%s\n' "$STACK_EXPECTED_OMNI_NODE_SEMVER" ;;
-        eth-rpc) printf '%s\n' "$STACK_EXPECTED_ETH_RPC_SEMVER" ;;
         *)
             log_error "Internal error: unknown SDK binary: $1"
             exit 1
@@ -195,7 +188,7 @@ _ensure_one_sdk_binary() {
 }
 
 # Ensures listed SDK binaries exist under STACK_LOCAL_BIN_DIR and prepends that directory on PATH.
-# Names: polkadot | polkadot-prepare-worker | polkadot-execute-worker | polkadot-omni-node | eth-rpc
+# Names: polkadot | polkadot-prepare-worker | polkadot-execute-worker | polkadot-omni-node
 # Relay polkadot requires the two worker binaries beside it on PATH (same release).
 ensure_local_sdk_binaries() {
     [[ "${STACK_DOWNLOAD_SDK_BINARIES:-1}" == "1" ]] || return 0
@@ -280,10 +273,9 @@ validate_zombienet_toolchain() {
 }
 
 validate_full_external_toolchain() {
-    ensure_local_sdk_binaries polkadot polkadot-prepare-worker polkadot-execute-worker polkadot-omni-node eth-rpc
+    ensure_local_sdk_binaries polkadot polkadot-prepare-worker polkadot-execute-worker polkadot-omni-node
     validate_chain_spec_builder_version
     validate_zombienet_node_binaries
-    require_cmd_semver_exact eth-rpc "$STACK_EXPECTED_ETH_RPC_SEMVER" "eth-rpc (pallet-revive-eth-rpc)"
 }
 
 validate_solo_dev_toolchain() {
@@ -356,7 +348,6 @@ validate_zombienet_ports() {
 validate_full_stack_ports() {
     require_distinct_ports \
         "Substrate RPC" "$STACK_SUBSTRATE_RPC_PORT" \
-        "Ethereum RPC" "$STACK_ETH_RPC_PORT" \
         "Frontend" "$STACK_FRONTEND_PORT" \
         "Relay Alice RPC" "$STACK_RELAY_ALICE_RPC_PORT" \
         "Relay Alice P2P" "$STACK_RELAY_ALICE_P2P_PORT" \
@@ -369,7 +360,6 @@ validate_full_stack_ports() {
 
     require_ports_free \
         "$STACK_SUBSTRATE_RPC_PORT" \
-        "$STACK_ETH_RPC_PORT" \
         "$STACK_FRONTEND_PORT" \
         "$STACK_RELAY_ALICE_RPC_PORT" \
         "$STACK_RELAY_ALICE_P2P_PORT" \
@@ -569,52 +559,6 @@ wait_for_substrate_rpc() {
     return 1
 }
 
-eth_rpc_ready() {
-    curl -s \
-        -H "Content-Type: application/json" \
-        -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
-        "$ETH_RPC_HTTP" >/dev/null 2>&1
-}
-
-eth_rpc_block_producing() {
-    curl -s \
-        -H "Content-Type: application/json" \
-        -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
-        "$ETH_RPC_HTTP" | grep -Eq '"result":"0x[1-9a-fA-F][0-9a-fA-F]*"'
-}
-
-wait_for_eth_rpc() {
-    local eth_rpc_log
-    if [ -n "$NODE_DIR" ]; then
-        eth_rpc_log="$NODE_DIR/eth-rpc.log"
-    else
-        eth_rpc_log="$ZOMBIE_DIR/eth-rpc.log"
-    fi
-
-    log_info "Waiting for Ethereum RPC..."
-    for _ in $(seq 1 120); do
-        if eth_rpc_ready && { [ -n "$NODE_PID" ] || eth_rpc_block_producing; }; then
-            log_info "Ethereum RPC ready at $ETH_RPC_HTTP"
-            return 0
-        fi
-        if [ -n "$ETH_RPC_PID" ] && ! kill -0 "$ETH_RPC_PID" 2>/dev/null; then
-            log_error "eth-rpc stopped during startup."
-            if [ -f "$eth_rpc_log" ]; then
-                log_info "Recent log output:"
-                tail -n 100 "$eth_rpc_log" || true
-            fi
-            return 1
-        fi
-        sleep 1
-    done
-
-    log_error "Ethereum RPC did not become ready in time."
-    if [ -f "$eth_rpc_log" ]; then
-        log_info "Recent log output:"
-        tail -n 100 "$eth_rpc_log" || true
-    fi
-    return 1
-}
 
 write_zombienet_config() {
     local config_path="$1"
@@ -672,19 +616,31 @@ fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
 update_papi_descriptors() {
     require_command node
 
-    local papi_config
-    papi_config="$(mktemp "$ROOT_DIR/web/papi.local.XXXXXX.json")"
+    # Both BSD (macOS) and GNU `mktemp` require the `X`s to be at the
+    # END of the template — an extension after them is treated as a
+    # literal and the Xs are never replaced. That left behind
+    # `papi.local.XXXXXX.json` on aborted runs, blocking the next call.
+    # Create without extension, then rename.
+    local papi_config_base papi_config
+    papi_config_base="$(mktemp "$ROOT_DIR/web/papi.local.XXXXXX")"
+    papi_config="${papi_config_base}.json"
+    mv "$papi_config_base" "$papi_config"
+    # Make sure the temp is removed even if the user Ctrl-C's during
+    # `papi update` / `papi` — otherwise future invocations fail the
+    # same way.
+    trap 'rm -f "$papi_config"' EXIT INT TERM
+
     write_papi_config "$papi_config"
 
     npm run update-types -- --config "$papi_config"
     npm run codegen -- --config "$papi_config"
 
     rm -f "$papi_config"
+    trap - EXIT INT TERM
 }
 
 export_frontend_runtime_env() {
     export VITE_LOCAL_WS_URL="$SUBSTRATE_RPC_WS"
-    export VITE_LOCAL_ETH_RPC_URL="$ETH_RPC_HTTP"
 }
 
 start_zombienet_background() {
@@ -770,32 +726,6 @@ run_zombienet_foreground() {
     zombienet -p native -f -l text -d "$ZOMBIE_DIR" spawn zombienet.toml &
     ZOMBIE_PID=$!
     wait "$ZOMBIE_PID"
-}
-
-start_eth_rpc_background() {
-    ensure_local_sdk_binaries eth-rpc
-    require_cmd_semver_exact eth-rpc "$STACK_EXPECTED_ETH_RPC_SEMVER" "eth-rpc (pallet-revive-eth-rpc)"
-    require_port_free "$STACK_ETH_RPC_PORT"
-
-    local eth_rpc_log
-    local eth_rpc_dir
-    if [ -n "$NODE_DIR" ]; then
-        eth_rpc_dir="$NODE_DIR/eth-rpc"
-        eth_rpc_log="$NODE_DIR/eth-rpc.log"
-    else
-        eth_rpc_dir="$ZOMBIE_DIR/eth-rpc"
-        eth_rpc_log="$ZOMBIE_DIR/eth-rpc.log"
-    fi
-
-    eth-rpc \
-        --node-rpc-url "$SUBSTRATE_RPC_WS" \
-        --rpc-port "$STACK_ETH_RPC_PORT" \
-        --no-prometheus \
-        --rpc-cors all \
-        -d "$eth_rpc_dir" >"$eth_rpc_log" 2>&1 &
-    ETH_RPC_PID=$!
-
-    log_info "eth-rpc log: $eth_rpc_log"
 }
 
 cleanup_local_node() {

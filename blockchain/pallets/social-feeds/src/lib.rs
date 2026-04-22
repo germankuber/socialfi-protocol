@@ -35,6 +35,28 @@ pub trait PostProvider<AccountId, PostId> {
 	fn exists(post_id: &PostId) -> bool;
 }
 
+/// Runtime-supplied helpers used only by the benchmark suite. The
+/// benchmarks need cheap setup primitives for prerequisites managed by
+/// *other* pallets (profile registration, app registration) so those
+/// costs don't leak into the weights of the extrinsics we are actually
+/// measuring. The unit impl panics on purpose — a runtime with feeds
+/// benchmarks must wire a real helper.
+#[cfg(feature = "runtime-benchmarks")]
+pub trait BenchmarkHelper<AccountId, AppId> {
+	fn register_profile(who: &AccountId);
+	fn register_app(owner: &AccountId) -> AppId;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<AccountId, AppId> BenchmarkHelper<AccountId, AppId> for () {
+	fn register_profile(_who: &AccountId) {
+		unimplemented!("wire a concrete BenchmarkHelper in the runtime");
+	}
+	fn register_app(_owner: &AccountId) -> AppId {
+		unimplemented!("wire a concrete BenchmarkHelper in the runtime");
+	}
+}
+
 /// AppCrypto module for the key-service's offchain signing key. The
 /// collator inserts an sr25519 key with `KeyTypeId(*b"p2dc")` into its
 /// local keystore (via `author_insertKey` or a dev genesis shortcut);
@@ -73,7 +95,7 @@ pub mod pallet {
 		deps::{
 			frame_support::pallet_prelude::{TransactionSource, ValidTransaction},
 			sp_runtime::{
-				traits::Saturating,
+				traits::{SaturatedConversion, Saturating},
 				transaction_validity::{InvalidTransaction, TransactionValidity},
 			},
 		},
@@ -85,7 +107,8 @@ pub mod pallet {
 	};
 	use pallet_social_app_registry::AppProvider;
 	use pallet_social_profiles::ProfileProvider;
-	use scale_info::TypeInfo;
+	use social_notifications_primitives::StatementSubmitter;
+	use scale_info::{prelude::vec::Vec, TypeInfo};
 
 	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -103,7 +126,20 @@ pub mod pallet {
 	/// Signed payload carried by `deliver_unlock_unsigned`. The collator
 	/// OCW fills this in, signs it with its `AuthorityId`, and the on-chain
 	/// `validate_unsigned` verifies the signature + freshness window.
-	#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo)]
+	///
+	/// `Clone`, `PartialEq`, `Eq` use the `*NoBound` derives so the impls
+	/// apply without forcing `T: Clone + PartialEq + Eq`. `Debug` stays
+	/// hand-written on purpose: `DebugNoBound` prints every field, and
+	/// `wrapped_key` + `viewer` should not land in logs.
+	#[derive(
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		TypeInfo,
+		CloneNoBound,
+		PartialEqNoBound,
+		EqNoBound,
+	)]
 	#[scale_info(skip_type_params(T))]
 	pub struct DeliverUnlockPayload<T: Config> {
 		pub public: T::Public,
@@ -113,18 +149,6 @@ pub mod pallet {
 		pub wrapped_key: BoundedVec<u8, ConstU32<{ SEALED_KEY_LEN }>>,
 	}
 
-	// Manual trait impls — `derive` requires `T: Clone`, too strict.
-	impl<T: Config> Clone for DeliverUnlockPayload<T> {
-		fn clone(&self) -> Self {
-			Self {
-				public: self.public.clone(),
-				block_number: self.block_number,
-				post_id: self.post_id,
-				viewer: self.viewer.clone(),
-				wrapped_key: self.wrapped_key.clone(),
-			}
-		}
-	}
 	impl<T: Config> core::fmt::Debug for DeliverUnlockPayload<T> {
 		fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 			f.debug_struct("DeliverUnlockPayload")
@@ -132,16 +156,6 @@ pub mod pallet {
 				.finish_non_exhaustive()
 		}
 	}
-	impl<T: Config> PartialEq for DeliverUnlockPayload<T> {
-		fn eq(&self, other: &Self) -> bool {
-			self.block_number == other.block_number
-				&& self.post_id == other.post_id
-				&& self.viewer == other.viewer
-				&& self.wrapped_key == other.wrapped_key
-				&& self.public == other.public
-		}
-	}
-	impl<T: Config> Eq for DeliverUnlockPayload<T> {}
 
 	impl<T: Config> SignedPayload<T> for DeliverUnlockPayload<T>
 	where
@@ -162,6 +176,7 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ Copy
 			+ Default
+			+ Ord
 			+ frame::traits::One
 			+ frame::traits::CheckedAdd
 			+ core::ops::AddAssign
@@ -229,6 +244,21 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Submitter for real-time Statement Store notifications. The
+		/// runtime wires this to `pallet-statement`; mocks default to
+		/// `()` which discards every submission.
+		type NotificationSubmitter: social_notifications_primitives::StatementSubmitter<
+			Self::AccountId,
+		>;
+
+		/// Benchmark-only helpers. The runtime provides an impl that
+		/// short-circuits `ProfileProvider` / `AppProvider` guard checks
+		/// — benchmarks cannot call `pallet-social-profiles::create_profile`
+		/// directly because doing so would bake the cost of *that*
+		/// pallet into every feeds benchmark.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::BenchmarkHelper<Self::AccountId, Self::AppId>;
 	}
 
 	/// Auto-incrementing Post ID counter.
@@ -257,6 +287,32 @@ pub mod pallet {
 		T::PostId,
 		BoundedVec<T::PostId, T::MaxRepliesPerPost>,
 		ValueQuery,
+	>;
+
+	/// Timeline index: (author, (block_number, post_id)) -> ().
+	///
+	/// Secondary index that complements `PostsByAuthor` (which stores a
+	/// flat `BoundedVec` and forces callers to download everything to
+	/// paginate). Using `Twox64Concat` on the inner `(block, post_id)`
+	/// tuple is safe because the block-number/post-id are not user
+	/// supplied and the key space is sparse per author — no second
+	/// pre-image concerns, and the concat variant keeps the raw key
+	/// suffix available so iteration yields the decoded tuple.
+	///
+	/// Callers paginate via `Pallet::posts_timeline(author, from, to, limit)`
+	/// which returns entries newest-first by collecting and sorting the
+	/// keys for that author. With `MaxPostsPerAuthor` bounded, the cost is
+	/// bounded too; the win is that off-chain clients can ask for just
+	/// the slice they need without re-fetching the full vec.
+	#[pallet::storage]
+	pub type PostsTimeline<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::AccountId,
+		Twox64Concat,
+		(BlockNumberFor<T>, T::PostId),
+		(),
+		OptionQuery,
 	>;
 
 	/// Per-viewer unlock records. Keyed by `(post_id, viewer)` — the
@@ -325,9 +381,22 @@ pub mod pallet {
 			moderator: T::AccountId,
 		},
 		/// The admin configured (or rotated) the key service.
-		KeyServiceUpdated { version: u32 },
+		///
+		/// Observers can diff `previous_account` vs `account` to detect
+		/// rotations, and bind `version` to the X25519 public key so
+		/// clients know which pk to use for new capsules.
+		KeyServiceUpdated {
+			version: u32,
+			account: T::AccountId,
+			previous_account: Option<T::AccountId>,
+		},
 		/// The collator OCW delivered a wrapped key for a pending unlock.
 		UnlockKeyDelivered { post_id: T::PostId, viewer: T::AccountId },
+		/// The author called `unlock_post` on their own post. No state
+		/// change, no fee — they already have implicit access — but we
+		/// emit so clients get a deterministic acknowledgement instead
+		/// of a silent `Ok`.
+		AuthorSelfUnlockAcknowledged { post_id: T::PostId, author: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -419,7 +488,7 @@ pub mod pallet {
 		/// `visibility`: Public, Obfuscated, or Private.
 		/// `unlock_fee`: fee to unlock content (only for Obfuscated/Private, ignored for Public).
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::create_post())]
+		#[pallet::weight(T::WeightInfo::create_post(T::MaxPostsPerAuthor::get()))]
 		pub fn create_post(
 			origin: OriginFor<T>,
 			content: BoundedVec<u8, T::MaxContentLen>,
@@ -487,6 +556,7 @@ pub mod pallet {
 			NextPostId::<T>::put(next_id);
 			Posts::<T>::insert(post_id, post);
 			PostsByAuthor::<T>::insert(&who, author_posts);
+			PostsTimeline::<T>::insert(&who, (block_number, post_id), ());
 
 			T::Currency::transfer(
 				&who,
@@ -511,7 +581,7 @@ pub mod pallet {
 		///
 		/// Replies are always public with visibility Public.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::create_reply())]
+		#[pallet::weight(T::WeightInfo::create_reply(T::MaxPostsPerAuthor::get()))]
 		pub fn create_reply(
 			origin: OriginFor<T>,
 			parent_post_id: T::PostId,
@@ -553,6 +623,7 @@ pub mod pallet {
 			NextPostId::<T>::put(next_id);
 			Posts::<T>::insert(post_id, reply);
 			PostsByAuthor::<T>::insert(&who, author_posts);
+			PostsTimeline::<T>::insert(&who, (block_number, post_id), ());
 			Replies::<T>::insert(parent_post_id, parent_replies);
 
 			if parent.reply_fee > Zero::zero() {
@@ -572,6 +643,22 @@ pub mod pallet {
 				ExistenceRequirement::KeepAlive,
 			)
 			.map_err(|_| Error::<T>::InsufficientBalance)?;
+
+			// Push a Statement Store notification so `parent.author` gets
+			// a live "someone replied to your post" ping without anyone
+			// polling. Self-replies are skipped — no point notifying
+			// yourself — and the statement carries the new reply id as
+			// the entity so the UI can jump straight to it.
+			if who != parent.author {
+				let notif = social_notifications_primitives::build_statement(
+					who.clone(),
+					&social_notifications_primitives::Recipient::Direct(parent.author.clone()),
+					social_notifications_primitives::NotificationKind::Reply,
+					&post_id,
+					block_number.saturated_into::<u64>(),
+				);
+				T::NotificationSubmitter::submit_statement(who.clone(), notif);
+			}
 
 			Self::deposit_event(Event::ReplyCreated {
 				post_id,
@@ -613,6 +700,10 @@ pub mod pallet {
 			ensure!(post.visibility != PostVisibility::Public, Error::<T>::PostIsPublic);
 
 			if who == post.author {
+				Self::deposit_event(Event::AuthorSelfUnlockAcknowledged {
+					post_id,
+					author: who,
+				});
 				return Ok(());
 			}
 
@@ -654,7 +745,7 @@ pub mod pallet {
 		/// Admin entry point to publish / rotate the key service (the
 		/// custodial collator's X25519 pk + signer account).
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::unlock_post())]
+		#[pallet::weight(T::WeightInfo::set_key_service())]
 		pub fn set_key_service(
 			origin: OriginFor<T>,
 			account: T::AccountId,
@@ -662,10 +753,19 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(encryption_pk != [0u8; X25519_PK_LEN as usize], Error::<T>::InvalidBuyerPk);
-			let next_version =
-				KeyService::<T>::get().map(|ks| ks.version.saturating_add(1)).unwrap_or(1);
-			KeyService::<T>::put(KeyServiceInfo { account, encryption_pk, version: next_version });
-			Self::deposit_event(Event::KeyServiceUpdated { version: next_version });
+			let existing = KeyService::<T>::get();
+			let previous_account = existing.as_ref().map(|ks| ks.account.clone());
+			let next_version = existing.map(|ks| ks.version.saturating_add(1)).unwrap_or(1);
+			KeyService::<T>::put(KeyServiceInfo {
+				account: account.clone(),
+				encryption_pk,
+				version: next_version,
+			});
+			Self::deposit_event(Event::KeyServiceUpdated {
+				version: next_version,
+				account,
+				previous_account,
+			});
 			Ok(())
 		}
 
@@ -673,7 +773,7 @@ pub mod pallet {
 		/// re-sealed content key to the viewer. See the `validate_unsigned`
 		/// block for the pool-level validation rules.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::unlock_post())]
+		#[pallet::weight(T::WeightInfo::deliver_unlock_unsigned())]
 		pub fn deliver_unlock_unsigned(
 			origin: OriginFor<T>,
 			payload: DeliverUnlockPayload<T>,
@@ -723,7 +823,7 @@ pub mod pallet {
 		/// can trust the guard without any re-lookup into the app
 		/// registry.
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::unlock_post())]
+		#[pallet::weight(T::WeightInfo::redact_post())]
 		pub fn redact_post(
 			origin: OriginFor<T>,
 			post_id: T::PostId,
@@ -751,6 +851,33 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Paginate an author's timeline newest-first.
+		///
+		/// `from` / `to` are inclusive block-number bounds; `None` means
+		/// unbounded in that direction. `limit` caps the returned slice.
+		/// Intended for runtime APIs and off-chain indexers — the plain
+		/// `PostsByAuthor` vec forces clients to download every post just
+		/// to render the latest N, which scales poorly.
+		pub fn posts_timeline(
+			author: &T::AccountId,
+			from: Option<BlockNumberFor<T>>,
+			to: Option<BlockNumberFor<T>>,
+			limit: u32,
+		) -> Vec<(BlockNumberFor<T>, T::PostId)> {
+			let mut keys: Vec<(BlockNumberFor<T>, T::PostId)> =
+				PostsTimeline::<T>::iter_key_prefix(author)
+					.filter(|(block, _)| {
+						from.map_or(true, |lo| *block >= lo)
+							&& to.map_or(true, |hi| *block <= hi)
+					})
+					.collect();
+			// Newest first by (block, post_id). post_id tiebreaks in the
+			// rare case two posts share a block.
+			keys.sort_unstable_by(|a, b| b.cmp(a));
+			keys.truncate(limit as usize);
+			keys
+		}
+
 		fn resolve_fee_recipient(app_id: &Option<T::AppId>) -> Result<T::AccountId, DispatchError> {
 			match app_id {
 				Some(id) => {
@@ -831,6 +958,56 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			crate::offchain::run::<T>(block_number);
+		}
+	}
+
+	/// View functions — typed read queries exposed via the
+	/// `RuntimeViewFunction` runtime API. Off-chain clients (frontend,
+	/// CLI, indexers) invoke them directly over RPC without submitting
+	/// an extrinsic: no fee, no block, no signature required.
+	///
+	/// These are the public read surface of the pallet. Storage reads
+	/// elsewhere stay internal; anything a client needs to paginate,
+	/// hydrate or look up goes through here so the API is stable while
+	/// the storage layout can evolve.
+	#[pallet::view_functions]
+	impl<T: Config> Pallet<T> {
+		/// Fetch a single post with all its metadata. Returns `None` when
+		/// the post does not exist or was never created.
+		pub fn post_by_id(post_id: T::PostId) -> Option<PostInfo<T>> {
+			Posts::<T>::get(post_id)
+		}
+
+		/// How many posts the author has ever created (including replies).
+		/// Cheap — reads the `PostsByAuthor` length without hydrating the
+		/// actual post records. View function args must implement
+		/// `Decode` so the SCALE runtime API can dispatch them, which is
+		/// why this takes `AccountId` by value rather than by reference.
+		pub fn author_post_count(author: T::AccountId) -> u32 {
+			PostsByAuthor::<T>::get(&author).len() as u32
+		}
+
+		/// Paginated author feed, newest first, with posts hydrated in a
+		/// single round-trip. The off-chain client picks a block window
+		/// (`from`, `to`) and a page size (`limit`) and receives the full
+		/// `PostInfo` alongside each id — no second call needed.
+		///
+		/// Unknown authors return an empty vec. Holes (post_id present in
+		/// the timeline index but missing from `Posts`) are skipped
+		/// silently; that state is not reachable in this pallet today
+		/// but the filter keeps the view robust to future cleanup paths.
+		pub fn feed_by_author(
+			author: T::AccountId,
+			from: Option<BlockNumberFor<T>>,
+			to: Option<BlockNumberFor<T>>,
+			limit: u32,
+		) -> Vec<(T::PostId, PostInfo<T>)> {
+			Self::posts_timeline(&author, from, to, limit)
+				.into_iter()
+				.filter_map(|(_, post_id)| {
+					Posts::<T>::get(post_id).map(|info| (post_id, info))
+				})
+				.collect()
 		}
 	}
 }

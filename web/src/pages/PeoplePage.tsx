@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useSocialApi } from "../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../hooks/social/useSelectedAccount";
 import { useIpfs } from "../hooks/social/useIpfs";
-import { fetchIdentity } from "../hooks/social/useIdentity";
-import { useChainStore } from "../store/chainStore";
-import VerifiedBadge from "../components/social/VerifiedBadge";
+import { fetchPeopleIdentity } from "../hooks/social/useIdentity";
+import VerificationBadge from "../components/social/VerificationBadge";
 import { Link } from "react-router-dom";
 
 interface UserEntry {
@@ -14,14 +13,14 @@ interface UserEntry {
 	avatar: string;
 	followFee: bigint;
 	createdAt: number;
-	verified: boolean;
+	/** "verified" | "pending" | "none" */
+	verificationStatus: "verified" | "pending" | "none";
 	followerCount: number;
 }
 
 export default function PeoplePage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
-	const wsUrl = useChainStore((s) => s.wsUrl);
 	const { fetchProfileMetadata, ipfsUrl } = useIpfs();
 	const [users, setUsers] = useState<UserEntry[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -44,25 +43,30 @@ export default function PeoplePage() {
 				avatar: "",
 				followFee: e.value.follow_fee,
 				createdAt: Number(e.value.created_at),
-				verified: false,
+				verificationStatus: "none",
 				followerCount: 0,
 			}));
 
 			setUsers(userList);
 
-			// Resolve metadata + identity + follower count in background
+			// Resolve metadata + People identity + follower count in background
 			for (const user of userList) {
 				Promise.all([
 					fetchProfileMetadata(entries.find((e) => e.keyArgs[0].toString() === user.address)!.value.metadata.asText()),
-					fetchIdentity(wsUrl, user.address),
+					fetchPeopleIdentity(user.address),
 					api.query.SocialGraph.FollowerCount.getValue(user.address),
 				]).then(([meta, identity, fc]) => {
+					const status: "verified" | "pending" | "none" = identity?.verified
+						? "verified"
+						: identity?.hasIdentity
+							? "pending"
+							: "none";
 					setUsers((prev) => prev.map((u) => u.address === user.address ? {
 						...u,
 						name: (meta as { name?: string })?.name || "",
 						bio: (meta as { bio?: string })?.bio || "",
 						avatar: (meta as { avatar?: string })?.avatar ? ipfsUrl((meta as { avatar?: string }).avatar!) : "",
-						verified: identity?.verified ?? false,
+						verificationStatus: status,
 						followerCount: Number(fc),
 					} : u));
 				});
@@ -115,12 +119,7 @@ export default function PeoplePage() {
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-1.5 flex-wrap">
 										<span className="font-semibold truncate">{user.name || user.address.slice(0, 10) + "..."}</span>
-										{user.verified && <VerifiedBadge size="sm" />}
-										{user.verified ? (
-											<span className="inline-flex items-center rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success shrink-0">Verified</span>
-										) : (
-											<span className="inline-flex items-center rounded-full bg-surface-700/30 px-1.5 py-0.5 text-[9px] font-semibold text-surface-400 shrink-0">Unverified</span>
-										)}
+										<VerificationBadge status={user.verificationStatus} />
 										{account?.address === user.address && (
 											<span className="badge-info text-[9px]">You</span>
 										)}

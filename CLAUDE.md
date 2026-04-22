@@ -4,79 +4,71 @@ This file provides context for AI agents working with this repository.
 
 ## Project Purpose
 
-A developer starter template for the **Polkadot Blockchain Academy** demonstrating the full Polkadot technology stack through a **Proof of Existence** system. The same concept — claim and revoke ownership of file hashes on-chain — is implemented as a Substrate pallet, a Solidity EVM contract, a Solidity PVM contract, a React frontend, and a Rust CLI.
-
-Students do not need to use every part. Components are intentionally separated so teams can keep only the slices they want.
+A SocialFi reference stack on Polkadot: profiles, posts with public/obfuscated/private visibility, follows, app registry, delegated managers, sponsored fees, and real-time notifications via the Substrate Statement Store.
 
 ## Component Map
 
 | Component | Path | Tech |
 |---|---|---|
-| FRAME Pallet | `blockchain/pallets/template/` | Rust, FRAME, polkadot-sdk |
-| Parachain Runtime | `blockchain/runtime/` | Rust, Cumulus, pallet-revive |
-| EVM Contract | `contracts/evm/` | Solidity 0.8.28, Hardhat, solc |
-| PVM Contract | `contracts/pvm/` | Solidity 0.8.28, Hardhat, resolc (PolkaVM) |
-| Frontend | `web/` | React 18, Vite, TypeScript, Tailwind, PAPI, viem |
-| CLI | `cli/` | Rust, subxt, alloy, clap |
-| Scripts | `scripts/` | Bash (start, deploy, test helpers) |
+| FRAME Pallets | `blockchain/pallets/` | Rust, FRAME, polkadot-sdk |
+| Notifications primitives | `blockchain/primitives/social-notifications/` | Rust, sp-statement-store |
+| Parachain Runtime | `blockchain/runtime/` | Rust, Cumulus |
+| Frontend | `web/` | React 18, Vite, TypeScript, Tailwind, PAPI, @polkadot-apps/statement-store |
+| Indexer | `indexer/` | TypeScript, Express, lowdb, PAPI |
+| CLI | `cli/` | Rust, subxt, clap |
+| Scripts | `scripts/` | Bash (start, test helpers) |
+
+## SocialFi pallets (`blockchain/pallets/`)
+
+- `social-app-registry` (idx 51) — registry of "apps" with per-app bond + custom `AppModerator` origin.
+- `social-profiles` (idx 52) — one profile per account, holds metadata CID + follow fee.
+- `social-graph` (idx 53) — follow / unfollow edges, per-target fee.
+- `social-feeds` (idx 54) — posts, replies, encrypted posts (capsules), moderation via `EnsureAppModerator`.
+- `social-managers` (idx 55) — scoped delegation, synthetic origin + anti-escalation filter.
+- `sponsorship` (idx 56) + `ChargeSponsored` TransactionExtension — pay fees from a sponsor pot.
+- `pallet-statement` (idx 40) — Parity's Statement Store, drives real-time notification gossip.
 
 ## How the Layers Connect
 
-- The **pallet** is wired into the runtime at `pallet_index(50)` as `TemplatePallet`.
-- **pallet-revive** (index 90) enables both EVM and PVM smart contract execution with Ethereum RPC compatibility.
-- The same `ProofOfExistence.sol` is compiled via **solc** (EVM bytecode) and **resolc** (PolkaVM/RISC-V bytecode).
-- The **frontend** talks to the pallet via **PAPI** over WebSocket and to contracts via **viem** through the **eth-rpc** proxy.
-- The **CLI** uses **subxt** for Substrate interactions and **alloy** for Ethereum contract calls.
-- Contract addresses are stored in `deployments.json` (root) and auto-synced to `web/src/config/deployments.ts` by deploy scripts.
+- The **frontend** talks to the chain via **PAPI** over WebSocket (`ws://127.0.0.1:9944` in dev). Notifications use the **`@polkadot-apps/statement-store`** NPM client against the same endpoint.
+- The **CLI** uses **subxt** for chain info and the Statement Store JSON-RPC for statement submit/dump.
+- The **indexer** (optional, localhost-only) subscribes via PAPI and denormalises events into a JSON file for the frontend to query.
 - The local dev chain ID is `420420421`. The Polkadot Hub TestNet chain ID is `420420417`.
+- Notifications flow: pallets emit via `social-notifications-primitives::build_statement` → `NotificationStatementSubmitter` adapter in the runtime → `pallet-statement::submit_statement` → `pallet-statement::offchain_worker` attaches `Proof::OnChain` → statement gossip → frontend subscription.
 
 ## Key Files
 
-- `blockchain/pallets/template/src/lib.rs` — Pallet logic (create_claim, revoke_claim)
-- `blockchain/runtime/src/lib.rs` — Runtime definition, pallet wiring, runtime APIs
-- `blockchain/runtime/src/configs/mod.rs` — All pallet configuration (System, Balances, Revive, etc.)
-- `blockchain/runtime/src/configs/xcm_config.rs` — XCM cross-chain messaging config
-- `contracts/evm/contracts/ProofOfExistence.sol` — Solidity contract (same source for PVM)
-- `web/src/pages/PalletPage.tsx` — Pallet PoE frontend page
-- `web/src/components/ContractProofOfExistencePage.tsx` — Shared EVM/PVM contract page
-- `web/src/config/evm.ts` — Contract ABI, dev accounts, viem client setup
-- `cli/src/commands/contract.rs` — CLI contract interaction commands
-- `cli/src/commands/pallet.rs` — CLI pallet interaction commands
-- `cli/src/commands/prove.rs` — All-in-one prove command (hash + claim + optional upload)
-- `cli/src/commands/chain.rs` — CLI chain info, block subscription, Statement Store RPC
-- `scripts/common.sh` — Shared script utilities (port config, env setup)
-- `docs/INSTALL.md`, `docs/TOOLS.md`, `docs/DEPLOYMENT.md` — Setup, tooling, and deployment guides
+- `blockchain/runtime/src/lib.rs` — Runtime definition, `construct_runtime!`, runtime APIs (incl. `ValidateStatement`).
+- `blockchain/runtime/src/configs/mod.rs` — All pallet configuration + `NotificationStatementSubmitter` adapter.
+- `blockchain/runtime/src/configs/xcm_config.rs` — XCM cross-chain messaging config.
+- `blockchain/primitives/social-notifications/src/lib.rs` — Shared notification helpers (topics, payload).
+- `blockchain/pallets/social-feeds/src/lib.rs` — Posts + encrypted-post delivery + moderation.
+- `blockchain/pallets/social-feeds/src/offchain.rs` — OCW that opens encrypted capsules.
+- `cli/src/commands/chain.rs` — CLI chain info + Statement Store RPC.
+- `web/src/hooks/social/useNotifications.ts` — Real-time notifications hook.
+- `web/src/components/social/NotificationsBell.tsx` — Header bell with unread badge.
+- `scripts/common.sh` — Shared script utilities.
+- `docs/ARCHITECTURE_OVERVIEW.md` — Whole-stack diagram + walkthrough.
+- `docs/NOTIFICATIONS_{ARCHITECTURE,FLOW,TOPICS}.md` — Notifications docs.
 
 ## Build Commands
 
 ```bash
-# Rust (runtime + pallet + CLI)
+# Rust (runtime + pallets + CLI)
 cargo build --release
 
-# EVM contracts
-cd contracts/evm && npm ci && npx hardhat compile
-
-# PVM contracts
-cd contracts/pvm && npm ci && npx hardhat compile
-
 # Frontend
-cd web && npm ci && npm run build
+cd web && pnpm install && pnpm build
 ```
 
 ## Test Commands
 
 ```bash
-# Pallet unit tests
-cargo test -p pallet-template
+# All Rust tests
+cargo test --workspace
 
-# All Rust tests (runtime + pallet + CLI)
-SKIP_PALLET_REVIVE_FIXTURES=1 cargo test --workspace --features runtime-benchmarks
-
-# EVM contract tests
-cd contracts/evm && npx hardhat test
-
-# PVM contract tests
-cd contracts/pvm && npx hardhat test
+# Frontend type-check
+cd web && pnpm tsc --noEmit
 ```
 
 ## Format & Lint
@@ -88,45 +80,39 @@ cargo +nightly fmt --check      # check only
 cargo clippy --workspace        # lint
 
 # Frontend
-cd web && npm run fmt           # format
-cd web && npm run fmt:check     # check only
-cd web && npm run lint          # eslint
-
-# Contracts
-cd contracts/evm && npm run fmt
-cd contracts/pvm && npm run fmt
+cd web && pnpm fmt              # format
+cd web && pnpm fmt:check        # check only
+cd web && pnpm lint             # eslint
 ```
 
 ## Docker
 
 ```bash
-docker compose up -d    # builds runtime in Docker, starts node + eth-rpc
+docker compose up -d    # builds runtime in Docker, starts node
 docker compose down -v  # tear down
 ```
 
-- `docker/Dockerfile.node` — multi-stage: compiles runtime WASM, generates chain spec, packages into polkadot-omni-node image
-- `docker/Dockerfile.eth-rpc` — downloads pre-built eth-rpc binary from polkadot-sdk GH release (no official Docker image exists)
-- `docker-compose.yml` (root) — full stack: node (port 9944) + eth-rpc (port 8545)
-- `blockchain/Dockerfile` — lightweight deployment image (requires pre-generated chain_spec.json)
-- `.dockerignore` — excludes web/, contracts/, target/, node_modules/ from build context
+- `docker/Dockerfile.node` — multi-stage: compiles runtime WASM, generates chain spec, packages into polkadot-omni-node image.
+- `docker-compose.yml` (root) — single-service stack: node on port 9944.
+- `blockchain/Dockerfile` — lightweight deployment image (requires pre-generated chain_spec.json).
 
 ## Running Locally
 
 ```bash
-# Full stack: relay chain + collator + Statement Store + contracts + frontend
+# Full stack: relay chain + collator + frontend
 ./scripts/start-all.sh
 
-# Lightweight solo-node dev loop (no Statement Store)
+# Lightweight solo-node dev loop
 ./scripts/start-dev.sh
 
-# Local node + eth-rpc (no relay chain)
+# Local zombienet only (no frontend)
 ./scripts/start-local.sh
 
 # Frontend only (for an already-running chain)
 ./scripts/start-frontend.sh
 
-# Deploy contracts to Polkadot TestNet (Paseo)
-./scripts/deploy-paseo.sh
+# Indexer only
+./scripts/start-indexer.sh
 
 # Deploy frontend
 ./scripts/deploy-frontend.sh
@@ -140,21 +126,18 @@ docker compose down -v  # tear down
 - **polkadot-sdk**: stable2512-3 (umbrella crate v2512.3.3)
 - **Rust**: stable (pinned via `rust-toolchain.toml`)
 - **Node.js**: 22.x LTS (pinned via `.nvmrc`)
-- **Solidity**: 0.8.28
-- **resolc**: 1.0.0
 
 ## Notes for AI Agents
 
-- Dev private keys in `cli/src/commands/contract.rs` and `web/src/config/evm.ts` are **well-known Substrate dev account keys** (Alice, Bob, Charlie). They are public test keys, not secrets.
-- `web/.papi/` contains checked-in PAPI descriptors so the frontend works out of the box. After modifying pallet storage or calls, regenerate with: `cd web && npx papi update && npx papi`
-- `blockchain/chain_spec.json` is in `.gitignore` — it is generated at build/start time by scripts.
-- The `Cargo.toml` patch for `pallet-revive-proc-macro` works around a compilation bug in stable2512-3.
+- Dev private keys are **well-known Substrate dev account keys** (Alice, Bob, Charlie). Public test keys, not secrets.
+- `web/.papi/` contains checked-in PAPI descriptors so the frontend works out of the box. After modifying pallet storage or calls, regenerate with: `cd web && pnpm exec papi update && pnpm exec papi`.
+- `blockchain/chain_spec.json` is in `.gitignore` — generated at build/start time by scripts.
+- The X25519 secret used by `social-feeds`'s OCW to decrypt capsules is currently a compile-time constant in `blockchain/pallets/social-feeds/src/dev_key.rs`. See `docs/ARCHITECTURE_OVERVIEW.md` "Known rough edges" for the migration plan.
 
 ## Known Gaps / Future Work
 
-- **Runtime integration tests**: `blockchain/runtime/src/tests.rs` has only 1 compile-time API assertion test. Consider adding genesis-build smoke tests and pallet-integration tests.
-- **Shell script linting**: `scripts/` has ~1180 lines of bash with no linting in CI. A workflow running `shellcheck scripts/*.sh` would catch issues.
-- **deployments.json workflow**: The checked-in stub can cause merge conflicts when multiple branches deploy. Consider documenting the intended workflow or gitignoring it.
-- **E2E tests in CI**: `scripts/test-zombienet.sh` exists for local verification but is too heavy for CI (~15-25 min, requires Zombienet + binaries). Run locally before releases.
-- **Docker eth-rpc image**: No official `parity/eth-rpc` Docker image exists. `docker/Dockerfile.eth-rpc` downloads the binary from GH releases as a workaround.
+- **Encryption key management** — X25519 secret is hardcoded; plan is keystore-backed loading (see architecture doc).
+- **Runtime integration tests**: `blockchain/runtime/src/tests.rs` has only one compile-time API assertion test.
+- **Shell script linting**: `scripts/` has no linting in CI; a workflow running `shellcheck scripts/*.sh` would catch issues.
+- **Indexer is single-node** — fine for dev, needs Postgres for production.
 - **Commit message conventions**: Consider adopting Conventional Commits for clearer changelog generation.

@@ -25,9 +25,19 @@ pub mod weights;
 mod benchmarking;
 
 /// Trait that other pallets use to query app information.
+///
+/// All methods treat `Inactive` apps as if they did not exist — downstream
+/// pallets should not be able to post, moderate, or otherwise transact
+/// against an app whose owner has deregistered it. Callers that need to
+/// inspect historical (inactive) records must read `Apps` storage directly.
 pub trait AppProvider<AccountId, AppId> {
+	/// Return the owner of an **active** app, or `None` if the app does
+	/// not exist or is inactive.
 	fn get_owner(app_id: &AppId) -> Option<AccountId>;
+	/// `true` iff the app exists **and** is active.
 	fn exists(app_id: &AppId) -> bool;
+	/// `true` iff the app is active **and** was registered with
+	/// `has_images = true`. Returns `false` for inactive or missing apps.
 	fn has_images(app_id: &AppId) -> bool;
 }
 
@@ -45,6 +55,7 @@ pub mod pallet {
 	};
 	use scale_info::prelude::boxed::Box;
 	use scale_info::TypeInfo;
+	use social_notifications_primitives::StatementSubmitter;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -92,11 +103,25 @@ pub mod pallet {
 			o.into().map(|Origin::AppModerator { app_id, moderator }| (app_id, moderator))
 		}
 
+		/// Produce a usable `Origin::AppModerator` for benchmarking.
+		///
+		/// Mirrors `pallet_collective::EnsureMember::try_successful_origin`
+		/// (`substrate/frame/collective/src/lib.rs:1400-1406`):
+		/// decode a zero-filled `AccountId` — the bytes are meaningless
+		/// but the type is well-formed — and pair it with a default
+		/// `AppId`. Benchmarks run against this synthetic origin; there
+		/// is no real storage interaction, only dispatching through
+		/// `ModerationOrigin` in downstream pallets.
 		#[cfg(feature = "runtime-benchmarks")]
 		fn try_successful_origin()
 			-> Result<<T as frame_system::Config>::RuntimeOrigin, ()>
 		{
-			Err(())
+			let moderator = T::AccountId::decode(
+				&mut frame::deps::sp_runtime::traits::TrailingZeroInput::zeroes(),
+			)
+			.map_err(|_| ())?;
+			let app_id = T::AppId::default();
+			Ok(Origin::AppModerator { app_id, moderator }.into())
 		}
 	}
 
@@ -140,6 +165,13 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Submitter for real-time Statement Store notifications. The
+		/// runtime wires this to `pallet-statement`; mocks default to
+		/// `()` which discards every submission.
+		type NotificationSubmitter: social_notifications_primitives::StatementSubmitter<
+			Self::AccountId,
+		>;
 	}
 
 	/// Auto-incrementing app ID counter.
@@ -167,10 +199,18 @@ pub mod pallet {
 		AppRegistered { app_id: T::AppId, owner: T::AccountId },
 		/// An app was deregistered (set to inactive, bond returned).
 		AppDeregistered { app_id: T::AppId, owner: T::AccountId },
-		/// An app owner dispatched a call as `Origin::AppModerator`. The
-		/// downstream call's own event carries the effect — this one
-		/// simply records the moderation fact for audit tooling.
+		/// An app owner attempted to dispatch a call as
+		/// `Origin::AppModerator`. Emitted before the inner call runs, so
+		/// the inner call may still fail — this event records the
+		/// *moderation attempt* for audit tooling, not a confirmed effect.
+		/// Pair with the downstream call's own event to distinguish
+		/// attempted from applied moderation.
 		ModeratorDispatched { app_id: T::AppId, moderator: T::AccountId },
+		/// Emitted on the registration that fills the owner's last
+		/// available slot. Signals to indexers / front-ends that any
+		/// further `register_app` from this account will fail with
+		/// `TooManyApps` until a deregister frees a slot.
+		OwnerAppLimitReached { owner: T::AccountId, cap: u32 },
 	}
 
 	#[pallet::error]
@@ -216,7 +256,7 @@ pub mod pallet {
 		/// Reserves `T::AppBond`, assigns the next available AppId, stores the
 		/// app record, and updates the owner's app list.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::register_app())]
+		#[pallet::weight(T::WeightInfo::register_app(metadata.len() as u32))]
 		pub fn register_app(
 			origin: OriginFor<T>,
 			metadata: BoundedVec<u8, T::MaxMetadataLen>,
@@ -248,9 +288,38 @@ pub mod pallet {
 
 			NextAppId::<T>::put(next_id);
 			Apps::<T>::insert(app_id, app);
+			let slots_used = owner_apps.len() as u32;
 			AppsByOwner::<T>::insert(&who, owner_apps);
 
-			Self::deposit_event(Event::AppRegistered { app_id, owner: who });
+			log::info!(
+				target: "social-app-registry",
+				"🏗️ register_app owner={:?} app_id={:?} has_images={} slots={}",
+				who, app_id, has_images, slots_used,
+			);
+
+			Self::deposit_event(Event::AppRegistered { app_id, owner: who.clone() });
+
+			// Broadcast a Statement Store notification so any client
+			// subscribed to `BROADCAST_NEW_APP_TOPIC` learns about the
+			// new app in real time — no block polling required.
+			let notif = social_notifications_primitives::build_statement(
+				who.clone(),
+				&social_notifications_primitives::Recipient::Broadcast,
+				social_notifications_primitives::NotificationKind::NewApp,
+				&app_id,
+				frame::deps::sp_runtime::traits::SaturatedConversion::saturated_into::<u64>(
+					block_number,
+				),
+			);
+			T::NotificationSubmitter::submit_statement(who.clone(), notif);
+
+			// Owner just filled the last slot — surface it for UX/indexers.
+			// Next register_app from the same account will fail with
+			// `TooManyApps` until a deregister reopens a slot.
+			let cap = T::MaxAppsPerOwner::get();
+			if slots_used == cap {
+				Self::deposit_event(Event::OwnerAppLimitReached { owner: who, cap });
+			}
 			Ok(())
 		}
 
@@ -263,21 +332,43 @@ pub mod pallet {
 		pub fn deregister_app(origin: OriginFor<T>, app_id: T::AppId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			// 1. `try_mutate` only touches `Apps`. Keep the closure pure over
+			//    that storage item — no currency / cross-pallet calls inside,
+			//    so the closure stays trivially refundable and free of lock
+			//    coupling.
 			Apps::<T>::try_mutate(app_id, |maybe_app| -> DispatchResult {
 				let app = maybe_app.as_mut().ok_or(Error::<T>::AppNotFound)?;
 				ensure!(app.owner == who, Error::<T>::NotAppOwner);
 				ensure!(app.status != AppStatus::Inactive, Error::<T>::AppAlreadyInactive);
-
 				app.status = AppStatus::Inactive;
-				T::Currency::unreserve(&who, T::AppBond::get());
-
 				Ok(())
 			})?;
 
-			// Remove from owner index so the slot is freed.
-			AppsByOwner::<T>::mutate(&who, |apps| {
-				apps.retain(|id| *id != app_id);
-			});
+			// 2. Cross-pallet effects run AFTER `Apps` is committed, each
+			//    owning its own storage slot:
+			//    a) unreserve the bond from pallet-balances,
+			//    b) drop the app id from the owner's index.
+			//
+			//    `unreserve` returns the amount it could not release. With
+			//    our bookkeeping invariant (`AppBond` was reserved in
+			//    `register_app`) this is always zero — a non-zero value
+			//    signals state corruption and is worth logging.
+			let not_unreserved = T::Currency::unreserve(&who, T::AppBond::get());
+			if !not_unreserved.is_zero() {
+				log::warn!(
+					target: "social-app-registry",
+					"⚠️ deregister_app could not unreserve full bond for {:?}: {:?} remaining",
+					who, not_unreserved,
+				);
+			}
+
+			AppsByOwner::<T>::mutate(&who, |apps| apps.retain(|id| *id != app_id));
+
+			log::info!(
+				target: "social-app-registry",
+				"💤 deregister_app owner={:?} app_id={:?}",
+				who, app_id,
+			);
 
 			Self::deposit_event(Event::AppDeregistered { app_id, owner: who });
 			Ok(())

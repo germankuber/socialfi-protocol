@@ -4,9 +4,20 @@ import { useSponsorship } from "../../hooks/social/useSponsorship";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useProfileCache } from "../../hooks/social/useProfileCache";
+import type { TxStage } from "../../hooks/social/useTxTracker";
 import RequireWallet from "../../components/social/RequireWallet";
 import VerifiedBadge from "../../components/social/VerifiedBadge";
 import TxToast from "../../components/social/TxToast";
+
+/**
+ * A tx is "in flight" only while the wallet is signing or the chain is
+ * still deciding the outcome. Once it hits `finalized` or `error` the
+ * UI must re-enable controls so the user can move on — otherwise the
+ * success toast visually locks the page for `AUTO_DISMISS_MS` seconds.
+ */
+function txInFlight(stage: TxStage): boolean {
+	return stage === "signing" || stage === "broadcasting" || stage === "in_block";
+}
 
 /**
  * Directed-sponsorship dashboard.
@@ -60,7 +71,7 @@ export default function SponsorshipPage() {
 					ownAddress={address}
 					myPot={s.myPot}
 					beneficiaries={s.myBeneficiaries}
-					disabled={s.tracker.state.stage !== "idle"}
+					disabled={txInFlight(s.tracker.state.stage)}
 					onTopUp={(amt) => account && s.topUp(amt, account.signer)}
 					onWithdraw={(amt) => account && s.withdraw(amt, account.signer)}
 					onRegister={(who) =>
@@ -74,7 +85,7 @@ export default function SponsorshipPage() {
 				<BeneficiaryPanel
 					mySponsor={s.mySponsor}
 					mySponsorPot={s.mySponsorPot}
-					disabled={s.tracker.state.stage !== "idle"}
+					disabled={txInFlight(s.tracker.state.stage)}
 					onLeave={() => account && s.revokeMySponsor(account.signer)}
 				/>
 

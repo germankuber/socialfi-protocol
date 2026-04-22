@@ -25,5 +25,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["libsodium-wrappers"],
+    // `@polkadot-apps/statement-store` (and its logger) use top-level
+    // `await` for dynamic imports. esbuild's dev-mode dep optimizer
+    // defaults to `es2020`, which rejects TLA, so we bump it here to
+    // match the production `build.target`. Keeping both at `esnext`
+    // avoids a matrix of "works in build but breaks in dev" bugs.
+    esbuildOptions: {
+      target: "esnext",
+    },
   },
 });

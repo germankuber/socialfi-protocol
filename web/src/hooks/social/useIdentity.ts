@@ -1,7 +1,7 @@
-import { useCallback, useState, useEffect } from "react";
-import { getClient } from "../useChain";
-import { stack_template } from "@polkadot-api/descriptors";
-import { useChainStore } from "../../store/chainStore";
+import { useCallback, useEffect, useState } from "react";
+import { createClient } from "polkadot-api";
+import { getWsProvider } from "polkadot-api/ws-provider/web";
+import { getPeopleWsUrl } from "../../config/network";
 
 export interface IdentityData {
 	display: string;
@@ -26,7 +26,11 @@ function decodeData(d: unknown): string {
 	return String(obj.value || "");
 }
 
-function parseJudgement(judgements: Array<unknown>): { verified: boolean; judgement: string | null; registrarIndex: number | null } {
+function parseJudgement(judgements: Array<unknown>): {
+	verified: boolean;
+	judgement: string | null;
+	registrarIndex: number | null;
+} {
 	if (!Array.isArray(judgements) || judgements.length === 0) {
 		return { verified: false, judgement: null, registrarIndex: null };
 	}
@@ -38,18 +42,81 @@ function parseJudgement(judgements: Array<unknown>): { verified: boolean; judgem
 			return { verified: true, judgement: jType, registrarIndex: regIdx };
 		}
 	}
-	// Return first judgement even if not verified
 	const first = judgements[0] as [number, { type: string }];
-	return { verified: false, judgement: first?.[1]?.type || null, registrarIndex: first?.[0] ?? null };
+	return {
+		verified: false,
+		judgement: first?.[1]?.type || null,
+		registrarIndex: first?.[0] ?? null,
+	};
 }
 
-export async function fetchIdentity(wsUrl: string, address: string): Promise<IdentityData | null> {
-	try {
-		const api = getClient(wsUrl).getTypedApi(stack_template);
-		const raw = await api.query.Identity.IdentityOf.getValue(address);
-		if (!raw) return { display: "", email: "", twitter: "", web: "", verified: false, judgement: null, registrarIndex: null, hasIdentity: false };
+// ── People chain connection ────────────────────────────────────────────
+//
+// Identity state lives on the Polkadot People system parachain. The
+// endpoint is sourced from `VITE_PEOPLE_WS_URL` — see
+// `web/src/config/network.ts`. The client is cached across hook
+// instances so the whole app shares a single WebSocket.
 
-		// raw is [Registration, Option<Username>] or just Registration depending on version
+interface CachedClient {
+	url: string;
+	client: ReturnType<typeof createClient>;
+}
+
+let peopleClient: CachedClient | null = null;
+
+function getPeopleClient() {
+	const url = getPeopleWsUrl();
+	if (peopleClient && peopleClient.url === url) return peopleClient.client;
+	// Close the previous client if the URL changed — rare, but possible
+	// if a dev swaps `.env.local` while the app is hot-reloading.
+	if (peopleClient) {
+		try {
+			peopleClient.client.destroy();
+		} catch {
+			/* noop */
+		}
+	}
+	const client = createClient(getWsProvider(url));
+	peopleClient = { url, client };
+	return client;
+}
+
+/**
+ * Fetch identity from the Polkadot People parachain for an arbitrary
+ * address. Returns `null` on network / decode errors, a zeroed
+ * `IdentityData` (with `hasIdentity: false`) when the address has no
+ * entry, and a populated record when it does.
+ *
+ * Uses the unsafe (untyped) API because the template does not ship
+ * with PAPI descriptors for People — depending on a different chain
+ * metadata than this project's runtime would force every CI run to
+ * connect to People. The unsafe API path is fine here: we only read
+ * a single well-known storage item.
+ */
+export async function fetchPeopleIdentity(
+	address: string,
+): Promise<IdentityData | null> {
+	try {
+		const client = getPeopleClient();
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const api: any = client.getUnsafeApi();
+		const raw = await api.query.Identity.IdentityOf.getValue(address);
+		if (!raw) {
+			return {
+				display: "",
+				email: "",
+				twitter: "",
+				web: "",
+				verified: false,
+				judgement: null,
+				registrarIndex: null,
+				hasIdentity: false,
+			};
+		}
+
+		// Storage shape varies by runtime version:
+		// - classic:  Registration { judgements, info, deposit }
+		// - with usernames: (Registration, Option<Username>)
 		const reg = Array.isArray(raw) ? raw[0] : raw;
 		const info = (reg as { info?: Record<string, unknown> })?.info || {};
 		const judgements = (reg as { judgements?: unknown[] })?.judgements || [];
@@ -71,21 +138,30 @@ export async function fetchIdentity(wsUrl: string, address: string): Promise<Ide
 	}
 }
 
-/** Hook to load identity for a specific address. */
+/**
+ * React hook that loads identity for the given address from the
+ * Polkadot People parachain. `identity.hasIdentity` is false when the
+ * address has no People registration; pair with `identity.verified` to
+ * drive the three-state `<VerificationBadge />`.
+ */
 export function useIdentity(address: string | null) {
-	const wsUrl = useChainStore((s) => s.wsUrl);
 	const [identity, setIdentity] = useState<IdentityData | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	const load = useCallback(async () => {
-		if (!address) { setIdentity(null); return; }
+		if (!address) {
+			setIdentity(null);
+			return;
+		}
 		setLoading(true);
-		const data = await fetchIdentity(wsUrl, address);
+		const data = await fetchPeopleIdentity(address);
 		setIdentity(data);
 		setLoading(false);
-	}, [address, wsUrl]);
+	}, [address]);
 
-	useEffect(() => { load(); }, [load]);
+	useEffect(() => {
+		load();
+	}, [load]);
 
 	return { identity, loading, reload: load };
 }

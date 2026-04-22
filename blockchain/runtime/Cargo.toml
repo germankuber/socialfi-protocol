@@ -1,6 +1,6 @@
 [package]
 name = "stack-template-runtime"
-description = "A parachain runtime template for the Polkadot Stack, with EVM and PVM contract support."
+description = "A parachain runtime template for the Polkadot Stack."
 version = "0.1.0"
 license.workspace = true
 authors.workspace = true
@@ -20,13 +20,13 @@ codec = { features = ["derive"], workspace = true }
 cumulus-pallet-parachain-system.workspace = true
 hex-literal = { workspace = true, default-features = true }
 log = { workspace = true }
-pallet-template.workspace = true
 pallet-social-app-registry.workspace = true
 pallet-social-profiles.workspace = true
 pallet-social-feeds.workspace = true
 pallet-social-graph.workspace = true
 pallet-social-managers.workspace = true
 pallet-sponsorship.workspace = true
+social-notifications-primitives.workspace = true
 polkadot-sdk = { workspace = true, features = [
 	"cumulus-pallet-aura-ext",
 	"cumulus-pallet-session-benchmarking",
@@ -40,9 +40,7 @@ polkadot-sdk = { workspace = true, features = [
 	"pallet-authorship",
 	"pallet-balances",
 	"pallet-collator-selection",
-	"pallet-identity",
 	"pallet-message-queue",
-	"pallet-revive",
 	"pallet-session",
 	"pallet-statement",
 	"pallet-sudo",
@@ -77,10 +75,10 @@ std = [
 	"pallet-social-managers/std",
 	"pallet-social-profiles/std",
 	"pallet-sponsorship/std",
-	"pallet-template/std",
 	"polkadot-sdk/std",
 	"scale-info/std",
 	"serde_json/std",
+	"social-notifications-primitives/std",
 	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
@@ -91,7 +89,6 @@ runtime-benchmarks = [
 	"pallet-social-managers/runtime-benchmarks",
 	"pallet-social-profiles/runtime-benchmarks",
 	"pallet-sponsorship/runtime-benchmarks",
-	"pallet-template/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
 ]
 try-runtime = [
@@ -102,7 +99,6 @@ try-runtime = [
 	"pallet-social-managers/try-runtime",
 	"pallet-social-profiles/try-runtime",
 	"pallet-sponsorship/try-runtime",
-	"pallet-template/try-runtime",
 	"polkadot-sdk/try-runtime",
 ]
 

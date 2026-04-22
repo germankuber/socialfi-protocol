@@ -121,21 +121,47 @@ impl pallet_balances::Config for Test {
 parameter_types! {
 	pub const PostFee: u64 = 10;
 	pub const MaxContentLen: u32 = 128;
-	pub const MaxPostsPerAuthor: u32 = 100;
-	pub const MaxRepliesPerPost: u32 = 100;
+	// Small values so boundary tests can exercise the bounds without
+	// creating thousands of posts. MaxPostsPerAuthor is larger than
+	// MaxRepliesPerPost so the reply-limit test can saturate replies
+	// from a single author without hitting the posts-per-author cap.
+	pub const MaxPostsPerAuthor: u32 = 10;
+	pub const MaxRepliesPerPost: u32 = 5;
 	pub TreasuryAccount: u64 = 99;
 }
 
-/// Stand-in origin guard for the moderation tests. `NeverModeration` always
-/// rejects, which is fine for the existing test suite — none of the
-/// existing tests exercise `redact_post`. A dedicated integration test
-/// (e.g. in the runtime crate) would wire this to the real
-/// `EnsureAppModerator` guard.
-pub struct NeverModeration;
-impl EnsureOrigin<RuntimeOrigin> for NeverModeration {
+thread_local! {
+	/// Tuple emitted by [`ConfigurableModeration`] when it is armed. A
+	/// `None` means "behave like `NeverModeration`".
+	static MODERATION_SUCCESS: RefCell<Option<(u32, u64)>> = const { RefCell::new(None) };
+}
+
+/// Arm the moderation guard so the next `redact_post` dispatch succeeds
+/// with the provided `(app_id, moderator)` pair. The arming is reset by
+/// `new_test_ext` between tests.
+pub fn arm_moderation(app_id: u32, moderator: u64) {
+	MODERATION_SUCCESS.with(|v| *v.borrow_mut() = Some((app_id, moderator)));
+}
+
+/// Disarm the moderation guard so subsequent dispatches fall back to
+/// rejecting. Useful for testing the `BadOrigin` path inside the same
+/// `execute_with` block that previously armed the guard.
+pub fn disarm_moderation() {
+	MODERATION_SUCCESS.with(|v| *v.borrow_mut() = None);
+}
+
+/// Origin guard wired into the pallet `Config` — delegates to the
+/// `MODERATION_SUCCESS` thread-local so individual tests can switch
+/// between "moderator accepted" and "moderator rejected" behaviour
+/// without mutating the `Runtime` type.
+pub struct ConfigurableModeration;
+impl EnsureOrigin<RuntimeOrigin> for ConfigurableModeration {
 	type Success = (u32, u64);
 	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
-		Err(o)
+		match MODERATION_SUCCESS.with(|v| *v.borrow()) {
+			Some(pair) => Ok(pair),
+			None => Err(o),
+		}
 	}
 	#[cfg(feature = "runtime-benchmarks")]
 	fn try_successful_origin() -> Result<RuntimeOrigin, ()> {
@@ -154,12 +180,30 @@ impl crate::Config for Test {
 	type MaxContentLen = MaxContentLen;
 	type MaxPostsPerAuthor = MaxPostsPerAuthor;
 	type MaxRepliesPerPost = MaxRepliesPerPost;
-	type ModerationOrigin = NeverModeration;
+	type ModerationOrigin = ConfigurableModeration;
 	type AuthorityId = MockAuthorityId;
 	type AdminOrigin = frame_system::EnsureRoot<u64>;
 	type UnsignedValidityWindow = ConstU64<16>;
 	type UnsignedPriority = ConstU64<1_000>;
 	type WeightInfo = ();
+	type NotificationSubmitter = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = TestBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct TestBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<u64, u32> for TestBenchmarkHelper {
+	fn register_profile(who: &u64) {
+		MockProfileProvider::add_profile(*who);
+	}
+	fn register_app(owner: &u64) -> u32 {
+		let next_id = APPS.with(|v| v.borrow().len() as u32);
+		MockAppProvider::add_app(next_id, *owner);
+		next_id
+	}
 }
 
 /// Test-only AppCrypto wrapper. Bridges `UintAuthorityId` / `TestSignature`
@@ -228,6 +272,7 @@ where
 pub fn new_test_ext() -> TestState {
 	PROFILE_ACCOUNTS.with(|v| v.borrow_mut().clear());
 	APPS.with(|v| v.borrow_mut().clear());
+	MODERATION_SUCCESS.with(|v| *v.borrow_mut() = None);
 
 	let mut storage = GenesisConfig::<Test>::default().build_storage().unwrap();
 

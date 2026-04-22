@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
@@ -8,16 +9,6 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function identityDataValue(text: string): any {
-	if (!text) return { type: "None", value: undefined };
-	const bytes = new TextEncoder().encode(text.slice(0, 32));
-	const n = bytes.length;
-	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function noneData(): any { return { type: "None", value: undefined }; }
 
 interface ProfileData {
 	cid: string;
@@ -112,23 +103,9 @@ export default function ProfilePage() {
 				await tracker.submit(feeTx, account.signer, "Set Follow Fee");
 			}
 
-			// Sync on-chain identity with updated profile data
-			try {
-				const identityTx = api.tx.Identity.set_identity({
-					info: {
-						display: identityDataValue(metadata.name),
-						twitter: identityDataValue(metadata.links?.twitter || ""),
-						web: identityDataValue(metadata.links?.website || ""),
-						email: noneData(),
-						additional: [],
-						legal: noneData(),
-						riot: noneData(),
-						image: noneData(),
-						pgp_fingerprint: undefined,
-					},
-				});
-				await tracker.submit(identityTx, account.signer, "Sync Identity");
-			} catch { /* best-effort */ }
+			// Identity (display name + verification) is maintained on the
+			// Polkadot People parachain via the IdentityPanel on the profile
+			// editor — no longer auto-synced from here.
 
 			setShowForm(false);
 			loadProfile();
@@ -159,9 +136,9 @@ export default function ProfilePage() {
 							<h2 className="heading-2">Profile</h2>
 							{profile && (
 								<div className="flex gap-2">
-									<button onClick={() => setShowForm(!showForm)} className="btn-outline btn-sm">
-										{showForm ? "Cancel" : "Edit"}
-									</button>
+									<Link to="/profile/edit" className="btn-outline btn-sm">
+										Edit
+									</Link>
 									<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">Delete</button>
 								</div>
 							)}
