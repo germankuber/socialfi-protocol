@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Binary, createClient } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/web";
 import { useIdentity } from "../../hooks/social/useIdentity";
@@ -66,12 +67,33 @@ export default function IdentityPanel() {
 	const { getApi } = useSocialApi();
 	const { fetchProfileMetadata } = useIpfs();
 	const tracker = useTxTracker();
+	const navigate = useNavigate();
 	const { identity, loading, reload } = useIdentity(account?.address ?? null);
 	const [showForm, setShowForm] = useState(false);
 	const [display, setDisplay] = useState("");
 	const [email, setEmail] = useState("");
 	const [twitter, setTwitter] = useState("");
 	const [web, setWeb] = useState("");
+	const [alreadyRegisteredOpen, setAlreadyRegisteredOpen] = useState(false);
+
+	// Detect wallet rejection / cancellation during signing. The tx
+	// tracker surfaces it as an error stage whose message comes from
+	// the extension (PJS / Talisman / SubWallet all phrase it slightly
+	// differently — "rejected", "cancelled", "user denied"). In that
+	// case we show a confirmation popup instead of a hard error.
+	useEffect(() => {
+		if (tracker.state.stage !== "error") return;
+		const msg = tracker.state.message.toLowerCase();
+		const isCancel =
+			msg.includes("cancel") ||
+			msg.includes("rejected") ||
+			msg.includes("denied") ||
+			msg.includes("user");
+		if (isCancel) {
+			setAlreadyRegisteredOpen(true);
+			tracker.reset();
+		}
+	}, [tracker.state, tracker]);
 
 	if (!account) return null;
 
@@ -313,6 +335,50 @@ export default function IdentityPanel() {
 			)}
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
+
+			{alreadyRegisteredOpen && (() => {
+				const dismissAndGoBack = () => {
+					setAlreadyRegisteredOpen(false);
+					navigate("/profile/edit");
+				};
+				return (
+					<div
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+						role="dialog"
+						aria-modal="true"
+						onClick={dismissAndGoBack}
+					>
+						<div
+							className="panel max-w-sm w-full space-y-4"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<div className="flex items-center gap-3">
+								<div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+									<svg
+										className="w-5 h-5 text-success"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										strokeWidth={2.5}
+									>
+										<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+									</svg>
+								</div>
+								<h3 className="heading-2">You&apos;re already registered</h3>
+							</div>
+							<p className="text-sm text-secondary">
+								Your identity is registered on Polkadot People. No further
+								action is needed.
+							</p>
+							<div className="flex justify-end">
+								<button onClick={dismissAndGoBack} className="btn-brand btn-sm">
+									Got it
+								</button>
+							</div>
+						</div>
+					</div>
+				);
+			})()}
 		</div>
 	);
 }

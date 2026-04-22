@@ -18,6 +18,7 @@ const AppDetailPage = lazy(() => import("./pages/social/AppDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/social/PostDetailPage"));
 const PublicProfilePage = lazy(() => import("./pages/social/PublicProfilePage"));
 const EditProfilePage = lazy(() => import("./pages/social/EditProfilePage"));
+const PeopleIdentityPage = lazy(() => import("./pages/social/PeopleIdentityPage"));
 const CreateProfilePage = lazy(() => import("./pages/social/CreateProfilePage"));
 const AccountsPage = lazy(() => import("./pages/social/AccountsPage"));
 const ManagersPage = lazy(() => import("./pages/social/ManagersPage"));
@@ -172,6 +173,15 @@ createRoot(document.getElementById("root")!).render(
 						element={
 							<Suspense fallback={routeFallback}>
 								<EditProfilePage />
+							</Suspense>
+						}
+					/>
+					{/* People chain identity (register / verify) — standalone */}
+					<Route
+						path="profile/people"
+						element={
+							<Suspense fallback={routeFallback}>
+								<PeopleIdentityPage />
 							</Suspense>
 						}
 					/>
