@@ -45,19 +45,23 @@ sequenceDiagram
     autonumber
     participant A as Author browser
     participant IPFS
+    participant KS as Key Service
     participant Chain as social-feeds pallet
     participant OCW as Runtime OCW
     participant V as Viewer browser
 
     A->>A: generate k_content and encrypt body
     A->>IPFS: upload ciphertext blob
-    A->>A: seal k_content with KeyService pubkey
+    A->>KS: fetch X25519 pubkey
+    KS-->>A: pubkey
+    A->>A: seal k_content with that pubkey
     A->>Chain: create_post with cid and capsule
     V->>V: generate ephemeral X25519 keypair
     V->>Chain: unlock_post with buyer_pk and fee
     Chain->>Chain: enqueue PendingUnlocks entry
     OCW->>Chain: read PendingUnlocks and capsule
-    OCW->>OCW: unseal capsule and re-seal to buyer_pk
+    OCW->>KS: unseal capsule and re-seal to buyer_pk
+    KS-->>OCW: wrapped_key and signature
     OCW->>Chain: deliver_unlock_unsigned with payload and signature
     Chain->>Chain: validate and fill wrapped_key
     V->>Chain: query Unlocks for post and viewer
