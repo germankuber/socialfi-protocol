@@ -6,6 +6,7 @@ import { useSelectedAccount } from "./hooks/social/useSelectedAccount";
 import { useProfileGate } from "./hooks/social/useProfileGate";
 import { useWallet } from "./hooks/social/useWallet";
 import { getClient } from "./hooks/useChain";
+import { useTheme } from "./hooks/useTheme";
 import ThemeToggle from "./components/social/ThemeToggle";
 import NotificationsBell from "./components/social/NotificationsBell";
 
@@ -15,6 +16,8 @@ export default function App() {
 	const blockNumber = useChainStore((s) => s.blockNumber);
 	const { hasProfile } = useProfileGate();
 	const { account } = useSelectedAccount();
+	const { theme } = useTheme();
+	const logoSrc = theme === "dark" ? "/logo-dark.png" : "/logo-light.png";
 
 	useConnectionManagement();
 
@@ -26,7 +29,7 @@ export default function App() {
 				<div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
 					<Link to="/" className="flex items-center gap-2 shrink-0 group">
 						<img
-							src="/logo.png"
+							src={logoSrc}
 							alt="Polkadot Stack Template"
 							className="w-8 h-8 rounded-xl object-contain"
 						/>

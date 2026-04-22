@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="Polkadot Stack Template" width="200" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.png" />
+    <img src="docs/assets/logo-light.png" alt="Polkadot Stack Template" width="320" />
+  </picture>
 </p>
 
 # Polkadot Stack Template
