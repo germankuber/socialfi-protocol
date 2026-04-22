@@ -43,26 +43,26 @@ Three keys do all the work:
 ```mermaid
 sequenceDiagram
     autonumber
-    participant A as Author (browser)
+    participant A as Author browser
     participant IPFS
     participant Chain as social-feeds pallet
-    participant OCW as Runtime OCW (WASM)
-    participant V as Viewer (browser)
+    participant OCW as Runtime OCW
+    participant V as Viewer browser
 
-    A->>A: generate k_content, encrypt body
-    A->>IPFS: upload ciphertext blob → CID
-    A->>A: sealed_box(k_content, KeyService_pk) = capsule
-    A->>Chain: create_post(cid, visibility, capsule, unlock_fee)
-    V->>V: generate ephemeral X25519 keypair (buyer_pk, buyer_sk)
-    V->>Chain: unlock_post(post_id, buyer_pk) + pay fee
-    Chain->>Chain: Unlocks entry wrapped_key=None; PendingUnlocks enqueued
-    OCW->>Chain: read PendingUnlocks + capsule
-    OCW->>OCW: open capsule → k_content; seal to buyer_pk → wrapped_key
-    OCW->>Chain: deliver_unlock_unsigned(DeliverUnlockPayload, signature)
-    Chain->>Chain: validate_unsigned → fill wrapped_key, drop PendingUnlocks
-    V->>Chain: query Unlocks(post_id, viewer)
+    A->>A: generate k_content and encrypt body
+    A->>IPFS: upload ciphertext blob
+    A->>A: seal k_content with KeyService pubkey
+    A->>Chain: create_post with cid and capsule
+    V->>V: generate ephemeral X25519 keypair
+    V->>Chain: unlock_post with buyer_pk and fee
+    Chain->>Chain: enqueue PendingUnlocks entry
+    OCW->>Chain: read PendingUnlocks and capsule
+    OCW->>OCW: unseal capsule and re-seal to buyer_pk
+    OCW->>Chain: deliver_unlock_unsigned with payload and signature
+    Chain->>Chain: validate and fill wrapped_key
+    V->>Chain: query Unlocks for post and viewer
     V->>IPFS: fetch ciphertext blob
-    V->>V: unseal wrapped_key with buyer_sk → k_content; decrypt blob
+    V->>V: unseal wrapped_key with buyer_sk and decrypt blob
 ```
 
 ---
