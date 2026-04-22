@@ -41,14 +41,14 @@ export type DigestItem = Enum<{
 }>;
 export declare const DigestItem: GetEnum<DigestItem>;
 export type I82jm9g7pufuel = [FixedSizeBinary<4>, Binary];
-export type I2utisg9hv9r7a = Array<{
+export type I9su9g25lgrfeb = Array<{
     "phase": Phase;
     "event": Enum<{
-        "System": Anonymize<Ifdnj0j9hk8o6d>;
+        "System": Anonymize<Ib2af0uei5c1ns>;
         "ParachainSystem": Anonymize<Icbsekf57miplo>;
         "Balances": Anonymize<If2fif5uai98oi>;
         "TransactionPayment": TransactionPaymentEvent;
-        "Sudo": Anonymize<I6jfp8uq1rqkg0>;
+        "Sudo": Anonymize<I1vpo43f2fue6m>;
         "CollatorSelection": Anonymize<I4srakrmf0fspo>;
         "Session": Anonymize<I6ue0ck5fc3u44>;
         "XcmpQueue": Anonymize<Idsqc7mhp6nnle>;
@@ -56,13 +56,11 @@ export type I2utisg9hv9r7a = Array<{
         "CumulusXcm": Anonymize<I5uv57c3fffoi9>;
         "MessageQueue": Anonymize<I2kosejppk3jon>;
         "Statement": Anonymize<Ic1vdi0e9te2la>;
-        "TemplatePallet": Anonymize<Ibs185ts04asdp>;
-        "SocialAppRegistry": Anonymize<Iejd85algd2a87>;
+        "SocialAppRegistry": Anonymize<I8nas55un8m83j>;
         "SocialProfiles": Anonymize<I21lslh1sksejv>;
         "SocialGraph": Anonymize<Idqf7jqq12gtuq>;
         "SocialFeeds": Anonymize<I47krib0t7q04o>;
-        "Identity": Anonymize<I2au2or9cskfoi>;
-        "SocialManagers": Anonymize<Ibb13pmt2url3p>;
+        "SocialManagers": Anonymize<I3vf3bk83g7bj4>;
         "Sponsorship": Anonymize<I8f0sg10bcjnt9>;
     }>;
     "topics": Anonymize<Ic5m5lp1oioo8r>;
@@ -73,7 +71,7 @@ export type Phase = Enum<{
     "Initialization": undefined;
 }>;
 export declare const Phase: GetEnum<Phase>;
-export type Ifdnj0j9hk8o6d = AnonymousEnum<{
+export type Ib2af0uei5c1ns = AnonymousEnum<{
     /**
      * An extrinsic completed successfully.
      */
@@ -81,7 +79,7 @@ export type Ifdnj0j9hk8o6d = AnonymousEnum<{
     /**
      * An extrinsic failed.
      */
-    "ExtrinsicFailed": Anonymize<Ievs0l5092qcdo>;
+    "ExtrinsicFailed": Anonymize<If0gaa0blink0u>;
     /**
      * `:code` was updated.
      */
@@ -105,7 +103,7 @@ export type Ifdnj0j9hk8o6d = AnonymousEnum<{
     /**
      * An invalid authorized upgrade was rejected while trying to apply it.
      */
-    "RejectedInvalidAuthorizedUpgrade": Anonymize<Ibi6cpipuph58g>;
+    "RejectedInvalidAuthorizedUpgrade": Anonymize<I6r5gm396a3cbl>;
 }>;
 export type Ia82mnkmeo2rhc = {
     "dispatch_info": Anonymize<Ic9s8f85vjtncc>;
@@ -125,11 +123,11 @@ export type Iehg04bj71rkd = AnonymousEnum<{
     "Yes": undefined;
     "No": undefined;
 }>;
-export type Ievs0l5092qcdo = {
-    "dispatch_error": Anonymize<I33kjf48l20rf5>;
+export type If0gaa0blink0u = {
+    "dispatch_error": Anonymize<I6ldcn1te511n1>;
     "dispatch_info": Anonymize<Ic9s8f85vjtncc>;
 };
-export type I33kjf48l20rf5 = AnonymousEnum<{
+export type I6ldcn1te511n1 = AnonymousEnum<{
     "Other": undefined;
     "CannotLookup": undefined;
     "BadOrigin": undefined;
@@ -152,12 +150,10 @@ export type I33kjf48l20rf5 = AnonymousEnum<{
         "CumulusXcm": undefined;
         "MessageQueue": Anonymize<I5iupade5ag2dp>;
         "Statement": undefined;
-        "TemplatePallet": Anonymize<I92b4r5k2dd3v9>;
         "SocialAppRegistry": Anonymize<Ico8vg2oh7sl6s>;
-        "SocialProfiles": Anonymize<Ibgupio6oknchd>;
+        "SocialProfiles": Anonymize<Iadnh5c1g1nl01>;
         "SocialGraph": Anonymize<I2pj5sgnni00u8>;
         "SocialFeeds": Anonymize<I90lafknp0s986>;
-        "Identity": Anonymize<Ib8gja1crqq8kd>;
         "SocialManagers": Anonymize<I45lbgn1g7cj8q>;
         "Sponsorship": Anonymize<Ifrdeu34egmpkr>;
     }>;
@@ -620,20 +616,6 @@ export type I5iupade5ag2dp = AnonymousEnum<{
      */
     "RecursiveDisallowed": undefined;
 }>;
-export type I92b4r5k2dd3v9 = AnonymousEnum<{
-    /**
-     * This hash has already been claimed.
-     */
-    "AlreadyClaimed": undefined;
-    /**
-     * The caller is not the owner of this claim.
-     */
-    "NotClaimOwner": undefined;
-    /**
-     * No claim exists for this hash.
-     */
-    "ClaimNotFound": undefined;
-}>;
 export type Ico8vg2oh7sl6s = AnonymousEnum<{
     /**
      * The caller does not have enough balance to cover the registration bond.
@@ -664,7 +646,7 @@ export type Ico8vg2oh7sl6s = AnonymousEnum<{
      */
     "AppIdOverflow": undefined;
 }>;
-export type Ibgupio6oknchd = AnonymousEnum<{
+export type Iadnh5c1g1nl01 = AnonymousEnum<{
     /**
      * A profile already exists for this account.
      */
@@ -677,10 +659,6 @@ export type Ibgupio6oknchd = AnonymousEnum<{
      * The caller does not have enough balance to cover the profile bond.
      */
     "InsufficientBond": undefined;
-    /**
-     * The provided metadata exceeds the maximum allowed length.
-     */
-    "MetadataTooLong": undefined;
 }>;
 export type I2pj5sgnni00u8 = AnonymousEnum<{
     /**
@@ -781,129 +759,6 @@ export type I90lafknp0s986 = AnonymousEnum<{
      * already has a wrapped key.
      */
     "UnlockNotPending": undefined;
-}>;
-export type Ib8gja1crqq8kd = AnonymousEnum<{
-    /**
-     * Too many subs-accounts.
-     */
-    "TooManySubAccounts": undefined;
-    /**
-     * Account isn't found.
-     */
-    "NotFound": undefined;
-    /**
-     * Account isn't named.
-     */
-    "NotNamed": undefined;
-    /**
-     * Empty index.
-     */
-    "EmptyIndex": undefined;
-    /**
-     * Fee is changed.
-     */
-    "FeeChanged": undefined;
-    /**
-     * No identity found.
-     */
-    "NoIdentity": undefined;
-    /**
-     * Sticky judgement.
-     */
-    "StickyJudgement": undefined;
-    /**
-     * Judgement given.
-     */
-    "JudgementGiven": undefined;
-    /**
-     * Invalid judgement.
-     */
-    "InvalidJudgement": undefined;
-    /**
-     * The index is invalid.
-     */
-    "InvalidIndex": undefined;
-    /**
-     * The target is invalid.
-     */
-    "InvalidTarget": undefined;
-    /**
-     * Maximum amount of registrars reached. Cannot add any more.
-     */
-    "TooManyRegistrars": undefined;
-    /**
-     * Account ID is already named.
-     */
-    "AlreadyClaimed": undefined;
-    /**
-     * Sender is not a sub-account.
-     */
-    "NotSub": undefined;
-    /**
-     * Sub-account isn't owned by sender.
-     */
-    "NotOwned": undefined;
-    /**
-     * The provided judgement was for a different identity.
-     */
-    "JudgementForDifferentIdentity": undefined;
-    /**
-     * Error that occurs when there is an issue paying for judgement.
-     */
-    "JudgementPaymentFailed": undefined;
-    /**
-     * The provided suffix is too long.
-     */
-    "InvalidSuffix": undefined;
-    /**
-     * The sender does not have permission to issue a username.
-     */
-    "NotUsernameAuthority": undefined;
-    /**
-     * The authority cannot allocate any more usernames.
-     */
-    "NoAllocation": undefined;
-    /**
-     * The signature on a username was not valid.
-     */
-    "InvalidSignature": undefined;
-    /**
-     * Setting this username requires a signature, but none was provided.
-     */
-    "RequiresSignature": undefined;
-    /**
-     * The username does not meet the requirements.
-     */
-    "InvalidUsername": undefined;
-    /**
-     * The username is already taken.
-     */
-    "UsernameTaken": undefined;
-    /**
-     * The requested username does not exist.
-     */
-    "NoUsername": undefined;
-    /**
-     * The username cannot be forcefully removed because it can still be accepted.
-     */
-    "NotExpired": undefined;
-    /**
-     * The username cannot be removed because it's still in the grace period.
-     */
-    "TooEarly": undefined;
-    /**
-     * The username cannot be removed because it is not unbinding.
-     */
-    "NotUnbinding": undefined;
-    /**
-     * The username cannot be unbound because it is already unbinding.
-     */
-    "AlreadyUnbinding": undefined;
-    /**
-     * The action cannot be performed because of insufficient privileges (e.g. authority
-     * trying to unbind a username provided by the system).
-     */
-    "InsufficientPrivileges": undefined;
 }>;
 export type I45lbgn1g7cj8q = AnonymousEnum<{
     /**
@@ -1037,9 +892,9 @@ export type Ibgl04rn6nbfm6 = {
     "code_hash": FixedSizeBinary<32>;
     "check_version": boolean;
 };
-export type Ibi6cpipuph58g = {
+export type I6r5gm396a3cbl = {
     "code_hash": FixedSizeBinary<32>;
-    "error": Anonymize<I33kjf48l20rf5>;
+    "error": Anonymize<I6ldcn1te511n1>;
 };
 export type Icbsekf57miplo = AnonymousEnum<{
     /**
@@ -1291,11 +1146,11 @@ export type Ier2cke86dqbr2 = {
     "actual_fee": bigint;
     "tip": bigint;
 };
-export type I6jfp8uq1rqkg0 = AnonymousEnum<{
+export type I1vpo43f2fue6m = AnonymousEnum<{
     /**
      * A sudo call just took place.
      */
-    "Sudid": Anonymize<I6pku2di5bd8n3>;
+    "Sudid": Anonymize<Ipnf7nipkm7qc>;
     /**
      * The sudo key has been updated.
      */
@@ -1307,15 +1162,15 @@ export type I6jfp8uq1rqkg0 = AnonymousEnum<{
     /**
      * A [sudo_as](Pallet::sudo_as) call just took place.
      */
-    "SudoAsDone": Anonymize<I6pku2di5bd8n3>;
+    "SudoAsDone": Anonymize<Ipnf7nipkm7qc>;
 }>;
-export type I6pku2di5bd8n3 = {
+export type Ipnf7nipkm7qc = {
     /**
      * The result of the call made by the sudo user.
      */
-    "sudo_result": Anonymize<I450vhused0qvm>;
+    "sudo_result": Anonymize<Ic4gu8lb3j6spr>;
 };
-export type I450vhused0qvm = ResultPayload<undefined, Anonymize<I33kjf48l20rf5>>;
+export type Ic4gu8lb3j6spr = ResultPayload<undefined, Anonymize<I6ldcn1te511n1>>;
 export type I5rtkmhm2dng4u = {
     /**
      * The old sudo key (if one was previously set).
@@ -2332,27 +2187,7 @@ export type I815pbp5omtss = {
 };
 export type I4arjljr6dpflb = (number) | undefined;
 export type Iabpgqcjikia83 = (Binary) | undefined;
-export type Ibs185ts04asdp = AnonymousEnum<{
-    /**
-     * A new claim was created.
-     */
-    "ClaimCreated": Anonymize<I9p6tgcfbrrlod>;
-    /**
-     * A claim was revoked by its owner.
-     */
-    "ClaimRevoked": Anonymize<I9p6tgcfbrrlod>;
-}>;
-export type I9p6tgcfbrrlod = {
-    /**
-     * The account that created the claim.
-     */
-    "who": SS58String;
-    /**
-     * The hash that was claimed.
-     */
-    "hash": FixedSizeBinary<32>;
-};
-export type Iejd85algd2a87 = AnonymousEnum<{
+export type I8nas55un8m83j = AnonymousEnum<{
     /**
      * A new app was registered.
      */
@@ -2362,11 +2197,21 @@ export type Iejd85algd2a87 = AnonymousEnum<{
      */
     "AppDeregistered": Anonymize<Ibh7279nftp2hh>;
     /**
-     * An app owner dispatched a call as `Origin::AppModerator`. The
-     * downstream call's own event carries the effect — this one
-     * simply records the moderation fact for audit tooling.
+     * An app owner attempted to dispatch a call as
+     * `Origin::AppModerator`. Emitted before the inner call runs, so
+     * the inner call may still fail — this event records the
+     * *moderation attempt* for audit tooling, not a confirmed effect.
+     * Pair with the downstream call's own event to distinguish
+     * attempted from applied moderation.
      */
     "ModeratorDispatched": Anonymize<I8479qlmjf9la2>;
+    /**
+     * Emitted on the registration that fills the owner's last
+     * available slot. Signals to indexers / front-ends that any
+     * further `register_app` from this account will fail with
+     * `TooManyApps` until a deregister frees a slot.
+     */
+    "OwnerAppLimitReached": Anonymize<Iaf98ono6d228j>;
 }>;
 export type Ibh7279nftp2hh = {
     "app_id": number;
@@ -2375,6 +2220,10 @@ export type Ibh7279nftp2hh = {
 export type I8479qlmjf9la2 = {
     "app_id": number;
     "moderator": SS58String;
+};
+export type Iaf98ono6d228j = {
+    "owner": SS58String;
+    "cap": number;
 };
 export type I21lslh1sksejv = AnonymousEnum<{
     /**
@@ -2503,146 +2352,7 @@ export type Ifv4jftsc618sl = {
     "post_id": bigint;
     "author": SS58String;
 };
-export type I2au2or9cskfoi = AnonymousEnum<{
-    /**
-     * A name was set or reset (which will remove all judgements).
-     */
-    "IdentitySet": Anonymize<I4cbvqmqadhrea>;
-    /**
-     * A name was cleared, and the given balance returned.
-     */
-    "IdentityCleared": Anonymize<Iep1lmt6q3s6r3>;
-    /**
-     * A name was removed and the given balance slashed.
-     */
-    "IdentityKilled": Anonymize<Iep1lmt6q3s6r3>;
-    /**
-     * A judgement was asked from a registrar.
-     */
-    "JudgementRequested": Anonymize<I1fac16213rie2>;
-    /**
-     * A judgement request was retracted.
-     */
-    "JudgementUnrequested": Anonymize<I1fac16213rie2>;
-    /**
-     * A judgement was given by a registrar.
-     */
-    "JudgementGiven": Anonymize<Ifjt77oc391o43>;
-    /**
-     * A registrar was added.
-     */
-    "RegistrarAdded": Anonymize<Itvt1jsipv0lc>;
-    /**
-     * A sub-identity was added to an identity and the deposit paid.
-     */
-    "SubIdentityAdded": Anonymize<Ick3mveut33f44>;
-    /**
-     * An account's sub-identities were set (in bulk).
-     */
-    "SubIdentitiesSet": Anonymize<I719lqkkbtikbl>;
-    /**
-     * A given sub-account's associated name was changed by its super-identity.
-     */
-    "SubIdentityRenamed": Anonymize<Ie4intrc3n8jfu>;
-    /**
-     * A sub-identity was removed from an identity and the deposit freed.
-     */
-    "SubIdentityRemoved": Anonymize<Ick3mveut33f44>;
-    /**
-     * A sub-identity was cleared, and the given deposit repatriated from the
-     * main identity account to the sub-identity account.
-     */
-    "SubIdentityRevoked": Anonymize<Ick3mveut33f44>;
-    /**
-     * A username authority was added.
-     */
-    "AuthorityAdded": Anonymize<I2rg5btjrsqec0>;
-    /**
-     * A username authority was removed.
-     */
-    "AuthorityRemoved": Anonymize<I2rg5btjrsqec0>;
-    /**
-     * A username was set for `who`.
-     */
-    "UsernameSet": Anonymize<Ibdqerrooruuq9>;
-    /**
-     * A username was queued, but `who` must accept it prior to `expiration`.
-     */
-    "UsernameQueued": Anonymize<I8u2ba9jeiu6q0>;
-    /**
-     * A queued username passed its expiration without being claimed and was removed.
-     */
-    "PreapprovalExpired": Anonymize<I7ieadb293k6b4>;
-    /**
-     * A username was set as a primary and can be looked up from `who`.
-     */
-    "PrimaryUsernameSet": Anonymize<Ibdqerrooruuq9>;
-    /**
-     * A dangling username (as in, a username corresponding to an account that has removed its
-     * identity) has been removed.
-     */
-    "DanglingUsernameRemoved": Anonymize<Ibdqerrooruuq9>;
-    /**
-     * A username has been unbound.
-     */
-    "UsernameUnbound": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * A username has been removed.
-     */
-    "UsernameRemoved": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * A username has been killed.
-     */
-    "UsernameKilled": Anonymize<Ie5l999tf7t2te>;
-}>;
-export type Iep1lmt6q3s6r3 = {
-    "who": SS58String;
-    "deposit": bigint;
-};
-export type I1fac16213rie2 = {
-    "who": SS58String;
-    "registrar_index": number;
-};
-export type Ifjt77oc391o43 = {
-    "target": SS58String;
-    "registrar_index": number;
-};
-export type Itvt1jsipv0lc = {
-    "registrar_index": number;
-};
-export type Ick3mveut33f44 = {
-    "sub": SS58String;
-    "main": SS58String;
-    "deposit": bigint;
-};
-export type I719lqkkbtikbl = {
-    "main": SS58String;
-    "number_of_subs": number;
-    "new_deposit": bigint;
-};
-export type Ie4intrc3n8jfu = {
-    "sub": SS58String;
-    "main": SS58String;
-};
-export type I2rg5btjrsqec0 = {
-    "authority": SS58String;
-};
-export type Ibdqerrooruuq9 = {
-    "who": SS58String;
-    "username": Binary;
-};
-export type I8u2ba9jeiu6q0 = {
-    "who": SS58String;
-    "username": Binary;
-    "expiration": number;
-};
-export type I7ieadb293k6b4 = {
-    "whose": SS58String;
-};
-export type Ie5l999tf7t2te = {
-    "username": Binary;
-};
-export type Ibb13pmt2url3p = AnonymousEnum<{
+export type I3vf3bk83g7bj4 = AnonymousEnum<{
     /**
      * A new manager authorization was granted.
      */
@@ -2659,7 +2369,7 @@ export type Ibb13pmt2url3p = AnonymousEnum<{
      * A manager successfully dispatched an inner call on the owner's
      * behalf. `result` reports whether the inner call succeeded.
      */
-    "ActedAsManager": Anonymize<I52ueqm37mfa10>;
+    "ActedAsManager": Anonymize<Iatrg1vfmobak5>;
     /**
      * The `on_idle` hook lazily purged an expired authorization and
      * returned the deposit to the owner.
@@ -2683,10 +2393,10 @@ export type I6gobf0er3s1tq = {
     "removed_count": number;
     "deposit_released": bigint;
 };
-export type I52ueqm37mfa10 = {
+export type Iatrg1vfmobak5 = {
     "owner": SS58String;
     "manager": SS58String;
-    "result": Anonymize<I450vhused0qvm>;
+    "result": Anonymize<Ic4gu8lb3j6spr>;
 };
 export type I8f0sg10bcjnt9 = AnonymousEnum<{
     /**
@@ -2847,7 +2557,10 @@ export type TransactionPaymentReleases = Enum<{
     "V2": undefined;
 }>;
 export declare const TransactionPaymentReleases: GetEnum<TransactionPaymentReleases>;
-export type Ifi4da1gej1fri = Array<Anonymize<Iep1lmt6q3s6r3>>;
+export type Ifi4da1gej1fri = Array<{
+    "who": SS58String;
+    "deposit": bigint;
+}>;
 export type Ifvgo9568rpmqc = Array<[SS58String, FixedSizeBinary<32>]>;
 export type I6cs1itejju2vv = [bigint, number];
 export type Icgljjb6j82uhn = Array<number>;
@@ -3000,10 +2713,6 @@ export type I53esa2ms463bk = {
     "heap": Binary;
 };
 export type Ib4jhb8tt3uung = [Anonymize<Iejeo53sea6n4q>, number];
-export type I7offqqltf3agj = {
-    "owner": SS58String;
-    "block_number": number;
-};
 export type Iciucmpds8ms8l = {
     "owner": SS58String;
     "metadata": Binary;
@@ -3045,94 +2754,6 @@ export type I6h44toaeg76c7 = {
     "encryption_pk": FixedSizeBinary<32>;
     "version": number;
 };
-export type I4ftk0glls7946 = {
-    "judgements": Array<[number, IdentityJudgement]>;
-    "deposit": bigint;
-    "info": Anonymize<I1o57snqt6f4v5>;
-};
-export type IdentityJudgement = Enum<{
-    "Unknown": undefined;
-    "FeePaid": bigint;
-    "Reasonable": undefined;
-    "KnownGood": undefined;
-    "OutOfDate": undefined;
-    "LowQuality": undefined;
-    "Erroneous": undefined;
-}>;
-export declare const IdentityJudgement: GetEnum<IdentityJudgement>;
-export type I1o57snqt6f4v5 = {
-    "additional": Array<FixedSizeArray<2, IdentityData>>;
-    "display": IdentityData;
-    "legal": IdentityData;
-    "web": IdentityData;
-    "riot": IdentityData;
-    "email": IdentityData;
-    "pgp_fingerprint"?: (FixedSizeBinary<20>) | undefined;
-    "image": IdentityData;
-    "twitter": IdentityData;
-};
-export type IdentityData = Enum<{
-    "None": undefined;
-    "Raw0": undefined;
-    "Raw1": number;
-    "Raw2": FixedSizeBinary<2>;
-    "Raw3": FixedSizeBinary<3>;
-    "Raw4": FixedSizeBinary<4>;
-    "Raw5": FixedSizeBinary<5>;
-    "Raw6": FixedSizeBinary<6>;
-    "Raw7": FixedSizeBinary<7>;
-    "Raw8": FixedSizeBinary<8>;
-    "Raw9": FixedSizeBinary<9>;
-    "Raw10": FixedSizeBinary<10>;
-    "Raw11": FixedSizeBinary<11>;
-    "Raw12": FixedSizeBinary<12>;
-    "Raw13": FixedSizeBinary<13>;
-    "Raw14": FixedSizeBinary<14>;
-    "Raw15": FixedSizeBinary<15>;
-    "Raw16": FixedSizeBinary<16>;
-    "Raw17": FixedSizeBinary<17>;
-    "Raw18": FixedSizeBinary<18>;
-    "Raw19": FixedSizeBinary<19>;
-    "Raw20": FixedSizeBinary<20>;
-    "Raw21": FixedSizeBinary<21>;
-    "Raw22": FixedSizeBinary<22>;
-    "Raw23": FixedSizeBinary<23>;
-    "Raw24": FixedSizeBinary<24>;
-    "Raw25": FixedSizeBinary<25>;
-    "Raw26": FixedSizeBinary<26>;
-    "Raw27": FixedSizeBinary<27>;
-    "Raw28": FixedSizeBinary<28>;
-    "Raw29": FixedSizeBinary<29>;
-    "Raw30": FixedSizeBinary<30>;
-    "Raw31": FixedSizeBinary<31>;
-    "Raw32": FixedSizeBinary<32>;
-    "BlakeTwo256": FixedSizeBinary<32>;
-    "Sha256": FixedSizeBinary<32>;
-    "Keccak256": FixedSizeBinary<32>;
-    "ShaThree256": FixedSizeBinary<32>;
-}>;
-export declare const IdentityData: GetEnum<IdentityData>;
-export type I910puuahutflf = [SS58String, IdentityData];
-export type I4nfjdef0ibh44 = [bigint, Anonymize<Ia2lhg7l2hilo3>];
-export type I74af64m08r6as = Array<({
-    "account": SS58String;
-    "fee": bigint;
-    "fields": bigint;
-}) | undefined>;
-export type Ic8ann3kre6vdm = {
-    "account_id": SS58String;
-    "allocation": number;
-};
-export type I1j72qfgdejqsv = {
-    "owner": SS58String;
-    "provider": Anonymize<Idib8jf3ve40bj>;
-};
-export type Idib8jf3ve40bj = AnonymousEnum<{
-    "Allocation": undefined;
-    "AuthorityDeposit": bigint;
-    "System": undefined;
-}>;
-export type I60biiepd74113 = [SS58String, number, Anonymize<Idib8jf3ve40bj>];
 export type Ifhq9nad1vnuqe = {
     "scopes": number;
     "expires_at"?: Anonymize<I4arjljr6dpflb>;
@@ -3485,11 +3106,11 @@ export type I5utcetro501ir = {
     "value": bigint;
     "keep_alive": boolean;
 };
-export type I9kjdmjeroglf7 = AnonymousEnum<{
+export type I4l02sbhonvob = AnonymousEnum<{
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      */
-    "sudo": Anonymize<I2i50r8rcfts3l>;
+    "sudo": Anonymize<Ijvse40pfe8nl>;
     /**
      * Authenticates the sudo key and dispatches a function call with `Root` origin.
      * This function does not check the weight of the call, and instead allows the
@@ -3497,7 +3118,7 @@ export type I9kjdmjeroglf7 = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_unchecked_weight": Anonymize<Idlcrgc3dl5usf>;
+    "sudo_unchecked_weight": Anonymize<I5f6178dj52d4o>;
     /**
      * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
      * key.
@@ -3509,7 +3130,7 @@ export type I9kjdmjeroglf7 = AnonymousEnum<{
      *
      * The dispatch origin for this call must be _Signed_.
      */
-    "sudo_as": Anonymize<I2am3fetaem2gu>;
+    "sudo_as": Anonymize<Ia1uljsdjt4goo>;
     /**
      * Permanently removes the sudo key.
      *
@@ -3517,17 +3138,17 @@ export type I9kjdmjeroglf7 = AnonymousEnum<{
      */
     "remove_key": undefined;
 }>;
-export type I2i50r8rcfts3l = {
+export type Ijvse40pfe8nl = {
     "call": TxCallData;
 };
-export type Idlcrgc3dl5usf = {
+export type I5f6178dj52d4o = {
     "call": TxCallData;
     "weight": Anonymize<I4q39t5hn830vp>;
 };
 export type I8k3rnvpeeh4hv = {
     "new": MultiAddress;
 };
-export type I2am3fetaem2gu = {
+export type Ia1uljsdjt4goo = {
     "who": MultiAddress;
     "call": TxCallData;
 };
@@ -4361,25 +3982,7 @@ export type I1r4c2ghbtvjuc = {
     "index": number;
     "weight_limit": Anonymize<I4q39t5hn830vp>;
 };
-export type Ib9g9h9vhma17r = AnonymousEnum<{
-    /**
-     * Create a new proof-of-existence claim for the given hash.
-     *
-     * The hash must not already be claimed. The caller becomes the owner,
-     * and the current block number is recorded.
-     */
-    "create_claim": Anonymize<I1jm8m1rh9e20v>;
-    /**
-     * Revoke an existing proof-of-existence claim.
-     *
-     * Only the original claim owner can revoke it. The storage entry is removed.
-     */
-    "revoke_claim": Anonymize<I1jm8m1rh9e20v>;
-}>;
-export type I1jm8m1rh9e20v = {
-    "hash": FixedSizeBinary<32>;
-};
-export type Idmnhqjm694e0u = AnonymousEnum<{
+export type Id6scfug0iqhep = AnonymousEnum<{
     /**
      * Register a new social app.
      *
@@ -4404,7 +4007,7 @@ export type Idmnhqjm694e0u = AnonymousEnum<{
      * inner call's weight is added to the base weight so the fee
      * reflects the full amount of work.
      */
-    "act_as_moderator": Anonymize<I8pgovs95pnrrd>;
+    "act_as_moderator": Anonymize<I7fj7ks7okdqmq>;
 }>;
 export type I7fv0kt52b21r5 = {
     "metadata": Binary;
@@ -4413,7 +4016,7 @@ export type I7fv0kt52b21r5 = {
 export type I7uphs141r660c = {
     "app_id": number;
 };
-export type I8pgovs95pnrrd = {
+export type I7fj7ks7okdqmq = {
     "app_id": number;
     "call": TxCallData;
 };
@@ -4553,319 +4156,17 @@ export type I62qodqf8oaocv = {
         "viewer": SS58String;
         "wrapped_key": Binary;
     };
-    "signature": Anonymize<I3fo6882e5tjh8>;
+    "signature": Enum<{
+        "Ed25519": FixedSizeBinary<64>;
+        "Sr25519": FixedSizeBinary<64>;
+        "Ecdsa": FixedSizeBinary<65>;
+        "Eth": FixedSizeBinary<65>;
+    }>;
 };
-export type I3fo6882e5tjh8 = AnonymousEnum<{
-    "Ed25519": FixedSizeBinary<64>;
-    "Sr25519": FixedSizeBinary<64>;
-    "Ecdsa": FixedSizeBinary<65>;
-    "Eth": FixedSizeBinary<65>;
-}>;
 export type Ia6ds36j6alqgf = {
     "post_id": bigint;
 };
-export type I3q20jn7uoirtg = AnonymousEnum<{
-    /**
-     * Add a registrar to the system.
-     *
-     * The dispatch origin for this call must be `T::RegistrarOrigin`.
-     *
-     * - `account`: the account of the registrar.
-     *
-     * Emits `RegistrarAdded` if successful.
-     */
-    "add_registrar": Anonymize<Ic6cqd9g0t65v0>;
-    /**
-     * Set an account's identity information and reserve the appropriate deposit.
-     *
-     * If the account already has identity information, the deposit is taken as part payment
-     * for the new deposit.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * - `info`: The identity information.
-     *
-     * Emits `IdentitySet` if successful.
-     */
-    "set_identity": Anonymize<I2kds5jji7slh8>;
-    /**
-     * Set the sub-accounts of the sender.
-     *
-     * Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned
-     * and an amount `SubAccountDeposit` will be reserved for each item in `subs`.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * identity.
-     *
-     * - `subs`: The identity's (new) sub-accounts.
-     */
-    "set_subs": Anonymize<Ia9mkdf6l44shb>;
-    /**
-     * Clear an account's identity info and all sub-accounts and return all deposits.
-     *
-     * Payment: All reserved balances on the account are returned.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * identity.
-     *
-     * Emits `IdentityCleared` if successful.
-     */
-    "clear_identity": undefined;
-    /**
-     * Request a judgement from a registrar.
-     *
-     * Payment: At most `max_fee` will be reserved for payment to the registrar if judgement
-     * given.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a
-     * registered identity.
-     *
-     * - `reg_index`: The index of the registrar whose judgement is requested.
-     * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
-     *
-     * ```nocompile
-     * Registrars::<T>::get().get(reg_index).unwrap().fee
-     * ```
-     *
-     * Emits `JudgementRequested` if successful.
-     */
-    "request_judgement": Anonymize<I9l2s4klu0831o>;
-    /**
-     * Cancel a previous request.
-     *
-     * Payment: A previously reserved deposit is returned on success.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a
-     * registered identity.
-     *
-     * - `reg_index`: The index of the registrar whose judgement is no longer requested.
-     *
-     * Emits `JudgementUnrequested` if successful.
-     */
-    "cancel_request": Anonymize<I2ctrt5nqb8o7c>;
-    /**
-     * Set the fee required for a judgement to be requested from a registrar.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must be the account
-     * of the registrar whose index is `index`.
-     *
-     * - `index`: the index of the registrar whose fee is to be set.
-     * - `fee`: the new fee.
-     */
-    "set_fee": Anonymize<I711qahikocb1c>;
-    /**
-     * Change the account associated with a registrar.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must be the account
-     * of the registrar whose index is `index`.
-     *
-     * - `index`: the index of the registrar whose fee is to be set.
-     * - `new`: the new account ID.
-     */
-    "set_account_id": Anonymize<I6o1er683vod1j>;
-    /**
-     * Set the field information for a registrar.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must be the account
-     * of the registrar whose index is `index`.
-     *
-     * - `index`: the index of the registrar whose fee is to be set.
-     * - `fields`: the fields that the registrar concerns themselves with.
-     */
-    "set_fields": Anonymize<Id6gojh30v9ib2>;
-    /**
-     * Provide a judgement for an account's identity.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must be the account
-     * of the registrar whose index is `reg_index`.
-     *
-     * - `reg_index`: the index of the registrar whose judgement is being made.
-     * - `target`: the account whose identity the judgement is upon. This must be an account
-     * with a registered identity.
-     * - `judgement`: the judgement of the registrar of index `reg_index` about `target`.
-     * - `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is
-     * provided.
-     *
-     * Note: Judgements do not apply to a username.
-     *
-     * Emits `JudgementGiven` if successful.
-     */
-    "provide_judgement": Anonymize<Ide1bahhh47lj9>;
-    /**
-     * Remove an account's identity and sub-account information and slash the deposits.
-     *
-     * Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by
-     * `Slash`. Verification request deposits are not returned; they should be cancelled
-     * manually using `cancel_request`.
-     *
-     * The dispatch origin for this call must match `T::ForceOrigin`.
-     *
-     * - `target`: the account whose identity the judgement is upon. This must be an account
-     * with a registered identity.
-     *
-     * Emits `IdentityKilled` if successful.
-     */
-    "kill_identity": Anonymize<Id9uqtigc0il3v>;
-    /**
-     * Add the given account to the sender's subs.
-     *
-     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
-     * to the sender.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * sub identity of `sub`.
-     */
-    "add_sub": Anonymize<Ic68lsi7chpv5k>;
-    /**
-     * Alter the associated name of the given sub-account.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * sub identity of `sub`.
-     */
-    "rename_sub": Anonymize<Ic68lsi7chpv5k>;
-    /**
-     * Remove the given account from the sender's subs.
-     *
-     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
-     * to the sender.
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * sub identity of `sub`.
-     */
-    "remove_sub": Anonymize<Iek0boln8pgnko>;
-    /**
-     * Remove the sender as a sub-account.
-     *
-     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
-     * to the sender (*not* the original depositor).
-     *
-     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
-     * super-identity.
-     *
-     * NOTE: This should not normally be used, but is provided in the case that the non-
-     * controller of an account is maliciously registered as a sub-account.
-     */
-    "quit_sub": undefined;
-    /**
-     * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
-     *
-     * The authority can grant up to `allocation` usernames. To top up the allocation or
-     * change the account used to grant usernames, this call can be used with the updated
-     * parameters to overwrite the existing configuration.
-     */
-    "add_username_authority": Anonymize<I452bkd71b385t>;
-    /**
-     * Remove `authority` from the username authorities.
-     */
-    "remove_username_authority": Anonymize<Ie83f0p0ke1f4u>;
-    /**
-     * Set the username for `who`. Must be called by a username authority.
-     *
-     * If `use_allocation` is set, the authority must have a username allocation available to
-     * spend. Otherwise, the authority will need to put up a deposit for registering the
-     * username.
-     *
-     * Users can either pre-sign their usernames or
-     * accept them later.
-     *
-     * Usernames must:
-     * - Only contain lowercase ASCII characters or digits.
-     * - When combined with the suffix of the issuing authority be _less than_ the
-     * `MaxUsernameLength`.
-     */
-    "set_username_for": Anonymize<Ib9nmpn9ru9aeh>;
-    /**
-     * Accept a given username that an `authority` granted. The call must include the full
-     * username, as in `username.suffix`.
-     */
-    "accept_username": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * Remove an expired username approval. The username was approved by an authority but never
-     * accepted by the user and must now be beyond its expiration. The call must include the
-     * full username, as in `username.suffix`.
-     */
-    "remove_expired_approval": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * Set a given username as the primary. The username should include the suffix.
-     */
-    "set_primary_username": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * Start the process of removing a username by placing it in the unbinding usernames map.
-     * Once the grace period has passed, the username can be deleted by calling
-     * [remove_username](crate::Call::remove_username).
-     */
-    "unbind_username": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * Permanently delete a username which has been unbinding for longer than the grace period.
-     * Caller is refunded the fee if the username expired and the removal was successful.
-     */
-    "remove_username": Anonymize<Ie5l999tf7t2te>;
-    /**
-     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
-     * and slashes any deposit associated with it.
-     */
-    "kill_username": Anonymize<Ie5l999tf7t2te>;
-}>;
-export type Ic6cqd9g0t65v0 = {
-    "account": MultiAddress;
-};
-export type I2kds5jji7slh8 = {
-    "info": Anonymize<I1o57snqt6f4v5>;
-};
-export type Ia9mkdf6l44shb = {
-    "subs": Array<Anonymize<I910puuahutflf>>;
-};
-export type I9l2s4klu0831o = {
-    "reg_index": number;
-    "max_fee": bigint;
-};
-export type I2ctrt5nqb8o7c = {
-    "reg_index": number;
-};
-export type I711qahikocb1c = {
-    "index": number;
-    "fee": bigint;
-};
-export type I6o1er683vod1j = {
-    "index": number;
-    "new": MultiAddress;
-};
-export type Id6gojh30v9ib2 = {
-    "index": number;
-    "fields": bigint;
-};
-export type Ide1bahhh47lj9 = {
-    "reg_index": number;
-    "target": MultiAddress;
-    "judgement": IdentityJudgement;
-    "identity": FixedSizeBinary<32>;
-};
-export type Id9uqtigc0il3v = {
-    "target": MultiAddress;
-};
-export type Ic68lsi7chpv5k = {
-    "sub": MultiAddress;
-    "data": IdentityData;
-};
-export type Iek0boln8pgnko = {
-    "sub": MultiAddress;
-};
-export type I452bkd71b385t = {
-    "authority": MultiAddress;
-    "suffix": Binary;
-    "allocation": number;
-};
-export type Ie83f0p0ke1f4u = {
-    "suffix": Binary;
-    "authority": MultiAddress;
-};
-export type Ib9nmpn9ru9aeh = {
-    "who": MultiAddress;
-    "username": Binary;
-    "signature"?: (Anonymize<I3fo6882e5tjh8>) | undefined;
-    "use_allocation": boolean;
-};
-export type Idbrllcvngeaf7 = AnonymousEnum<{
+export type Ibt0amstka09l3 = AnonymousEnum<{
     /**
      * Authorize `manager` to act on the caller's behalf under `scopes`.
      *
@@ -4903,7 +4204,7 @@ export type Idbrllcvngeaf7 = AnonymousEnum<{
      * matching the pattern used by `pallet-proxy` at
      * `substrate/frame/proxy/src/lib.rs:240-262`.
      */
-    "act_as_manager": Anonymize<I3ddb6lhc3jmtj>;
+    "act_as_manager": Anonymize<I2gfslkg3g227g>;
 }>;
 export type I5gn45n88f3ubg = {
     "manager": SS58String;
@@ -4913,7 +4214,7 @@ export type I5gn45n88f3ubg = {
 export type I7ujehsqggbv5l = {
     "manager": SS58String;
 };
-export type I3ddb6lhc3jmtj = {
+export type I2gfslkg3g227g = {
     "owner": SS58String;
     "call": TxCallData;
 };
@@ -4970,7 +4271,7 @@ export type I7u915mvkdsb08 = ResultPayload<Binary, Enum<{
     "NotFound": Anonymize<I4gil44d08grh>;
     "Codec": undefined;
 }>>;
-export type Ifgpmvcafkjte5 = ResultPayload<Anonymize<I450vhused0qvm>, Anonymize<I5nrjkj9qumobs>>;
+export type I1omu75vdb83v0 = ResultPayload<Anonymize<Ic4gu8lb3j6spr>, Anonymize<I5nrjkj9qumobs>>;
 export type I5nrjkj9qumobs = AnonymousEnum<{
     "Invalid": Enum<{
         "Call": undefined;
@@ -5028,26 +4329,24 @@ export type Iei2mvq0mjvt81 = {
     }) | undefined;
     "tip": bigint;
 };
-export type Icmt859r8ealc1 = AnonymousEnum<{
+export type I3ih6drlahr49p = AnonymousEnum<{
     "System": Anonymize<Iekve0i6djpd9f>;
     "ParachainSystem": Anonymize<I3u72uvpuo4qrt>;
     "Timestamp": Anonymize<I7d75gqfg6jh9c>;
     "ParachainInfo": undefined;
     "Balances": Anonymize<I9svldsp29mh87>;
-    "Sudo": Anonymize<I9kjdmjeroglf7>;
+    "Sudo": Anonymize<I4l02sbhonvob>;
     "CollatorSelection": Anonymize<I9dpq5287dur8b>;
     "Session": Anonymize<I77dda7hps0u37>;
     "XcmpQueue": Anonymize<Ib7tahn20bvsep>;
     "PolkadotXcm": Anonymize<I6k1inef986368>;
     "CumulusXcm": undefined;
     "MessageQueue": Anonymize<Ic2uoe7jdksosp>;
-    "TemplatePallet": Anonymize<Ib9g9h9vhma17r>;
-    "SocialAppRegistry": Anonymize<Idmnhqjm694e0u>;
+    "SocialAppRegistry": Anonymize<Id6scfug0iqhep>;
     "SocialProfiles": Anonymize<I847f6f75mj572>;
     "SocialGraph": Anonymize<I5lcpnc4e0dlj4>;
     "SocialFeeds": Anonymize<I3suic5ikb3h3k>;
-    "Identity": Anonymize<I3q20jn7uoirtg>;
-    "SocialManagers": Anonymize<Idbrllcvngeaf7>;
+    "SocialManagers": Anonymize<Ibt0amstka09l3>;
     "Sponsorship": Anonymize<Idb5t8qi40bp51>;
 }>;
 export type Ic1d4u2opv3fst = {

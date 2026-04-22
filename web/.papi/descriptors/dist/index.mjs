@@ -14,22 +14,22 @@ var toBinary = (base64) => {
 };
 
 // .papi/descriptors/src/stack_template.ts
-var descriptorValues = import("./descriptors-L7EOGEFW.mjs").then((module) => module["Stack_template"]);
-var metadataTypes = import("./metadataTypes-ORPTPFZP.mjs").then(
+var descriptorValues = import("./descriptors-ES27SQXT.mjs").then((module) => module["Stack_template"]);
+var metadataTypes = import("./metadataTypes-XQMQTU7Z.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
 var asset = {};
 var extensions = {};
-var getMetadata = () => import("./stack_template_metadata-AZX44JKI.mjs").then(
+var getMetadata = () => import("./stack_template_metadata-4E4KK7YN.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
-var genesis = "0x14fbbb3eb647b8f42c36378bf7bb8db1cfe0d396bc65054d38e69a710b4ae18c";
+var genesis = "0x2e26eec8886eacb9b4bfc049ea7acc12f3b9eca1eafdb2488d8a153d093ba540";
 var _allDescriptors = { descriptors: descriptorValues, metadataTypes, asset, extensions, getMetadata, genesis };
 var stack_template_default = _allDescriptors;
 
 // .papi/descriptors/src/bulletin.ts
-var descriptorValues2 = import("./descriptors-L7EOGEFW.mjs").then((module) => module["Bulletin"]);
-var metadataTypes2 = import("./metadataTypes-ORPTPFZP.mjs").then(
+var descriptorValues2 = import("./descriptors-ES27SQXT.mjs").then((module) => module["Bulletin"]);
+var metadataTypes2 = import("./metadataTypes-XQMQTU7Z.mjs").then(
   (module) => toBinary("default" in module ? module.default : module)
 );
 var asset2 = {};
@@ -80,8 +80,6 @@ var XcmV3TraitsError = _Enum;
 var XcmV4Response = _Enum;
 var XcmPalletVersionMigrationStage = _Enum;
 var XcmVersionedAssetId = _Enum;
-var IdentityJudgement = _Enum;
-var IdentityData = _Enum;
 var MultiAddress = _Enum;
 var BalancesAdjustmentDirection = _Enum;
 var XcmVersionedXcm = _Enum;
@@ -97,7 +95,7 @@ var XcmVersionedAsset = _Enum;
 
 // .papi/descriptors/src/index.ts
 var metadatas = {
-  ["0xe91db0351a6a0e16e984917059a10db4a35b3637b5b43312c52e578a1e756562"]: stack_template_default,
+  ["0xf7538d99c3093b31694b3957c47cb7218c3fe96dddbf21624340baf1399b9c35"]: stack_template_default,
   ["0x1a82e5143be3211ded412b0368b486ce83bd41a80ec95eb267f6c204adda8365"]: bulletin_default
 };
 var getMetadata3 = async (codeHash) => {
@@ -114,8 +112,6 @@ export {
   BalancesTypesReasons,
   DigestItem,
   DispatchClass,
-  IdentityData,
-  IdentityJudgement,
   MultiAddress,
   Phase,
   TokenError,
