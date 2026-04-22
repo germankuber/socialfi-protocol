@@ -96,90 +96,35 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
 
-## What's Inside
+## Commands
 
-- **Polkadot SDK Blockchain** ([`blockchain/`](blockchain/)) — A Cumulus-based parachain compatible with `polkadot-omni-node`
-  - **SocialFi Pallets** ([`blockchain/pallets/`](blockchain/pallets/)) — `social-app-registry`, `social-profiles`, `social-graph`, `social-feeds`, `social-managers`, `sponsorship`
-  - **Notifications Primitives** ([`blockchain/primitives/social-notifications/`](blockchain/primitives/social-notifications/)) — Shared helpers to build Statement Store notifications
-  - **Parachain Runtime** ([`blockchain/runtime/`](blockchain/runtime/)) — Wires the pallets + `pallet-statement` into a single construct-runtime
-- **Frontend** ([`web/`](web/)) — React + TypeScript app using PAPI for pallet interactions and `@polkadot-apps/statement-store` for live notifications
-- **Indexer** ([`indexer/`](indexer/)) — Optional TypeScript service that denormalises pallet events for the frontend
-- **CLI** ([`cli/`](cli/)) — Rust CLI for chain queries and Statement Store submit/dump via subxt
-- **Dev Scripts** ([`scripts/`](scripts/)) — One-command scripts to build, start, and test the stack locally
+Every day-to-day operation is exposed through `make`. Run `make help`
+for the live list; the targets below are what the repo ships with.
 
-See [`docs/ARCHITECTURE_OVERVIEW.md`](docs/ARCHITECTURE_OVERVIEW.md) for the full whole-stack walkthrough.
+### Run the stack
 
-## Quick Start
+| Target            | What it does                                                  |
+|-------------------|---------------------------------------------------------------|
+| `make node`       | Start the Substrate dev node with full logs                   |
+| `make node-quiet` | Same node, with the noisy consensus / idle logs filtered out  |
+| `make frontend`   | Start the React frontend (Vite dev server)                    |
+| `make indexer`    | Start the event indexer + HTTP API on `:3001`                 |
 
-### Docker (no Rust required)
+Each one runs in its own terminal. Typical local flow: `make node` →
+`make indexer` → `make frontend`.
 
-```bash
-docker compose up -d
+### Deploy
 
-# Start the frontend on the host
-cd web && pnpm install && pnpm dev
-```
+| Target                    | What it does                                                          |
+|---------------------------|-----------------------------------------------------------------------|
+| `make tunnel`             | Open an ngrok HTTPS tunnel against the node WS port (`9944`)          |
+| `make deploy-with-tunnel` | Full local DotNS deploy — build, IPFS CAR, Bulletin upload, contenthash (basename: `socialfi`) |
+| `make deploy-frontend`    | Legacy path — upload the built frontend to IPFS via `w3cli`           |
 
-The Docker build compiles the Rust runtime and generates the chain spec automatically. See [`web/README.md`](web/README.md) for frontend-specific follow-up.
-
-### Native (Rust toolchain)
-
-```bash
-# Fetch pinned SDK binaries into ./bin/
-./scripts/download-sdk-binaries.sh
-
-# Full local stack: relay chain + collator + frontend
-./scripts/start-all.sh
-```
-
-Prerequisites:
-
-- **Rust**: stable (pinned via `rust-toolchain.toml`)
-- **Node.js**: 22.x LTS (pinned via `.nvmrc`)
-- **Polkadot SDK binaries** (stable2512-3): `polkadot`, `polkadot-prepare-worker`, `polkadot-execute-worker` (relay), `polkadot-omni-node`. Fetched into `./bin/` by the script above.
-- **Zombienet** (`npm install -g @zombienet/cli`) for local relay-chain testing.
-
-See [`docs/INSTALL.md`](docs/INSTALL.md) for the full setup guide.
-
-## Running
-
-```bash
-# Full local stack
-./scripts/start-all.sh
-
-# Lightweight solo-node dev loop
-./scripts/start-dev.sh
-
-# Zombienet only (no frontend)
-./scripts/start-local.sh
-
-# Frontend only (for an already-running chain)
-./scripts/start-frontend.sh
-```
-
-## Format & Lint
-
-```bash
-# Rust (requires nightly for rustfmt config options)
-cargo +nightly fmt
-cargo clippy --workspace
-
-# Frontend
-cd web && pnpm fmt && pnpm lint
-```
-
-## Test Commands
-
-```bash
-# All Rust tests
-cargo test --workspace
-
-# Statement Store smoke test
-./scripts/test-statement-store-smoke.sh
-
-# Frontend type-check
-cd web && pnpm tsc --noEmit
-```
+The deploy flow assumes `make tunnel` is already running in another
+terminal so the published bundle can reach your local node through
+the ngrok URL. `make deploy-with-tunnel` is fully self-contained and
+does not touch GitHub Actions.
 
 ## Documentation
 
