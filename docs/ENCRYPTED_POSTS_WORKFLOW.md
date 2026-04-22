@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.png" />
+    <img src="./assets/logo-light.png" alt="Polkadot Stack Template" width="220" />
+  </picture>
+</p>
+
 # Encrypted Posts — End-to-End Workflow
 
 Detailed trace of what runs, where, and when, from the moment the node

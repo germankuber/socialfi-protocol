@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.png" />
+    <img src="./assets/logo-light.png" alt="Polkadot Stack Template" width="220" />
+  </picture>
+</p>
+
 # Deployment Guide
 
 This guide covers deploying the frontend and the parachain runtime.
