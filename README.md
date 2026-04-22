@@ -56,6 +56,7 @@ flowchart TB
     Wallet -- "signs identity tx" --> People
 
     Indexer -- "events" --> RPC
+    Front -- "get pubkey" --> KS
     OCW -- "unseal and sign" --> KS
 
     classDef user fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
