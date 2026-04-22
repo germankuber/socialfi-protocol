@@ -51,6 +51,8 @@ flowchart TB
     Front -- "write PAPI" --> RPC
     Front -- "subscribe" --> RPC
 
+    Wallet -- "signs tx" --> RPC
+
     Front -- "read identity" --> People
     Wallet -- "signs identity tx" --> People
 
