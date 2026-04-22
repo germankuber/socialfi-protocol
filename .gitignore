@@ -55,3 +55,4 @@ web/*.mjs
 !web/verify-encrypted-ipfs.mjs
 !web/verify-unlock-state.mjs
 
+build.car

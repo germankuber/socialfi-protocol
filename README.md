@@ -81,20 +81,28 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
  │              events  ·  view-function reads  ·  statements                │
  └──────────────────────────────────────┬────────────────────────────────────┘
                                         │
-              ┌─────────────────────────┼─────────────────────────┐
-              │                         │                         │
-              ▼                         ▼                         ▼
-   ┌──────────────────┐      ┌────────────────────┐      ┌────────────────────┐
-   │   IPFS Gateway   │      │   Indexer (node)   │      │  Statement Store   │
-   │  post / profile  │      │  denormalised      │      │  notifications     │
-   │  metadata blobs  │      │  events → lowdb    │      │  gossip → PAPI sub │
-   └──────────────────┘      └────────────────────┘      └────────────────────┘
+              ┌───────────────┬─────────┼─────────┬─────────────────┐
+              │               │         │         │                 │
+              ▼               ▼         ▼         ▼                 ▼
+   ┌──────────────────┐  ┌────────────┐  ┌─────────────┐  ┌────────────────────┐
+   │   IPFS Gateway   │  │  Indexer   │  │  Statement  │  │   Key Service      │
+   │  post / profile  │  │  (node)    │  │  Store      │  │  (external — WIP)  │
+   │  metadata blobs  │  │  events →  │  │  gossip →   │  │  custody keys,     │
+   │                  │  │  lowdb     │  │  PAPI sub   │  │  sign on request   │
+   └──────────────────┘  └────────────┘  └─────────────┘  └──────────▲─────────┘
+                                                                     │
+                                                    OCW ↔ Key Service │
+                                                                     │
+                              ┌──────────────────────────────────────┘
+                              │  (collator's OCW asks the Key Service
+                              │   to unseal capsules + sign deliveries)
+                              ▼
 ```
 
 **Key dataflows**
 
 - **Write path**: Wallet signs → node TxPool → runtime dispatch → event emitted → indexer persists → frontend re-renders.
-- **Encrypted read path**: Viewer pays `unlock_post` → OCW reads `PendingUnlocks`, re-seals content key for viewer → submits `deliver_unlock_unsigned` → viewer polls `Unlocks` and decrypts locally.
+- **Encrypted read path**: Viewer pays `unlock_post` → OCW reads `PendingUnlocks` and **calls the external Key Service**, which custodies the X25519 keys and re-seals the content key for the viewer (and signs the delivery) → OCW submits `deliver_unlock_unsigned` → viewer polls `Unlocks` and decrypts locally. The current in-node stub (`blockchain/pallets/social-feeds/src/dev_key.rs`) ships a deterministic dev key for local testing; production moves this behind the Key Service.
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
 
@@ -189,7 +197,6 @@ cd web && pnpm tsc --noEmit
 - [docs/NOTIFICATIONS_ARCHITECTURE.md](docs/NOTIFICATIONS_ARCHITECTURE.md) — Real-time notifications component map
 - [docs/NOTIFICATIONS_FLOW.md](docs/NOTIFICATIONS_FLOW.md) — End-to-end notification sequence
 - [docs/NOTIFICATIONS_TOPICS.md](docs/NOTIFICATIONS_TOPICS.md) — Topic + payload contract
-- [docs/ENCRYPTED_POSTS.md](docs/ENCRYPTED_POSTS.md) — Crypto design for private posts
 - [docs/TOOLS.md](docs/TOOLS.md) — Polkadot stack components used here
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Deployment guide
 - [docs/INSTALL.md](docs/INSTALL.md) — Local setup

@@ -20,11 +20,11 @@ help:
 	@echo "  make indexer             Start the event indexer"
 	@echo ""
 	@echo "  make tunnel              Open an ngrok HTTPS tunnel to the node WS port"
-	@echo "                           (needs to be running before deploy-with-tunnel)"
-	@echo "  make deploy-frontend     Build + upload the frontend to IPFS"
-	@echo "                           (requires w3cli logged in — see the script)"
-	@echo "  make deploy-with-tunnel  Deploy to DotNS using the current ngrok tunnel"
-	@echo "                           as the WS endpoint (default basename: socialfi)"
+	@echo "                           (must be running before deploy-with-tunnel)"
+	@echo "  make deploy-with-tunnel  Full local DotNS deploy via the current ngrok"
+	@echo "                           tunnel — build, IPFS CAR, Bulletin upload,"
+	@echo "                           contenthash (basename: socialfi)"
+	@echo "  make deploy-frontend     Legacy — upload the frontend to IPFS via w3cli"
 
 node:
 	./scripts/start-dev.sh
@@ -46,8 +46,8 @@ tunnel:
 	}
 	ngrok http 9944
 
-deploy-frontend:
-	./scripts/deploy-frontend.sh
-
 deploy-with-tunnel:
 	./scripts/deploy-with-tunnel.sh
+
+deploy-frontend:
+	./scripts/deploy-frontend.sh

@@ -1,31 +1,79 @@
 #!/usr/bin/env bash
-# Deploy the frontend to DotNS with the current ngrok tunnel URL
-# baked into the static bundle.
+# Local end-to-end DotNS deploy.
 #
-# Assumes:
-#   1. `ngrok http 9944` is already running locally.
-#   2. `gh` is installed and authenticated (`gh auth status`).
+# Mirrors the GitHub Actions workflow (`.github/workflows/deploy-frontend.yml`
+# + `paritytech/dotns-sdk/.github/workflows/deploy.yml`) but runs every
+# step on the developer's laptop. The flow:
 #
-# Reads the public URL from the ngrok local API, dispatches the
-# `Deploy Frontend to DotNS` workflow with that URL as `ws_url`, and
-# tails the run until it finishes.
+#   1. Read the current ngrok tunnel (required — DotNS cannot reach
+#      `ws://localhost:9944`).
+#   2. `VITE_WS_URL=<tunnel> npm run build` — bundle the frontend.
+#   3. `ipfs add` the `web/dist/` directory and `ipfs dag export`
+#      it to a CAR file (CID v1 + raw-leaves, matching the workflow).
+#   4. `dotns bulletin authorize <address>` — authorise the signer
+#      on Paseo Bulletin.
+#   5. `dotns bulletin upload build.car --resume --print-contenthash`
+#      — upload to Bulletin and capture the CID.
+#   6. `dotns lookup name <basename>` — register the base domain if
+#      it does not exist yet (skipped unless `REGISTER_BASE=true`).
+#   7. `dotns content set <basename> <cid>` — point the domain at the
+#      new CID.
+#
+# Dependencies (all must be in PATH):
+#   - node 22.x
+#   - npm
+#   - ngrok   (tunnel has to be running already)
+#   - ipfs    (Kubo) — installed automatically on macOS/Linux if missing
+#   - dotns   CLI (https://github.com/paritytech/dotns-sdk)
 #
 # Usage:
-#   ./scripts/deploy-with-tunnel.sh [basename]
+#   ./scripts/deploy-local.sh [basename]
 #
-# If `basename` is omitted, defaults to the one pinned in the workflow.
+# Env overrides:
+#   DOTNS_MNEMONIC       BIP39 phrase for the signer (defaults to the
+#                        Alice dev seed — only usable on Paseo testnet).
+#   REGISTER_BASE=true   Register the base domain if it isn't owned yet.
+#   SKIP_BUILD=true      Reuse an existing `web/dist/` (useful when
+#                        iterating on deploy errors).
+#   NGROK_API            ngrok local API (default: http://127.0.0.1:4040).
+
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+BASENAME="${1:-socialfi}"
 NGROK_API="${NGROK_API:-http://127.0.0.1:4040/api/tunnels}"
-WORKFLOW_FILE=".github/workflows/deploy-frontend.yml"
-DEFAULT_BASENAME="${DEFAULT_BASENAME:-socialfi}"
+# Alice dev seed — only safe for Paseo testnet. Override via env.
+DEFAULT_DEV_MNEMONIC="bottom drive obey lake curtain smoke basket hold race lonely fit walk"
+export DOTNS_MNEMONIC="${DOTNS_MNEMONIC:-$DEFAULT_DEV_MNEMONIC}"
+REGISTER_BASE="${REGISTER_BASE:-false}"
+SKIP_BUILD="${SKIP_BUILD:-false}"
 
-BASENAME="${1:-$DEFAULT_BASENAME}"
+# ── preflight ────────────────────────────────────────────────────────
 
-# 1. Pull the current ngrok https URL.
+for cmd in node npm dotns; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "[error] required command not found: $cmd"
+        exit 1
+    fi
+done
+
+if ! command -v ipfs >/dev/null 2>&1; then
+    echo "[info] ipfs not found — installing via brew (macOS)"
+    if command -v brew >/dev/null 2>&1; then
+        brew install ipfs
+    else
+        echo "[error] install IPFS Kubo manually: https://docs.ipfs.tech/install/command-line/"
+        exit 1
+    fi
+fi
+
+# ── 1. resolve ngrok WS URL ──────────────────────────────────────────
+
 if ! raw=$(curl -s --max-time 3 "$NGROK_API" 2>/dev/null); then
-    echo "[error] cannot reach the ngrok local API at $NGROK_API"
-    echo "        is ngrok running?  try:  ngrok http 9944"
+    echo "[error] cannot reach ngrok local API at $NGROK_API"
+    echo "        is the tunnel running?  try: make tunnel"
     exit 1
 fi
 
@@ -40,42 +88,90 @@ for t in data.get('tunnels', []):
 "
 )
 
-if [ -z "$HTTPS_URL" ]; then
-    echo "[error] no https tunnel found in ngrok output"
+if [[ -z "$HTTPS_URL" ]]; then
+    echo "[error] no https tunnel in ngrok output"
     exit 1
 fi
 
 WS_URL="${HTTPS_URL/https:/wss:}"
 
-echo "[info] ngrok public URL:  $HTTPS_URL"
-echo "[info] ws URL for build:  $WS_URL"
-echo "[info] DotNS basename:    $BASENAME"
+echo "[info] ngrok tunnel:   $HTTPS_URL"
+echo "[info] WS for build:   $WS_URL"
+echo "[info] DotNS basename: $BASENAME"
 echo
 
-# 2. Make sure gh is ready.
-if ! command -v gh >/dev/null 2>&1; then
-    echo "[error] gh CLI not installed. install with: brew install gh"
+# ── 2. build ─────────────────────────────────────────────────────────
+
+if [[ "$SKIP_BUILD" == "true" && -d "$ROOT_DIR/web/dist" ]]; then
+    echo "[step 2/7] skipping build (SKIP_BUILD=true and web/dist exists)"
+else
+    echo "[step 2/7] building frontend with VITE_WS_URL=$WS_URL"
+    cd "$ROOT_DIR/web"
+    VITE_WS_URL="$WS_URL" npm run build
+    cd "$ROOT_DIR"
+fi
+
+# ── 3. CAR file ──────────────────────────────────────────────────────
+
+echo "[step 3/7] exporting build/ as IPFS CAR"
+ipfs init --profile server >/dev/null 2>&1 || true
+CAR_CID=$(ipfs add -Q -r --cid-version=1 --raw-leaves --pin=false "$ROOT_DIR/web/dist")
+ipfs dag export "$CAR_CID" > "$ROOT_DIR/build.car"
+CAR_SIZE=$(stat -f '%z' "$ROOT_DIR/build.car" 2>/dev/null || stat --printf='%s' "$ROOT_DIR/build.car")
+echo "[info] CAR CID:  $CAR_CID"
+echo "[info] CAR size: $CAR_SIZE bytes"
+
+# ── 4. authorise on Bulletin ─────────────────────────────────────────
+
+echo "[step 4/7] authorising account on Bulletin"
+ADDRESS=$(dotns account address)
+echo "[info] signer address: $ADDRESS"
+dotns bulletin authorize "$ADDRESS"
+
+# ── 5. upload to Bulletin ────────────────────────────────────────────
+
+echo "[step 5/7] uploading CAR to Bulletin"
+UPLOAD_RESULT=$(
+    dotns bulletin upload "$ROOT_DIR/build.car" \
+        --resume \
+        --print-contenthash \
+        --json \
+        --concurrency 4
+)
+CID=$(echo "$UPLOAD_RESULT" | python3 -c "import json, sys; print(json.load(sys.stdin).get('cid', ''))")
+if [[ -z "$CID" ]]; then
+    echo "[error] upload succeeded but no CID returned"
+    echo "        raw response: $UPLOAD_RESULT"
     exit 1
 fi
-if ! gh auth status >/dev/null 2>&1; then
-    echo "[error] gh not authenticated. run:  gh auth login"
+echo "[info] uploaded CID: $CID"
+
+# ── 6. (optional) register base domain ───────────────────────────────
+
+echo "[step 6/7] checking base domain ${BASENAME}.dot"
+LOOKUP=$(dotns lookup name "$BASENAME" --json 2>&1 || true)
+EXISTS=$(echo "$LOOKUP" | python3 -c "import json, sys; print(json.load(sys.stdin).get('exists', False))" 2>/dev/null || echo "False")
+
+if [[ "$EXISTS" == "True" || "$EXISTS" == "true" ]]; then
+    echo "[info] ${BASENAME}.dot is already registered"
+elif [[ "$REGISTER_BASE" == "true" ]]; then
+    echo "[info] registering ${BASENAME}.dot"
+    dotns register domain --name "$BASENAME"
+else
+    echo "[error] ${BASENAME}.dot is not registered and REGISTER_BASE is not set"
+    echo "        re-run with:  REGISTER_BASE=true make deploy-local"
+    echo "        or register manually at https://dotns.paseo.li"
     exit 1
 fi
 
-# 3. Dispatch the workflow.
-echo "[info] dispatching workflow..."
-gh workflow run "$WORKFLOW_FILE" \
-    -f "basename=$BASENAME" \
-    -f "ws_url=$WS_URL" \
-    -f "skip-cache=true"
+# ── 7. set contenthash ───────────────────────────────────────────────
 
-echo "[info] waiting for run to start..."
-sleep 4
+echo "[step 7/7] setting contenthash for $BASENAME → $CID"
+dotns content set "$BASENAME" "$CID"
 
-# Grab the newest run id for this workflow.
-RUN_ID=$(gh run list --workflow "$WORKFLOW_FILE" --limit 1 --json databaseId --jq '.[0].databaseId')
-echo "[info] run id: $RUN_ID"
-echo "[info] url:    $(gh run view "$RUN_ID" --json url --jq '.url')"
 echo
-echo "[info] tailing (Ctrl+C to detach; the run keeps going on GitHub):"
-gh run watch "$RUN_ID" --exit-status
+echo "=== Deployment complete ==="
+echo "  Domain: ${BASENAME}.dot"
+echo "  CID:    $CID"
+echo "  URL:    https://${BASENAME}.dot.li"
+echo "  Direct: https://${BASENAME}.dot"

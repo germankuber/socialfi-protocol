@@ -5,6 +5,16 @@ import path from "path";
 export default defineConfig({
   base: "./",
   plugins: [react()],
+  // `@polkadot-apps/host` ships inline vitest blocks
+  // (`if (import.meta.vitest) { ... }`) inside its published sources.
+  // In production those blocks are dead code but Rollup cannot always
+  // hoist them out, which reorders the chunk and surfaces as a TDZ
+  // `Cannot access 'T' before initialization` at runtime. Replacing
+  // the sentinel with `undefined` at build time lets esbuild eliminate
+  // the whole block cleanly before Rollup runs.
+  define: {
+    "import.meta.vitest": "undefined",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

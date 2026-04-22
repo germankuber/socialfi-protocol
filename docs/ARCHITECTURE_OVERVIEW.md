@@ -202,11 +202,14 @@ two meaningful OCWs today:
   the Statement Store host function. Notifications (replies, follows,
   new-app broadcasts) ride on this.
 - **`social-feeds` OCW** (`src/offchain.rs`) — for encrypted posts,
-  reads pending unlocks, opens the capsule with the key-service
-  secret, re-seals to the viewer's ephemeral public key, submits a
-  signed `deliver_unlock_unsigned`. Key management is a known weak
-  point today; see [`KEY_MANAGEMENT.md`](./KEY_MANAGEMENT.md) for the
-  migration plan.
+  reads pending unlocks and **calls out to an external Key Service**
+  that custodies the X25519 keypair; the service opens the capsule,
+  re-seals the content key to the viewer's ephemeral public key, and
+  signs the payload. The OCW then submits `deliver_unlock_unsigned`.
+  The in-repo code still ships a dev stub (`dev_key.rs`) where this
+  lives inside the collator — production moves it behind the
+  external service. See [`KEY_MANAGEMENT.md`](./KEY_MANAGEMENT.md) for
+  the migration plan.
 
 ### 4. Collator node
 
@@ -355,7 +358,7 @@ sequenceDiagram
     participant PSponsor as pallet-sponsorship
     participant PStatement as pallet-statement
     participant OCW as feeds OCW
-    participant KeyService as key-service<br/>(collator)
+    participant KeyService as key-service<br/>(external)
     participant Bob
 
     Alice->>Web: Writes reply + attaches encrypted capsule
@@ -375,8 +378,8 @@ sequenceDiagram
     Bob->>Bob: bell +1
 
     Note over OCW,KeyService: If reply had its own capsule later unlocked by a viewer
-    OCW->>KeyService: open(capsule) (currently: hardcoded key)
-    KeyService-->>OCW: content_key
+    OCW->>KeyService: open(capsule) + sign (external service, currently stubbed in-node)
+    KeyService-->>OCW: content_key + signature
     OCW->>PFeeds: deliver_unlock_unsigned(viewer_key)
 ```
 
@@ -495,8 +498,6 @@ to replace the chain as the authoritative source.
 - [`INSTALL.md`](./INSTALL.md) — local setup.
 - [`TOOLS.md`](./TOOLS.md) — tooling reference.
 - [`DEPLOYMENT.md`](./DEPLOYMENT.md) — production-lite deployment.
-- [`ENCRYPTED_POSTS.md`](./ENCRYPTED_POSTS.md) — full crypto design
-  of obfuscated/private posts.
 - [`ENCRYPTED_POSTS_WORKFLOW.md`](./ENCRYPTED_POSTS_WORKFLOW.md) —
   step-by-step of a single encrypted unlock.
 - [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
