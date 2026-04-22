@@ -25,17 +25,7 @@ flowchart TB
         RPC["RPC / TxPool / P2P"]
         subgraph RT["Runtime"]
             TxExt["TxExtension pipeline"]
-            subgraph Pallets["SocialFi pallets"]
-                direction TB
-                AR["51 app-registry"]
-                PR["52 profiles"]
-                GR["53 graph"]
-                FD["54 feeds"]
-                MG["55 managers"]
-                SP["56 sponsorship"]
-                ST["40 pallet-statement"]
-                AR ~~~ PR ~~~ GR ~~~ FD ~~~ MG ~~~ SP ~~~ ST
-            end
+            Pallets["📚 SocialFi pallets<br/>━━━━━━━━━━━━━━<br/>51 app-registry<br/>52 profiles<br/>53 graph<br/>54 feeds<br/>55 managers<br/>56 sponsorship<br/>40 pallet-statement"]
             TxExt --> Pallets
         end
         OCW["OCW — feeds and statement-store"]
@@ -64,7 +54,7 @@ flowchart TB
     classDef external fill:#581c87,color:#f3e8ff,stroke:#a855f7
     classDef people fill:#4c1d95,color:#ede9fe,stroke:#a78bfa
     class Wallet,Front,IPFS,Indexer user
-    class RPC,RT,OCW,TxExt,Pallets,AR,PR,GR,FD,MG,SP,ST chain
+    class RPC,RT,OCW,TxExt,Pallets chain
     class KS external
     class People people
 ```
