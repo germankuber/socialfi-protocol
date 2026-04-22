@@ -15,48 +15,47 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
 ```mermaid
 flowchart TB
     Wallet["🔐 Wallet<br/>PJS · Talisman · SubWallet"]
-    IPFS["📦 IPFS Gateway<br/>post / profile media"]
+    IPFS["📦 IPFS Gateway<br/>post and profile media"]
     Front["🌐 Web Frontend<br/>React · Vite · PAPI"]
-    Indexer["🗂️ Indexer<br/>PAPI subscribe → lowdb<br/>HTTP API :3001"]
-    KS["🔑 Key Service<br/>external — WIP<br/>custody X25519 + sr25519"]
+    Indexer["🗂️ Indexer<br/>PAPI subscribe to lowdb<br/>HTTP API 3001"]
+    KS["🔑 Key Service<br/>external WIP<br/>custodies X25519 and sr25519"]
 
-    subgraph Node["⛓️ Node (ws://…:9944) · polkadot-omni-node"]
-        direction TB
+    subgraph Node["⛓️ Node — polkadot-omni-node ws 9944"]
+        RPC["RPC / TxPool / P2P"]
         subgraph RT["Runtime"]
-            direction TB
-            TxExt["TxExtension pipeline<br/>CheckNonZeroSender → … → ChargeSponsored → CheckMetadataHash"]
+            TxExt["TxExtension pipeline"]
             subgraph Pallets["SocialFi pallets"]
-                direction LR
-                AR["[51] app-registry"]
-                PR["[52] profiles"]
-                GR["[53] graph"]
-                FD["[54] feeds<br/>posts · capsules"]
-                MG["[55] managers"]
-                SP["[56] sponsorship"]
-                ST["[40] pallet-statement<br/>notification gossip"]
+                AR["51 app-registry"]
+                PR["52 profiles"]
+                GR["53 graph"]
+                FD["54 feeds"]
+                MG["55 managers"]
+                SP["56 sponsorship"]
+                ST["40 pallet-statement"]
             end
             TxExt --> Pallets
         end
-        OCW["OCW<br/>feeds · statement-store"]
+        OCW["OCW — feeds and statement-store"]
+        RPC --> RT
         RT --> OCW
     end
 
-    Front <-- "sign req / signed tx" --> Wallet
-    Front <-- "upload / fetch (CIDs)" --> IPFS
-    Front <-- "HTTP /api/tx, /api/events" --> Indexer
+    Front <--> Wallet
+    Front <--> IPFS
+    Front <--> Indexer
 
-    Front -- "read PAPI: storage + view fns" --> Node
-    Front -- "write PAPI: submit signed tx" --> Node
-    Front -- "subscribe: events + statements" --> Node
+    Front -- "read PAPI" --> RPC
+    Front -- "write PAPI" --> RPC
+    Front -- "subscribe" --> RPC
 
-    Indexer -- "PAPI subscribe (events)" --> Node
-    OCW -- "unseal(capsule) + sign<br/>(HTTP)" --> KS
+    Indexer -- "events" --> RPC
+    OCW -- "unseal and sign" --> KS
 
     classDef user fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
     classDef external fill:#581c87,color:#f3e8ff,stroke:#a855f7
     class Wallet,Front,IPFS,Indexer user
-    class Node,RT,OCW,TxExt,Pallets,AR,PR,GR,FD,MG,SP,ST chain
+    class RPC,RT,OCW,TxExt,Pallets,AR,PR,GR,FD,MG,SP,ST chain
     class KS external
 ```
 
