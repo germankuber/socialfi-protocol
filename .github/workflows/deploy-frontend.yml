@@ -10,6 +10,10 @@ on:
         # Lowercase letters, digits, and hyphens only. Cannot start/end with hyphen.
         # Name must be 9+ letters followed by exactly 2 digits (e.g. "my-cool-project42").
         default: 'polkadot-stack-template00'
+      ws_url:
+        description: 'Override VITE_WS_URL baked into the bundle (e.g. your ngrok tunnel)'
+        type: string
+        default: ''
       skip-cache:
         description: 'Skip deployment cache and force redeploy'
         type: boolean
@@ -70,11 +74,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: web/dist
-          key: build-${{ needs.check.outputs.source-hash }}
+          # Include the ws_url in the key: if the user passes a new
+          # tunnel URL the previous cached `web/dist` must not be
+          # reused (it would still point at the old URL).
+          key: build-${{ needs.check.outputs.source-hash }}-${{ hashFiles('web/package-lock.json') }}-${{ inputs.ws_url }}
 
       - name: Build app
         if: steps.cache-build.outputs.cache-hit != 'true'
         working-directory: web
+        env:
+          VITE_WS_URL: ${{ inputs.ws_url }}
         run: npm run build
 
       - uses: actions/upload-artifact@v4

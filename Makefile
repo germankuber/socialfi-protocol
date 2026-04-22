@@ -1,4 +1,4 @@
-.PHONY: help node node-quiet frontend indexer
+.PHONY: help node node-quiet frontend indexer tunnel deploy-frontend deploy-with-tunnel
 
 # RUST_LOG filter for `make node-quiet`:
 # * base = info        → keeps every pallet log + state-change message
@@ -13,11 +13,18 @@ NODE_LOG_FILTER := info,substrate=warn,sc_basic_authorship=off,manual_seal=off,s
 help:
 	@echo "SocialFi Protocol — run each in a separate terminal:"
 	@echo ""
-	@echo "  make node         Start the Substrate dev node (full logs)"
-	@echo "  make node-quiet   Start the node muting consensus noise —"
-	@echo "                    shows only warn+ globally, info for our pallets"
-	@echo "  make frontend     Start the React frontend"
-	@echo "  make indexer      Start the event indexer"
+	@echo "  make node                Start the Substrate dev node (full logs)"
+	@echo "  make node-quiet          Start the node muting consensus noise —"
+	@echo "                           shows only warn+ globally, info for our pallets"
+	@echo "  make frontend            Start the React frontend"
+	@echo "  make indexer             Start the event indexer"
+	@echo ""
+	@echo "  make tunnel              Open an ngrok HTTPS tunnel to the node WS port"
+	@echo "                           (needs to be running before deploy-with-tunnel)"
+	@echo "  make deploy-frontend     Build + upload the frontend to IPFS"
+	@echo "                           (requires w3cli logged in — see the script)"
+	@echo "  make deploy-with-tunnel  Deploy to DotNS using the current ngrok tunnel"
+	@echo "                           as the WS endpoint (default basename: socialfi)"
 
 node:
 	./scripts/start-dev.sh
@@ -31,3 +38,16 @@ frontend:
 
 indexer:
 	./scripts/start-indexer.sh
+
+tunnel:
+	@command -v ngrok >/dev/null 2>&1 || { \
+		echo "[error] ngrok not installed — get it from https://ngrok.com/download"; \
+		exit 1; \
+	}
+	ngrok http 9944
+
+deploy-frontend:
+	./scripts/deploy-frontend.sh
+
+deploy-with-tunnel:
+	./scripts/deploy-with-tunnel.sh

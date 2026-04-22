@@ -18,7 +18,7 @@ set -euo pipefail
 
 NGROK_API="${NGROK_API:-http://127.0.0.1:4040/api/tunnels}"
 WORKFLOW_FILE=".github/workflows/deploy-frontend.yml"
-DEFAULT_BASENAME="${DEFAULT_BASENAME:-socialfi-demo42}"
+DEFAULT_BASENAME="${DEFAULT_BASENAME:-socialfi}"
 
 BASENAME="${1:-$DEFAULT_BASENAME}"
 
