@@ -13,85 +13,86 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
 ## Architecture at a Glance
 
 ```
- ┌──────────────────┐   upload / fetch   ┌──────────────────┐
- │  IPFS Gateway    │◄──────────────────►│   Web Frontend   │
- │  post / profile  │   CIDs only        │  React + Vite    │
- │  media & meta    │                    │  PAPI + Tailwind │
- └──────────────────┘                    └────┬─────┬───────┘
-                                              │     │
-                                              │     │ HTTP :3001
-                                              │     │ /api/tx, /api/events
-                                              │     ▼
- ┌──────────────────┐                    ┌──────────────────┐
- │      Wallets     │                    │     Indexer      │
- │  PJS / Talisman  │──── signs txs ────►│  PAPI subscribe  │
- │    / SubWallet   │                    │  events → lowdb  │
- └──────────────────┘                    └──────────┬───────┘
-          │                                         │
-          │  ┌─── signed extrinsics ────────────────┘
-          │  │    RPC queries · view-function reads
-          │  │    statement subscriptions
-          ▼  ▼
- ┌───────────────────────────────────────────────────────────────────────────┐
- │                      NODE LAYER  (ws://…:9944)                            │
- │                                                                           │
- │     polkadot-omni-node   —   RPC   ·   TxPool   ·   P2P gossip            │
- │                                                                           │
- │   ┌─────────────────────────────────────────────────────────────────┐     │
- │   │                        RUNTIME                                  │     │
- │   │                                                                 │     │
- │   │   TxExtension pipeline (per extrinsic):                         │     │
- │   │   CheckNonZeroSender → CheckSpec/Tx/Genesis/Era/Nonce/Weight    │     │
- │   │       → ChargeSponsored<ChargeTransactionPayment>               │     │
- │   │         (wrapper redirects fees to sponsor pot)                 │     │
- │   │       → CheckMetadataHash                                       │     │
- │   │                                                                 │     │
- │   │   SocialFi Pallets                                              │     │
- │   │   ─────────────────────────────────────────────────────────     │     │
- │   │   [51] social-app-registry   [52] social-profiles               │     │
- │   │        per-app bond + app          one profile / AccountId,     │     │
- │   │        moderator origin            metadata CID + follow fee    │     │
- │   │                                                                 │     │
- │   │   [53] social-graph          [54] social-feeds                  │     │
- │   │        follows, follower          posts / replies / timeline,   │     │
- │   │        counts, per-target fee     obfuscated + encrypted posts  │     │
- │   │                                   (capsule + OCW unseal)        │     │
- │   │                                                                 │     │
- │   │   [55] social-managers       [56] sponsorship                   │     │
- │   │        scoped delegation,         SponsorPots, ChargeSponsored  │     │
- │   │        expiry purge, anti-        wrapper, balance-zero         │     │
- │   │        escalation filter          onboarding                    │     │
- │   │                                                                 │     │
- │   │   [40] pallet-statement  —  real-time notification gossip       │     │
- │   └─────────────────────────────────────────────────────────────────┘     │
- │                                                                           │
- │   ┌─────────────────────────────────────────────────────────────────┐     │
- │   │                     OCW (Offchain Worker)                       │     │
- │   │                                                                 │     │
- │   │   • social-feeds OCW — drains `PendingUnlocks`                  │     │
- │   │   • statement-store OCW — attaches `Proof::OnChain`             │     │
- │   └──────────────────────────────────┬──────────────────────────────┘     │
- │                                      │                                    │
- └──────────────────────────────────────┼────────────────────────────────────┘
-                                        │  unseal(capsule) + sign
-                                        │  (HTTP to external service)
-                                        ▼
-                              ┌──────────────────────┐
-                              │    Key Service       │
-                              │  (external — WIP)    │
-                              │  custodies X25519    │
-                              │  + sr25519; signs    │
-                              │  on request          │
-                              └──────────────────────┘
+                                                  ┌──────────────────┐
+                                   ┌─────────────►│     Wallets      │
+                                   │  sign req    │  PJS / Talisman  │
+                                   │◄─────────────│    / SubWallet   │
+                                   │  signed tx   └──────────────────┘
+                                   │
+ ┌──────────────────┐   CIDs  ┌────┴─────────────┐        HTTP :3001
+ │  IPFS Gateway    │◄───────►│   Web Frontend   │◄──────────────────────────┐
+ │  post / profile  │         │  React + Vite    │  /api/tx, /api/events     │
+ │  media & meta    │  upload │  PAPI + Tailwind │                           │
+ └──────────────────┘  fetch  └────┬─────────────┘                           │
+                                   │                                         │
+                    ┌──────────────┼──────────────┐                          │
+                    │              │              │                          │
+               read │         write│              │ subscribe                │
+               PAPI │         PAPI │              │ PAPI / statement-store   │
+                    │              │              │                          │
+    storage queries │  submit      │              │  events + statements     │
+    view functions  │  signed tx   │              │  streaming               │
+                    ▼              ▼              ▼                          │
+ ┌───────────────────────────────────────────────────────────────────────────┼──┐
+ │                      NODE LAYER  (ws://…:9944)                            │  │
+ │                                                                           │  │
+ │     polkadot-omni-node   —   RPC   ·   TxPool   ·   P2P gossip            │  │
+ │                                                                           │  │
+ │   ┌─────────────────────────────────────────────────────────────────┐     │  │
+ │   │                        RUNTIME                                  │     │  │
+ │   │                                                                 │     │  │
+ │   │   TxExtension pipeline (per extrinsic):                         │     │  │
+ │   │   CheckNonZeroSender → CheckSpec/Tx/Genesis/Era/Nonce/Weight    │     │  │
+ │   │       → ChargeSponsored<ChargeTransactionPayment>               │     │  │
+ │   │         (wrapper redirects fees to sponsor pot)                 │     │  │
+ │   │       → CheckMetadataHash                                       │     │  │
+ │   │                                                                 │     │  │
+ │   │   SocialFi Pallets                                              │     │  │
+ │   │   ─────────────────────────────────────────────────────────     │     │  │
+ │   │   [51] social-app-registry   [52] social-profiles               │     │  │
+ │   │        per-app bond + app          one profile / AccountId,     │     │  │
+ │   │        moderator origin            metadata CID + follow fee    │     │  │
+ │   │                                                                 │     │  │
+ │   │   [53] social-graph          [54] social-feeds                  │     │  │
+ │   │        follows, follower          posts / replies / timeline,   │     │  │
+ │   │        counts, per-target fee     obfuscated + encrypted posts  │     │  │
+ │   │                                   (capsule + OCW unseal)        │     │  │
+ │   │                                                                 │     │  │
+ │   │   [55] social-managers       [56] sponsorship                   │     │  │
+ │   │        scoped delegation,         SponsorPots, ChargeSponsored  │     │  │
+ │   │        expiry purge, anti-        wrapper, balance-zero         │     │  │
+ │   │        escalation filter          onboarding                    │     │  │
+ │   │                                                                 │     │  │
+ │   │   [40] pallet-statement  —  real-time notification gossip       │     │  │
+ │   └─────────────────────────────────────────────────────────────────┘     │  │
+ │                                                                           │  │
+ │   ┌─────────────────────────────────────────────────────────────────┐     │  │
+ │   │                     OCW (Offchain Worker)                       │     │  │
+ │   │                                                                 │     │  │
+ │   │   • social-feeds OCW — drains `PendingUnlocks`                  │     │  │
+ │   │   • statement-store OCW — attaches `Proof::OnChain`             │     │  │
+ │   └──────────────────────────────────┬──────────────────────────────┘     │  │
+ │                                      │                                    │  │
+ └─────┬────────────────────────────────┼────────────────────────────────────┘  │
+       │                                │                                       │
+       │ PAPI WS: events subscribe      │  unseal(capsule) + sign               │
+       ▼                                │  (HTTP to external service)           │
+ ┌──────────────────┐                   ▼                                       │
+ │     Indexer      │         ┌──────────────────────┐                          │
+ │  PAPI subscribe  │         │    Key Service       │                          │
+ │  events → lowdb  │         │  (external — WIP)    │                          │
+ │  HTTP API :3001  │         │  custodies X25519    │                          │
+ └──────┬───────────┘         │  + sr25519; signs    │                          │
+        │                     │  on request          │                          │
+        └─────────────────────┴──────────────────────┘ ──────────────────────── │
+         serves denormalised tx / event history to the frontend (top-right) ───┘
 ```
 
 **Key dataflows**
 
-- **Read path**: Frontend queries **the node directly** via PAPI (storage + view functions) for live on-chain state, and **the indexer HTTP API** (`:3001`) for denormalised event history. IPFS gateways are hit only to materialise post/profile media referenced by CIDs stored on-chain.
-- **Write path**: Wallet signs → node TxPool → runtime dispatch → event emitted. Both the frontend (PAPI subscription) and the indexer (event watcher) observe the same event stream and update their own views.
+- **Read path**: The frontend pulls live state **straight from the node** over PAPI WS (storage + view functions + statement-store subscriptions) and denormalised tx/event history **from the indexer HTTP API** (`:3001`). IPFS is hit directly from the browser to materialise post/profile media referenced by on-chain CIDs.
+- **Write path**: The frontend asks the **wallet** (PJS / Talisman / SubWallet) to sign the extrinsic; the wallet returns the signed bytes and the **frontend submits them to the node** via PAPI. The node propagates the tx, the runtime dispatches it, and both the frontend (via its own PAPI subscription) and the indexer (via its event watcher) observe the resulting events.
 - **Encrypted read path**: Viewer pays `unlock_post` → OCW reads `PendingUnlocks` and **calls the external Key Service** over HTTP. The service custodies the X25519 keypair, opens the capsule, re-seals the content key for the viewer, and signs the delivery payload. OCW submits `deliver_unlock_unsigned` → viewer polls `Unlocks` and decrypts locally. The in-repo `dev_key.rs` is a dev-only stub that inlines the key inside the collator; production moves it behind the Key Service.
-- **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
-- **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
 
