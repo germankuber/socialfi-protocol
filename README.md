@@ -25,6 +25,7 @@ flowchart TB
         subgraph RT["Runtime"]
             TxExt["TxExtension pipeline"]
             subgraph Pallets["SocialFi pallets"]
+                direction TB
                 AR["51 app-registry"]
                 PR["52 profiles"]
                 GR["53 graph"]
@@ -32,6 +33,7 @@ flowchart TB
                 MG["55 managers"]
                 SP["56 sponsorship"]
                 ST["40 pallet-statement"]
+                AR ~~~ PR ~~~ GR ~~~ FD ~~~ MG ~~~ SP ~~~ ST
             end
             TxExt --> Pallets
         end
