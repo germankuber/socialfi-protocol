@@ -15,7 +15,11 @@ function dataValue(text: string): any {
 	if (!text) return { type: "None", value: undefined };
 	const bytes = new TextEncoder().encode(text.slice(0, 32));
 	const n = bytes.length;
-	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
+	// Each `RawN` variant in the pallet-identity `Data` enum carries a
+	// `FixedSizeBinary<N>` payload. PAPI uses `Binary.fromBytes` for the
+	// entire range — the previous `n === 1 ? bytes[0] : ...` branch
+	// produced a raw number that the SCALE encoder cannot serialize.
+	return { type: `Raw${n}`, value: Binary.fromBytes(bytes) };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,15 +104,25 @@ export default function IdentityPanel() {
 		if (!account || !display.trim()) return;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const peopleApi: any = getPeopleClient().getUnsafeApi();
-		const info = {
+		// People chain `IdentityInfo` shape changes with runtime upgrades
+		// (e.g. `discord` / `matrix` / `github` fields added in newer
+		// versions). Fill every field defensively with `None` so the SCALE
+		// encoder never sees an `undefined` variant — PAPI's enum encoder
+		// crashes with "Cannot read properties of undefined (reading
+		// 'type')" otherwise.
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const info: Record<string, any> = {
 			display: dataValue(display.trim()),
 			email: dataValue(email.trim()),
 			twitter: dataValue(twitter.trim()),
 			web: dataValue(web.trim()),
-			additional: [],
 			legal: noneData(),
 			riot: noneData(),
 			image: noneData(),
+			matrix: noneData(),
+			github: noneData(),
+			discord: noneData(),
+			additional: [],
 			pgp_fingerprint: undefined,
 		};
 		const tx = peopleApi.tx.Identity.set_identity({ info });

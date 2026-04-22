@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Binary } from "polkadot-api";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
@@ -135,9 +136,9 @@ export default function ProfilePage() {
 							<h2 className="heading-2">Profile</h2>
 							{profile && (
 								<div className="flex gap-2">
-									<button onClick={() => setShowForm(!showForm)} className="btn-outline btn-sm">
-										{showForm ? "Cancel" : "Edit"}
-									</button>
+									<Link to="/profile/edit" className="btn-outline btn-sm">
+										Edit
+									</Link>
 									<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">Delete</button>
 								</div>
 							)}
