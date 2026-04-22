@@ -67,7 +67,6 @@ echo "[info] dispatching workflow..."
 gh workflow run "$WORKFLOW_FILE" \
     -f "basename=$BASENAME" \
     -f "ws_url=$WS_URL" \
-    -f "eth_rpc_url=" \
     -f "skip-cache=true"
 
 echo "[info] waiting for run to start..."

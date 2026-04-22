@@ -25,15 +25,11 @@ export default function App() {
 			<header className="sticky top-0 z-50 border-b border-surface-800 bg-surface-950/90 backdrop-blur-xl">
 				<div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
 					<Link to="/" className="flex items-center gap-2 shrink-0 group">
-						<div className="w-8 h-8 rounded-xl bg-brand-500 flex items-center justify-center">
-							<svg viewBox="0 0 16 16" className="w-4 h-4" fill="white">
-								<circle cx="8" cy="3" r="2" />
-								<circle cx="3" cy="8" r="2" />
-								<circle cx="13" cy="8" r="2" />
-								<circle cx="8" cy="13" r="2" />
-								<circle cx="8" cy="8" r="1.5" opacity="0.6" />
-							</svg>
-						</div>
+						<img
+							src="/logo.png"
+							alt="Polkadot Stack Template"
+							className="w-8 h-8 rounded-xl object-contain"
+						/>
 						<span className="text-[15px] font-bold tracking-tight hidden sm:inline">SocialFi</span>
 					</Link>
 

@@ -97,8 +97,9 @@ fn local_testnet_genesis() -> Value {
 	)
 }
 
-/// Ethereum dev accounts (Alith, Baltathar, Charleth) with 0xEE padding to 32 bytes.
-/// These are the standard dev accounts recognized by the eth-rpc adapter.
+/// Ethereum-flavoured dev accounts (Alith, Baltathar, Charleth) with 0xEE
+/// padding to 32 bytes. Kept on the endowed list so historical test
+/// fixtures that reference them by name continue to work.
 fn eth_dev_accounts() -> Vec<AccountId> {
 	use sp_core::crypto::AccountId32;
 	[

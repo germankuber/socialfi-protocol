@@ -20,7 +20,6 @@ codec = { features = ["derive"], workspace = true }
 cumulus-pallet-parachain-system.workspace = true
 hex-literal = { workspace = true, default-features = true }
 log = { workspace = true }
-pallet-template.workspace = true
 pallet-social-app-registry.workspace = true
 pallet-social-profiles.workspace = true
 pallet-social-feeds.workspace = true
@@ -77,7 +76,6 @@ std = [
 	"pallet-social-managers/std",
 	"pallet-social-profiles/std",
 	"pallet-sponsorship/std",
-	"pallet-template/std",
 	"polkadot-sdk/std",
 	"scale-info/std",
 	"serde_json/std",
@@ -92,7 +90,6 @@ runtime-benchmarks = [
 	"pallet-social-managers/runtime-benchmarks",
 	"pallet-social-profiles/runtime-benchmarks",
 	"pallet-sponsorship/runtime-benchmarks",
-	"pallet-template/runtime-benchmarks",
 	"polkadot-sdk/runtime-benchmarks",
 ]
 try-runtime = [
@@ -103,7 +100,6 @@ try-runtime = [
 	"pallet-social-managers/try-runtime",
 	"pallet-social-profiles/try-runtime",
 	"pallet-sponsorship/try-runtime",
-	"pallet-template/try-runtime",
 	"polkadot-sdk/try-runtime",
 ]
 

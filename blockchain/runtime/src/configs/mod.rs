@@ -123,10 +123,7 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
-	// Use the `WeightToFee` polynomial declared in the runtime crate.
-	// Previously this pulled in `pallet_revive::evm::fees::BlockRatioFee`
-	// because revive needed EVM-compatible gas accounting; with revive
-	// removed we fall back to the standard polynomial-based fee curve.
+	// Standard polynomial-based fee curve declared in the runtime crate.
 	type WeightToFee = super::WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
@@ -284,11 +281,6 @@ impl pallet_statement::Config for Runtime {
 	type MaxAllowedStatements = MaxAllowedStatements;
 	type MinAllowedBytes = MinAllowedBytes;
 	type MaxAllowedBytes = MaxAllowedBytes;
-}
-
-/// Configure the template proof-of-existence pallet.
-impl pallet_template::Config for Runtime {
-	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

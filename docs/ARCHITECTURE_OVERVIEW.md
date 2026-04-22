@@ -1,19 +1,17 @@
 # Architecture Overview
 
 A whole-stack view of the Polkadot Stack Template: pallets, runtime,
-collator, clients, indexer, wallets, smart contracts, and the offchain
-workers that glue privacy features together.
+collator, clients, indexer, wallets, and the offchain workers that
+glue privacy features together.
 
-The template is not a product — it is a **reference of every surface
-the Polkadot tech stack exposes**, pulled together around a small
-SocialFi protocol (profiles, posts, follows, apps, notifications) plus
-the canonical Proof-of-Existence demo.
+The template is a **SocialFi reference** for the Polkadot tech stack:
+profiles, posts, follows, apps, sponsored transactions, delegated
+managers, encrypted-post delivery, and real-time notifications.
 
 ## 10-second mental model
 
-- The **chain** is a parachain runtime that embeds a handful of FRAME
-  pallets (social + template + statement-store + revive for smart
-  contracts) and runs inside a **collator** node.
+- The **chain** is a parachain runtime that embeds the FRAME social
+  pallets plus `pallet-statement` and runs inside a **collator** node.
 - Anything that needs trustless consensus lives **on-chain**: profile
   registrations, posts, follow edges, app registry entries, fee pots,
   encrypted capsules, moderation records.
@@ -22,8 +20,7 @@ the canonical Proof-of-Existence demo.
   presence/unlock delivery (offchain worker + statement gossip),
   denormalised feed views (local indexer).
 - Clients (browser dApp, Rust CLI) talk to the chain via RPC — PAPI
-  for Substrate extrinsics, viem/alloy for EVM contracts through the
-  `eth-rpc` proxy.
+  for Substrate extrinsics from the browser, subxt from the CLI.
 
 ## Top-down component map
 
@@ -34,64 +31,49 @@ pallets live inside the runtime; they get their own zoom-in below.
 graph TB
     subgraph Clients["👥 Clients"]
         Web["web/<br/>React + Vite + PAPI"]
-        CLI["cli/<br/>Rust + subxt + alloy"]
+        CLI["cli/<br/>Rust + subxt"]
         Wallets["Browser wallets<br/>Polkadot.js · Talisman · SubWallet · Host"]
     end
 
     subgraph Services["🔌 Off-chain services"]
         Indexer["indexer/<br/>TypeScript + lowdb"]
-        EthRpc["eth-rpc<br/>Ethereum JSON-RPC proxy"]
         IPFS[("IPFS<br/>post bodies")]
     end
 
     subgraph Node["🖥️ Collator node"]
-        RPC["RPC endpoints<br/>9944 Substrate WS · 8545 ETH JSON-RPC"]
+        RPC["RPC endpoints<br/>9944 Substrate WS"]
         Runtime["WASM runtime<br/>stack-template-runtime<br/>(hosts FRAME pallets)"]
         OCW["Offchain workers<br/>per-pallet hooks"]
         SS["Statement Store<br/>gossip + TTL"]
     end
 
-    subgraph Contracts["📜 Smart contracts"]
-        EVM["contracts/evm<br/>Solidity → solc"]
-        PVM["contracts/pvm<br/>Solidity → resolc (PolkaVM)"]
-    end
-
     Web -->|PAPI WS| RPC
-    Web -->|viem| EthRpc
     Wallets -.signs.-> Web
     Web -->|HTTP| Indexer
     Web -->|JSON-RPC| SS
     Web -->|multiaddr| IPFS
 
     CLI -->|subxt WS| RPC
-    CLI -->|alloy HTTP| EthRpc
 
-    EthRpc -->|subxt WS| RPC
     Indexer -->|PAPI WS| RPC
 
     RPC --> Runtime
     Runtime --> OCW
     OCW --> SS
-    Runtime -.revive dispatches.-> EVM
-    Runtime -.revive dispatches.-> PVM
 
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
     classDef offchain fill:#075985,color:#e0f2fe,stroke:#0284c7
     classDef client fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
-    classDef contract fill:#581c87,color:#f3e8ff,stroke:#a855f7
     class RPC,Runtime,OCW,SS chain
-    class Indexer,EthRpc,IPFS offchain
+    class Indexer,IPFS offchain
     class Web,CLI,Wallets client
-    class EVM,PVM contract
 ```
 
 ### Pallet zoom-in
 
 The runtime `construct_runtime!` composition. Social pallets sit
-around the shared primitives (`social-profiles` + `social-notifications-primitives`)
-and push notifications through `pallet-statement`. `pallet-revive`
-is the EVM/PVM execution surface; `pallet-template` is the
-stand-alone Proof-of-Existence demo.
+around the shared primitives (`social-notifications-primitives`)
+and push notifications through `pallet-statement`.
 
 ```mermaid
 graph TB
@@ -99,12 +81,12 @@ graph TB
         direction TB
 
         subgraph Social["SocialFi pallets"]
-            Registry[social-app-registry<br/>idx 50]
-            Profiles[social-profiles<br/>idx 51]
-            Graph[social-graph<br/>idx 52]
-            Feeds[social-feeds<br/>idx 53]
-            Managers[social-managers<br/>idx 54]
-            Sponsor[sponsorship<br/>idx 55]
+            Registry[social-app-registry<br/>idx 51]
+            Profiles[social-profiles<br/>idx 52]
+            Graph[social-graph<br/>idx 53]
+            Feeds[social-feeds<br/>idx 54]
+            Managers[social-managers<br/>idx 55]
+            Sponsor[sponsorship<br/>idx 56]
         end
 
         subgraph Shared["Shared primitives"]
@@ -112,9 +94,7 @@ graph TB
         end
 
         subgraph Infra["Infrastructure pallets"]
-            Statement[pallet-statement<br/>idx 60]
-            Revive[pallet-revive<br/>idx 90 · EVM + PVM]
-            Template[pallet-template<br/>idx 100 · PoE]
+            Statement[pallet-statement<br/>idx 40]
         end
 
         Registry -->|AppProvider| Feeds
@@ -137,7 +117,7 @@ graph TB
     classDef infra fill:#1e293b,color:#e2e8f0,stroke:#475569
     class Registry,Profiles,Graph,Feeds,Managers,Sponsor social
     class NotifPrim shared
-    class Statement,Revive,Template infra
+    class Statement infra
 ```
 
 ---
@@ -158,8 +138,6 @@ storage domain and exposes extrinsics.
 | `social-managers` | Scoped delegation (Lens-style): let another account act on your behalf for a subset of scopes. | `add_manager`, `remove_manager`, `act_as_manager` |
 | `sponsorship` | Sponsor pots + `ChargeSponsored` TransactionExtension that pays fees for pre-authorised beneficiaries. | `register_beneficiary`, `top_up`, `withdraw`, (+ signed-ext hooks) |
 | `pallet-statement` | Parity's Statement Store pallet. Its OCW turns on-chain `NewStatement` events into gossiped statements. | (no extrinsics; driven by events) |
-| `pallet-revive` | PolkaVM + EVM execution engine with Ethereum JSON-RPC compatibility. | `upload_code`, `instantiate`, `call` |
-| `pallet-template` | Minimal Proof-of-Existence example. Mirrors the contracts 1:1. | `create_claim`, `revoke_claim` |
 
 All pallets live in `blockchain/pallets/`. Shared helpers (the
 notifications crate) live in `blockchain/primitives/`.
@@ -173,15 +151,13 @@ executes. Pallet indices are pinned:
 
 | Index | Pallet |
 |---|---|
-| 50 | `social-app-registry` |
-| 51 | `social-profiles` |
-| 52 | `social-graph` |
-| 53 | `social-feeds` |
-| 54 | `social-managers` |
-| 55 | `sponsorship` |
-| 60 | `pallet-statement` |
-| 90 | `pallet-revive` |
-| 100 | `pallet-template` (PoE) |
+| 40 | `pallet-statement` |
+| 51 | `social-app-registry` |
+| 52 | `social-profiles` |
+| 53 | `social-graph` |
+| 54 | `social-feeds` |
+| 55 | `social-managers` |
+| 56 | `sponsorship` |
 
 The runtime also owns cross-pallet adapters — e.g.
 `NotificationStatementSubmitter` bridges social pallets to
@@ -213,9 +189,6 @@ The bin produced by `polkadot-parachain`-compatible wrapper logic
 
 - **9944** — Substrate JSON-RPC over WebSocket. PAPI, subxt, and the
   Statement Store subscription hit this.
-- **8545** — Ethereum JSON-RPC proxy (`eth-rpc`), turns Substrate
-  blocks into Ethereum-compatible responses so viem/alloy can talk to
-  the EVM/PVM contracts embedded through `pallet-revive`.
 - **30333** — libp2p peer port.
 
 Statement Store gossip also flows through libp2p, separately from
@@ -238,24 +211,7 @@ See [`NOTIFICATIONS_ARCHITECTURE.md`](./NOTIFICATIONS_ARCHITECTURE.md)
 for the specific wiring and [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md)
 for the exact topic layout.
 
-### 6. Smart contracts (EVM + PVM)
-
-`pallet-revive` provides two compilation targets for the same
-Solidity source (`contracts/*/contracts/ProofOfExistence.sol`):
-
-- **EVM (solc)** — canonical Ethereum bytecode. Interoperates with
-  existing tooling (Hardhat, viem, MetaMask via the eth-rpc proxy).
-- **PVM (resolc)** — PolkaVM / RISC-V bytecode. Native to the
-  pallet-revive engine; forward-looking path for Polkadot.
-
-Both compile from the same `.sol` file, which is the point: the same
-app can be audited and deployed twice, demonstrating that the
-Polkadot stack is a drop-in replacement at the contract level.
-
-Deploy addresses are stored in `deployments.json` (root) and
-auto-synced to `web/src/config/deployments.ts` by the deploy scripts.
-
-### 7. Off-chain services
+### 6. Off-chain services
 
 - **`indexer/`** — tiny TypeScript service (Express + lowdb) that
   subscribes to the chain via PAPI, denormalises transfers and pallet
@@ -263,22 +219,19 @@ auto-synced to `web/src/config/deployments.ts` by the deploy scripts.
   `/api/txs-by-address`, `/api/earnings/:post_id` to the frontend.
   Non-authoritative: the chain remains the source of truth; the
   indexer is pure query acceleration. Listens on localhost only.
-- **`eth-rpc`** — Parity-provided proxy binary. Bridges Ethereum
-  JSON-RPC (what viem/MetaMask speak) to Substrate RPC (what the
-  collator speaks). No state of its own.
 - **IPFS** — storage for post bodies and profile metadata. The chain
   stores only CIDs; the frontend pins/reads real content from IPFS.
 
-### 8. Clients
+### 7. Clients
 
-- **`web/`** — React 18 + Vite + Tailwind + PAPI + viem + zustand.
-  Main surface for end users. Connects wallets, renders the feed,
-  submits extrinsics, subscribes to notifications.
-- **`cli/`** — Rust binary built on subxt + alloy + clap. Full
-  scriptable access to both the Substrate side and the EVM side.
-  Used by the smoke test scripts.
+- **`web/`** — React 18 + Vite + Tailwind + PAPI + zustand. Main
+  surface for end users. Connects wallets, renders the feed, submits
+  extrinsics, subscribes to notifications.
+- **`cli/`** — Rust binary built on subxt + clap. Scriptable
+  access to the Substrate side (chain info, Statement Store submit /
+  dump). Used by the smoke test scripts.
 
-### 9. Wallets
+### 8. Wallets
 
 Three entry points are supported:
 
@@ -291,7 +244,7 @@ Three entry points are supported:
 The frontend normalises all three behind a single `WalletAccount`
 store entry and lets the user switch per-tab.
 
-### 10. Notifications
+### 9. Notifications
 
 A real-time bell in the header that pushes events without polling.
 See the dedicated docs:
@@ -408,7 +361,6 @@ graph LR
     subgraph RPCLayer["RPC providers"]
         RPC1["Collator A<br/>RPC :9944"]
         RPC2["Collator B<br/>RPC :9944"]
-        EthProxy["eth-rpc<br/>:8545"]
     end
 
     subgraph Backend["Backend services (optional)"]
@@ -422,12 +374,10 @@ graph LR
 
     Users --> WebCDN
     WebCDN -.PAPI WS.-> RPC1
-    WebCDN -.viem HTTPS.-> EthProxy
     WebCDN -.HTTP.-> IPFSGW
     WebCDN -.HTTP.-> IndexerProd
     Wallet -.signs.-> WebCDN
     IndexerProd -.PAPI WS.-> RPC2
-    EthProxy --> RPC1
     RPC1 --> Para
     RPC2 --> Para
     Para --> Relay
@@ -455,8 +405,6 @@ If you ever get lost about **which layer owns what**:
 | Follow edges | pallet-social-graph storage | — |
 | Notifications | Statement Store (transient) | browser state (local) |
 | Encrypted post content key | off-chain (custodial key service, TBD) | — |
-| Smart contract state | pallet-revive storage | — |
-| Deployed contract addresses | `deployments.json` | `web/src/config/deployments.ts` (generated) |
 
 The rule: **if you can read it from the chain, read it from the
 chain**. The indexer exists to make specific queries cheaper, never
@@ -497,5 +445,3 @@ to replace the chain as the authoritative source.
   + [`NOTIFICATIONS_FLOW.md`](./NOTIFICATIONS_FLOW.md)
   + [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — real-
   time notifications.
-- [`LENS_INSPIRED_FEATURES.md`](./LENS_INSPIRED_FEATURES.md) —
-  roadmap of further social features.

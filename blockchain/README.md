@@ -6,7 +6,8 @@ A Polkadot SDK parachain built with FRAME and Cumulus, compatible with `polkadot
 
 | Path | What it contains |
 | --- | --- |
-| [`pallets/template/`](pallets/template/) | The Proof of Existence FRAME pallet |
+| [`pallets/`](pallets/) | SocialFi FRAME pallets: app-registry, profiles, graph, feeds, managers, sponsorship |
+| [`primitives/social-notifications/`](primitives/social-notifications/) | Shared helpers to build Statement Store notifications |
 | [`runtime/`](runtime/) | The parachain runtime built on `polkadot-sdk stable2512-3` |
 | [`chain_spec.json`](chain_spec.json) | Generated local chain spec used by the dev scripts and some Docker flows |
 | [`Dockerfile`](Dockerfile) | Lightweight runtime image that packages a pre-generated chain spec |
@@ -18,17 +19,17 @@ A Polkadot SDK parachain built with FRAME and Cumulus, compatible with `polkadot
 # Build the runtime
 cargo build -p stack-template-runtime --release
 
-# Pallet unit tests
-cargo test -p pallet-template
+# All workspace tests
+cargo test --workspace
 
 # All workspace tests including benchmarks
-SKIP_PALLET_REVIVE_FIXTURES=1 cargo test --workspace --features runtime-benchmarks
+cargo test --workspace --features runtime-benchmarks
 ```
 
 ## Running Locally
 
 - [`../scripts/start-dev.sh`](../scripts/start-dev.sh) — Fastest solo-node runtime/pallet loop
 - [`../scripts/start-local.sh`](../scripts/start-local.sh) — Relay-backed Zombienet network
-- [`../scripts/start-all.sh`](../scripts/start-all.sh) — Full stack: relay chain + contracts + frontend
+- [`../scripts/start-all.sh`](../scripts/start-all.sh) — Full stack: relay chain + frontend
 
 On `polkadot-sdk stable2512-3`, the solo-node dev path does not expose Statement Store RPCs. Use the relay-backed scripts when you need Statement Store locally.

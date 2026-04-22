@@ -3,7 +3,6 @@ resolver = "2"
 members = [
 	"blockchain/runtime",
 	"blockchain/primitives/social-notifications",
-	"blockchain/pallets/template",
 	"blockchain/pallets/social-app-registry",
 	"blockchain/pallets/social-profiles",
 	"blockchain/pallets/social-graph",
@@ -22,7 +21,6 @@ edition = "2021"
 
 [workspace.dependencies]
 # Local crates
-pallet-template = { path = "./blockchain/pallets/template", default-features = false }
 pallet-social-app-registry = { path = "./blockchain/pallets/social-app-registry", default-features = false }
 pallet-social-profiles = { path = "./blockchain/pallets/social-profiles", default-features = false }
 pallet-social-graph = { path = "./blockchain/pallets/social-graph", default-features = false }
@@ -58,7 +56,6 @@ sp-statement-store = { version = "24.0.0", default-features = false }
 subxt = { version = "0.38" }
 subxt-signer = { version = "0.38", features = ["sr25519", "subxt"] }
 tokio = { version = "1", features = ["full"] }
-alloy = { version = "1.8", features = ["contract", "provider-http", "signer-local"] }
 
 [profile.release]
 opt-level = 3
