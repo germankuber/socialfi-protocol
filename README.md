@@ -35,7 +35,7 @@ flowchart TB
                 ST["40 pallet-statement"]
                 AR ~~~ PR ~~~ GR ~~~ FD ~~~ MG ~~~ SP ~~~ ST
             end
-            TxExt --> FD
+            TxExt --> Pallets
         end
         OCW["OCW — feeds and statement-store"]
         RPC --> RT
