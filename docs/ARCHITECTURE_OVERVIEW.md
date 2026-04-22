@@ -32,8 +32,10 @@ managers, encrypted-post delivery, and real-time notifications.
 
 ## Top-down component map
 
-High-level flow — clients, off-chain services, and the collator. The
-pallets live inside the runtime; they get their own zoom-in below.
+High-level flow — clients, off-chain services, this template's
+collator, **and the Polkadot People system parachain** that owns
+on-chain identity. The SocialFi pallets live inside the runtime; they
+get their own zoom-in below.
 
 ```mermaid
 graph TB
@@ -48,14 +50,21 @@ graph TB
         IPFS[("IPFS<br/>post bodies")]
     end
 
-    subgraph Node["🖥️ Collator node"]
+    subgraph Node["🖥️ SocialFi collator"]
         RPC["RPC endpoints<br/>9944 Substrate WS"]
-        Runtime["WASM runtime<br/>stack-template-runtime<br/>(hosts FRAME pallets)"]
+        Runtime["WASM runtime<br/>stack-template-runtime<br/>(hosts SocialFi pallets)"]
         OCW["Offchain workers<br/>per-pallet hooks"]
         SS["Statement Store<br/>gossip + TTL"]
     end
 
+    subgraph People["🪪 Polkadot People parachain"]
+        PeopleRPC["People RPC<br/>VITE_PEOPLE_WS_URL"]
+        PalletIdentity["pallet-identity<br/>(display name, judgement,<br/>username)"]
+        PeopleRPC --> PalletIdentity
+    end
+
     Web -->|PAPI WS| RPC
+    Web -->|PAPI WS · read + write| PeopleRPC
     Wallets -.signs.-> Web
     Web -->|HTTP| Indexer
     Web -->|JSON-RPC| SS
@@ -70,12 +79,21 @@ graph TB
     OCW --> SS
 
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
+    classDef people fill:#4c1d95,color:#ede9fe,stroke:#a78bfa
     classDef offchain fill:#075985,color:#e0f2fe,stroke:#0284c7
     classDef client fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
     class RPC,Runtime,OCW,SS chain
+    class PeopleRPC,PalletIdentity people
     class Indexer,IPFS offchain
     class Web,CLI,Wallets client
 ```
+
+The frontend opens **two PAPI connections in parallel**: one to this
+project's chain for SocialFi data (profiles, posts, follows,
+sponsorship), and one to Polkadot People for identity state. The same
+sr25519 keypair signs against either chain, so the user doesn't need
+separate wallets — but they do need DOT on People to cover the
+identity deposit when they register.
 
 ### Pallet zoom-in
 
@@ -264,6 +282,29 @@ See the dedicated docs:
 - [`NOTIFICATIONS_TOPICS.md`](./NOTIFICATIONS_TOPICS.md) — topic +
   payload contract.
 
+### 10. Identity (Polkadot People parachain)
+
+Display names, websites, Twitter handles and registrar judgements
+live on the **Polkadot People system parachain**, not on this chain.
+This project deliberately does not embed `pallet-identity` locally so
+the protocol can piggyback on the identity records users already hold
+in Polkadot.
+
+- The frontend opens a second PAPI connection to the endpoint
+  configured in `VITE_PEOPLE_WS_URL` (see `web/src/config/network.ts`).
+- `useIdentity(address)` reads `Identity.IdentityOf(address)` from
+  People and exposes a three-state result (`verified` / `pending` /
+  `none`) via the `<VerificationBadge />` component.
+- `<IdentityPanel />` on the profile editor submits
+  `set_identity` / `request_judgement` / `clear_identity` **directly
+  to People chain** using the user's wallet. The same sr25519 keypair
+  that signs local SocialFi extrinsics signs the People txs; the user
+  needs DOT on People to cover the deposit (~0.02 DOT total).
+- `pallet-social-profiles` stays as the source of truth for
+  SocialFi-specific data (metadata CID + follow fee). Identity and
+  profile are complementary — identity is universal across Polkadot
+  UIs; profile is app-specific.
+
 ---
 
 ## Typical request paths
@@ -366,7 +407,7 @@ graph LR
         IPFSGW["IPFS gateway<br/>(Paseo or self-hosted)"]
     end
 
-    subgraph RPCLayer["RPC providers"]
+    subgraph RPCLayer["SocialFi RPC"]
         RPC1["Collator A<br/>RPC :9944"]
         RPC2["Collator B<br/>RPC :9944"]
     end
@@ -375,13 +416,21 @@ graph LR
         IndexerProd["Indexer<br/>express + postgres"]
     end
 
-    subgraph Chain["Parachain"]
+    subgraph Chain["SocialFi parachain"]
         Para["Collators A..N"]
         Relay["Polkadot / Paseo relay"]
     end
 
+    subgraph PeopleEcosystem["Polkadot People parachain"]
+        PeopleRPC["wss://polkadot-people-<br/>rpc.polkadot.io"]
+        PeopleCollators["Parity / public<br/>People collators"]
+        PeopleRPC --> PeopleCollators
+        PeopleCollators --> Relay
+    end
+
     Users --> WebCDN
     WebCDN -.PAPI WS.-> RPC1
+    WebCDN -.PAPI WS.-> PeopleRPC
     WebCDN -.HTTP.-> IPFSGW
     WebCDN -.HTTP.-> IndexerProd
     Wallet -.signs.-> WebCDN
@@ -406,13 +455,14 @@ If you ever get lost about **which layer owns what**:
 
 | Data | Source of truth | Denormalised copy |
 |---|---|---|
-| Account balances | pallet-balances storage | — |
+| Account balances | pallet-balances storage (this chain) | — |
 | Profile metadata CID | pallet-social-profiles storage | — |
 | Post bodies | IPFS | web PAPI cache |
 | Post metadata | pallet-social-feeds storage | indexer (`/api/events`) |
 | Follow edges | pallet-social-graph storage | — |
 | Notifications | Statement Store (transient) | browser state (local) |
 | Encrypted post content key | off-chain (custodial key service, TBD) | — |
+| **Identity (display name, judgement, username)** | **pallet-identity on Polkadot People parachain** | — |
 
 The rule: **if you can read it from the chain, read it from the
 chain**. The indexer exists to make specific queries cheaper, never

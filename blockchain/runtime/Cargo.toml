@@ -40,7 +40,6 @@ polkadot-sdk = { workspace = true, features = [
 	"pallet-authorship",
 	"pallet-balances",
 	"pallet-collator-selection",
-	"pallet-identity",
 	"pallet-message-queue",
 	"pallet-session",
 	"pallet-statement",

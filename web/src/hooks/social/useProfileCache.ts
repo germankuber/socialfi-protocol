@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { getClient } from "../useChain";
 import { stack_template } from "@polkadot-api/descriptors";
 import { useChainStore } from "../../store/chainStore";
-import { fetchIdentity } from "./useIdentity";
+import { fetchPeopleIdentity } from "./useIdentity";
 
 export interface CachedProfile {
 	name: string;
 	avatar: string;
 	verified: boolean;
+	hasIdentity: boolean;
 }
 
 const IPFS_GATEWAYS = [
@@ -32,19 +33,20 @@ async function resolveProfile(wsUrl: string, address: string): Promise<CachedPro
 	try {
 		const api = getClient(wsUrl).getTypedApi(stack_template);
 
-		// Fetch social profile + identity in parallel
+		// Fetch social profile (local chain) + People identity in parallel.
 		const [profileData, identityData] = await Promise.all([
 			api.query.SocialProfiles.Profiles.getValue(address),
-			fetchIdentity(wsUrl, address),
+			fetchPeopleIdentity(address),
 		]);
 
 		if (!profileData) {
-			// No social profile — maybe has identity only
+			// No social profile — fall back to People identity display name.
 			if (identityData?.hasIdentity && identityData.display) {
 				return {
 					name: identityData.display,
 					avatar: "",
 					verified: identityData.verified,
+					hasIdentity: true,
 				};
 			}
 			return null;
@@ -83,6 +85,7 @@ async function resolveProfile(wsUrl: string, address: string): Promise<CachedPro
 			name,
 			avatar,
 			verified: identityData?.verified ?? false,
+			hasIdentity: identityData?.hasIdentity ?? false,
 		};
 	} catch {
 		return null;

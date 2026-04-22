@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Binary } from "polkadot-api";
+import { Binary, createClient } from "polkadot-api";
+import { getWsProvider } from "polkadot-api/ws-provider/web";
 import { useIdentity } from "../../hooks/social/useIdentity";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
 import { useIpfs } from "../../hooks/social/useIpfs";
-import VerifiedBadge from "./VerifiedBadge";
+import { getPeopleWsUrl } from "../../config/network";
+import VerificationBadge, { identityStatus } from "./VerificationBadge";
 import TxToast from "./TxToast";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,6 +21,40 @@ function dataValue(text: string): any {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function noneData(): any {
 	return { type: "None", value: undefined };
+}
+
+// ── Dedicated PAPI client for People chain writes ──────────────────────
+//
+// Identity extrinsics (`set_identity`, `request_judgement`, `clear_identity`)
+// are submitted to the Polkadot People parachain, NOT to this project's
+// chain. The People endpoint is sourced from `VITE_PEOPLE_WS_URL`. The
+// client is cached across renders so the WebSocket stays warm.
+//
+// We intentionally use the **unsafe (untyped) API** here to avoid
+// pulling People-specific PAPI descriptors into the repo. All three
+// identity calls are well-known and stable across Polkadot SDK
+// versions.
+
+interface CachedClient {
+	url: string;
+	client: ReturnType<typeof createClient>;
+}
+
+let peopleClient: CachedClient | null = null;
+
+function getPeopleClient() {
+	const url = getPeopleWsUrl();
+	if (peopleClient && peopleClient.url === url) return peopleClient.client;
+	if (peopleClient) {
+		try {
+			peopleClient.client.destroy();
+		} catch {
+			/* noop */
+		}
+	}
+	const client = createClient(getWsProvider(url));
+	peopleClient = { url, client };
+	return client;
 }
 
 export default function IdentityPanel() {
@@ -35,7 +71,10 @@ export default function IdentityPanel() {
 
 	if (!account) return null;
 
-	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	async function prefillFromProfile() {
 		try {
@@ -45,15 +84,22 @@ export default function IdentityPanel() {
 			const meta = await fetchProfileMetadata(data.metadata.asText());
 			if (meta) {
 				setDisplay((meta as { name?: string }).name || "");
-				setTwitter((meta as { links?: { twitter?: string } }).links?.twitter || "");
-				setWeb((meta as { links?: { website?: string } }).links?.website || "");
+				setTwitter(
+					(meta as { links?: { twitter?: string } }).links?.twitter || "",
+				);
+				setWeb(
+					(meta as { links?: { website?: string } }).links?.website || "",
+				);
 			}
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
 	async function setIdentity() {
 		if (!account || !display.trim()) return;
-		const api = getApi();
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const peopleApi: any = getPeopleClient().getUnsafeApi();
 		const info = {
 			display: dataValue(display.trim()),
 			email: dataValue(email.trim()),
@@ -65,43 +111,59 @@ export default function IdentityPanel() {
 			image: noneData(),
 			pgp_fingerprint: undefined,
 		};
-		const tx = api.tx.Identity.set_identity({ info });
-		const ok = await tracker.submit(tx, account.signer, "Set Identity");
-		if (ok) { setShowForm(false); reload(); }
+		const tx = peopleApi.tx.Identity.set_identity({ info });
+		const ok = await tracker.submit(tx, account.signer, "Set Identity on People");
+		if (ok) {
+			setShowForm(false);
+			reload();
+		}
 	}
 
 	async function requestJudgement() {
 		if (!account) return;
-		const api = getApi();
-		const tx = api.tx.Identity.request_judgement({ reg_index: 0, max_fee: 0n });
-		await tracker.submit(tx, account.signer, "Request Judgement");
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const peopleApi: any = getPeopleClient().getUnsafeApi();
+		const tx = peopleApi.tx.Identity.request_judgement({
+			reg_index: 0,
+			max_fee: 0n,
+		});
+		await tracker.submit(tx, account.signer, "Request Judgement on People");
 		reload();
 	}
 
 	async function clearIdentity() {
 		if (!account) return;
-		const api = getApi();
-		const tx = api.tx.Identity.clear_identity();
-		const ok = await tracker.submit(tx, account.signer, "Clear Identity");
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const peopleApi: any = getPeopleClient().getUnsafeApi();
+		const tx = peopleApi.tx.Identity.clear_identity();
+		const ok = await tracker.submit(tx, account.signer, "Clear Identity on People");
 		if (ok) reload();
 	}
 
 	return (
 		<div className="panel space-y-4">
 			<div className="flex items-center justify-between">
-				<h2 className="heading-2 flex items-center gap-2">
-					On-chain Identity
-					{identity?.verified && <VerifiedBadge size="md" />}
-				</h2>
+				<div>
+					<h2 className="heading-2 flex items-center gap-2">
+						Polkadot People Identity
+						<VerificationBadge status={identityStatus(identity)} size="md" showNoneLabel={false} />
+					</h2>
+					<p className="text-[11px] text-secondary mt-0.5">
+						Identity lives on the Polkadot People parachain. Requires DOT on
+						that chain to cover the registration deposit and fees.
+					</p>
+				</div>
 				{identity?.hasIdentity && (
-					<button onClick={clearIdentity} disabled={busy} className="btn-danger btn-sm">Clear</button>
+					<button onClick={clearIdentity} disabled={busy} className="btn-danger btn-sm">
+						Clear
+					</button>
 				)}
 			</div>
 
 			{loading ? (
 				<div className="flex items-center gap-2 text-secondary text-sm">
 					<div className="w-4 h-4 border-2 border-surface-600 border-t-brand-500 rounded-full animate-spin" />
-					Loading...
+					Loading from People chain…
 				</div>
 			) : identity?.hasIdentity ? (
 				<div className="space-y-3">
@@ -110,21 +172,39 @@ export default function IdentityPanel() {
 						{identity.verified ? (
 							<>
 								<span className="badge-success">Verified</span>
-								<span className="text-xs text-secondary">by Registrar #{identity.registrarIndex}</span>
+								<span className="text-xs text-secondary">
+									by Registrar #{identity.registrarIndex}
+								</span>
 							</>
 						) : identity.judgement === "FeePaid" ? (
 							<span className="badge-info">Pending judgement</span>
 						) : (
-							<span className="badge-neutral">Unverified</span>
+							<span className="badge-neutral">In process</span>
 						)}
 					</div>
 
 					{/* Fields */}
 					<div className="rounded-xl bg-surface-800 p-3 space-y-1.5 text-sm">
-						{identity.display && <p><span className="text-secondary">Name:</span> {identity.display}</p>}
-						{identity.twitter && <p><span className="text-secondary">Twitter:</span> {identity.twitter}</p>}
-						{identity.web && <p><span className="text-secondary">Website:</span> {identity.web}</p>}
-						{identity.email && <p><span className="text-secondary">Email:</span> {identity.email}</p>}
+						{identity.display && (
+							<p>
+								<span className="text-secondary">Name:</span> {identity.display}
+							</p>
+						)}
+						{identity.twitter && (
+							<p>
+								<span className="text-secondary">Twitter:</span> {identity.twitter}
+							</p>
+						)}
+						{identity.web && (
+							<p>
+								<span className="text-secondary">Website:</span> {identity.web}
+							</p>
+						)}
+						{identity.email && (
+							<p>
+								<span className="text-secondary">Email:</span> {identity.email}
+							</p>
+						)}
 					</div>
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 
@@ -138,11 +218,19 @@ export default function IdentityPanel() {
 			) : (
 				<div className="space-y-3">
 					<p className="text-secondary text-sm">
-						Set your on-chain identity for verification. This is separate from your social profile and visible across the Polkadot ecosystem.
+						Register your display name, website, email, or Twitter on the
+						Polkadot People parachain. Once a registrar issues a judgement
+						your profile will show as verified everywhere across Polkadot.
 					</p>
 					{!showForm ? (
-						<button onClick={() => { setShowForm(true); prefillFromProfile(); }} className="btn-outline btn-sm">
-							Set Identity
+						<button
+							onClick={() => {
+								setShowForm(true);
+								prefillFromProfile();
+							}}
+							className="btn-outline btn-sm"
+						>
+							Register on People chain
 						</button>
 					) : (
 						<div className="space-y-3">
@@ -151,25 +239,58 @@ export default function IdentityPanel() {
 							</button>
 							<div>
 								<label className="form-label">Display Name *</label>
-								<input type="text" value={display} onChange={(e) => setDisplay(e.target.value)} placeholder="Your name" className="input" />
+								<input
+									type="text"
+									value={display}
+									onChange={(e) => setDisplay(e.target.value)}
+									placeholder="Your name"
+									className="input"
+								/>
 							</div>
 							<div>
 								<label className="form-label">Twitter</label>
-								<input type="text" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="@handle" className="input" />
+								<input
+									type="text"
+									value={twitter}
+									onChange={(e) => setTwitter(e.target.value)}
+									placeholder="@handle"
+									className="input"
+								/>
 							</div>
 							<div>
 								<label className="form-label">Website</label>
-								<input type="text" value={web} onChange={(e) => setWeb(e.target.value)} placeholder="https://..." className="input" />
+								<input
+									type="text"
+									value={web}
+									onChange={(e) => setWeb(e.target.value)}
+									placeholder="https://..."
+									className="input"
+								/>
 							</div>
 							<div>
 								<label className="form-label">Email</label>
-								<input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="input" />
+								<input
+									type="text"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									placeholder="you@example.com"
+									className="input"
+								/>
 							</div>
-							<p className="text-[10px] text-surface-500">Setting identity requires a small deposit (refunded when cleared).</p>
+							<p className="text-[10px] text-surface-500">
+								This transaction is sent to the Polkadot People parachain and
+								requires DOT on People to cover the deposit (refunded on clear).
+							</p>
 							<div className="flex gap-2">
-								<button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">Cancel</button>
-								<button onClick={setIdentity} disabled={!display.trim() || busy} className="btn-brand btn-sm">
-									Set Identity
+								<button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">
+									Cancel
+								</button>
+								<button
+									onClick={setIdentity}
+									disabled={!display.trim() || busy}
+									className="btn-brand btn-sm"
+								>
+									Register
 								</button>
 							</div>
 						</div>

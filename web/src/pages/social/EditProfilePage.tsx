@@ -9,16 +9,7 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function identityDataValue(text: string): any {
-	if (!text) return { type: "None", value: undefined };
-	const bytes = new TextEncoder().encode(text.slice(0, 32));
-	const n = bytes.length;
-	return { type: `Raw${n}`, value: n === 1 ? bytes[0] : Binary.fromBytes(bytes) };
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function noneData(): any { return { type: "None", value: undefined }; }
+import IdentityPanel from "../../components/social/IdentityPanel";
 
 interface ProfileData {
 	cid: string;
@@ -86,16 +77,10 @@ export default function EditProfilePage() {
 				await tracker.submit(api.tx.SocialProfiles.set_follow_fee({ fee }), account.signer, "Set Follow Fee");
 			}
 
-			try {
-				await tracker.submit(api.tx.Identity.set_identity({
-					info: {
-						display: identityDataValue(metadata.name),
-						twitter: identityDataValue(metadata.links?.twitter || ""),
-						web: identityDataValue(metadata.links?.website || ""),
-						email: noneData(), additional: [], legal: noneData(), riot: noneData(), image: noneData(), pgp_fingerprint: undefined,
-					},
-				}), account.signer, "Sync Identity");
-			} catch { /* best-effort */ }
+			// Identity (display name + verification) is maintained on the
+			// Polkadot People parachain via the IdentityPanel on this page.
+			// We no longer auto-sync here because that tx lives on a
+			// different chain and requires DOT on People.
 
 			loadProfile();
 		} catch (e) {
@@ -153,6 +138,8 @@ export default function EditProfilePage() {
 								disabled={busy}
 							/>
 						</div>
+
+						<IdentityPanel />
 					</>
 				) : (
 					<div className="panel text-center py-8">

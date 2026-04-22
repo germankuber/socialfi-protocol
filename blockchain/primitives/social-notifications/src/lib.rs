@@ -37,8 +37,7 @@
 extern crate alloc;
 
 use alloc::format;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::string::String;
 use codec::Encode;
 use sp_statement_store::{Statement, Topic};
 

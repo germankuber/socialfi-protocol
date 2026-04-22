@@ -244,9 +244,6 @@ mod runtime {
 	#[runtime::pallet_index(54)]
 	pub type SocialFeeds = pallet_social_feeds;
 
-	#[runtime::pallet_index(55)]
-	pub type Identity = pallet_identity;
-
 	#[runtime::pallet_index(56)]
 	pub type SocialManagers = pallet_social_managers;
 
