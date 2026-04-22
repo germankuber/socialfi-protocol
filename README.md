@@ -14,9 +14,14 @@ A SocialFi reference implementation on Polkadot. Profiles, posts with public/obf
 
 ```mermaid
 flowchart TB
+    User(["👤 User<br/>browser"])
+    DotLi["🌐 dot.li<br/>resolver + iframe host"]
+    DotNS[("🏷️ DotNS<br/>name → contenthash<br/>on Polkadot Hub")]
+    Bulletin[("🗄️ Bulletin chain<br/>content-addressed storage<br/>IPFS gateway")]
+
     Wallet["🔐 Wallet<br/>PJS · Talisman · SubWallet"]
     IPFS["📦 IPFS Gateway<br/>post and profile media"]
-    Front["🌐 Web Frontend<br/>React · Vite · PAPI"]
+    Front["🌐 Web Frontend<br/>React · Vite · PAPI<br/>(runs inside dot.li iframe)"]
     Indexer["🗂️ Indexer<br/>PAPI subscribe to lowdb<br/>HTTP API 3001"]
     KS["🔑 Key Service<br/>external WIP<br/>custodies X25519 and sr25519"]
     People["🪪 Polkadot People<br/>pallet-identity<br/>display · judgement · username"]
@@ -33,7 +38,14 @@ flowchart TB
         RT --> OCW
     end
 
-    Front <--> Wallet
+    User -- "socialfi.dot.li" --> DotLi
+    DotLi -- "lookup contenthash" --> DotNS
+    DotLi -- "fetch CID" --> Bulletin
+    DotLi -- "serves bundle in iframe" --> Front
+
+    DotLi <--> Wallet
+    Front <-- "sign req / signed tx<br/>(postMessage)" --> DotLi
+
     Front <--> IPFS
     Front <--> Indexer
 
@@ -49,10 +61,14 @@ flowchart TB
     Front -- "get pubkey" --> KS
     OCW -- "unseal and sign" --> KS
 
+    classDef actor fill:#064e3b,color:#d1fae5,stroke:#10b981
+    classDef delivery fill:#7c2d12,color:#fed7aa,stroke:#ea580c
     classDef user fill:#1e3a8a,color:#dbeafe,stroke:#3b82f6
     classDef chain fill:#1e293b,color:#e2e8f0,stroke:#475569
     classDef external fill:#581c87,color:#f3e8ff,stroke:#a855f7
     classDef people fill:#4c1d95,color:#ede9fe,stroke:#a78bfa
+    class User actor
+    class DotLi,DotNS,Bulletin delivery
     class Wallet,Front,IPFS,Indexer user
     class RPC,RT,OCW,TxExt,Pallets chain
     class KS external
@@ -61,8 +77,9 @@ flowchart TB
 
 **Key dataflows**
 
+- **Delivery path (how the app reaches the user)**: The user opens `https://socialfi.dot.li`. **dot.li** looks the name up on **DotNS** (running on Polkadot Hub TestNet) and gets the `contenthash` pointing at the latest bundle CID. It then fetches that CID from **Bulletin chain's IPFS-compatible gateway** (`paseo-ipfs.polkadot.io`) — *not* a generic gateway like `ipfs.io`, which doesn't know how to talk to Bulletin. dot.li mounts the bundle inside a **sandboxed iframe** in the user's browser and serves it. From there on, the frontend behaves like any other PAPI dapp — the iframe just isolates it from the dot.li host page.
 - **Read path**: The frontend pulls live state **straight from the node** over PAPI WS (storage + view functions + statement-store subscriptions) and denormalised tx/event history **from the indexer HTTP API** (`:3001`). IPFS is hit directly from the browser to materialise post/profile media referenced by on-chain CIDs.
-- **Write path**: The frontend asks the **wallet** (PJS / Talisman / SubWallet) to sign the extrinsic; the wallet returns the signed bytes and the **frontend submits them to the node** via PAPI. The node propagates the tx, the runtime dispatches it, and both the frontend (via its own PAPI subscription) and the indexer (via its event watcher) observe the resulting events.
+- **Write path**: The iframe-embedded frontend doesn't touch the wallet directly — it `postMessage`s the extrinsic up to the **dot.li host**, which owns the connection to the user's wallet (PJS / Talisman / SubWallet / mobile signer). The host asks the wallet to sign, the wallet returns the signed bytes, and the signature comes back into the iframe. The frontend (or the wallet itself) then submits to the node. The node propagates the tx, the runtime dispatches it, and both the frontend (via its own PAPI subscription) and the indexer (via its event watcher) observe the resulting events.
 - **Encrypted read path**: Viewer pays `unlock_post` → OCW reads `PendingUnlocks` and **calls the external Key Service** over HTTP. The service custodies the X25519 keypair, opens the capsule, re-seals the content key for the viewer, and signs the delivery payload. OCW submits `deliver_unlock_unsigned` → viewer polls `Unlocks` and decrypts locally. The in-repo `dev_key.rs` is a dev-only stub that inlines the key inside the collator; production moves it behind the Key Service.
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
