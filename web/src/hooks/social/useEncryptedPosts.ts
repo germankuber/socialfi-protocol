@@ -164,7 +164,10 @@ export function useUnlockEncryptedPost(postId: bigint | null, viewer: string | n
 				return;
 			}
 			const sk = loadBuyerSk(postId);
-			console.log("[decrypt] buyer sk from sessionStorage:", sk ? `${sk.length}b` : "MISSING");
+			console.log(
+				"[decrypt] buyer sk from sessionStorage:",
+				sk ? `${sk.length}b` : "MISSING",
+			);
 			if (!sk) {
 				setState({ status: "error", error: "buyer secret not found in this browser tab" });
 				return;

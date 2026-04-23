@@ -44,9 +44,15 @@ export default function AccountsPage() {
 				<div className="space-y-2">
 					<div className="flex items-center justify-between">
 						<p className="text-sm font-medium">Polkadot Host (Nova Mobile)</p>
-						<span className={`badge ${wallet.spektrStatus === "connected" ? "badge-success" :
-							wallet.spektrStatus === "unavailable" ? "badge-neutral" : "badge-danger"
-							}`}>
+						<span
+							className={`badge ${
+								wallet.spektrStatus === "connected"
+									? "badge-success"
+									: wallet.spektrStatus === "unavailable"
+										? "badge-neutral"
+										: "badge-danger"
+							}`}
+						>
 							{wallet.spektrStatus === "connected"
 								? `${wallet.spektrAccounts.length} account${wallet.spektrAccounts.length !== 1 ? "s" : ""}`
 								: wallet.spektrStatus === "unavailable"
@@ -56,7 +62,8 @@ export default function AccountsPage() {
 					</div>
 					{wallet.spektrStatus === "unavailable" && (
 						<p className="text-xs text-secondary">
-							Open this app through a Polkadot Host client (Nova wallet, Spektr) to use mobile signing.
+							Open this app through a Polkadot Host client (Nova wallet, Spektr) to
+							use mobile signing.
 						</p>
 					)}
 				</div>
@@ -69,7 +76,8 @@ export default function AccountsPage() {
 					{wallet.connectedWallet ? (
 						<div className="flex items-center justify-between">
 							<span className="badge-success">
-								{WALLET_NAMES[wallet.connectedWallet] || wallet.connectedWallet} ({wallet.extensionAccounts.length})
+								{WALLET_NAMES[wallet.connectedWallet] || wallet.connectedWallet} (
+								{wallet.extensionAccounts.length})
 							</span>
 							<button onClick={wallet.disconnectWallet} className="btn-danger btn-sm">
 								Disconnect
@@ -89,7 +97,8 @@ export default function AccountsPage() {
 						</div>
 					) : (
 						<p className="text-xs text-secondary">
-							No browser wallets detected. Install Polkadot.js, Talisman, or SubWallet.
+							No browser wallets detected. Install Polkadot.js, Talisman, or
+							SubWallet.
 						</p>
 					)}
 				</div>
@@ -101,11 +110,16 @@ export default function AccountsPage() {
 					<h2 className="heading-2 mb-3">Connected Accounts</h2>
 					<div className="divide-y divide-surface-800">
 						{allAccounts.map((acc) => (
-							<div key={`${acc.type}-${acc.address}`} className="py-3 first:pt-0 last:pb-0">
+							<div
+								key={`${acc.type}-${acc.address}`}
+								className="py-3 first:pt-0 last:pb-0"
+							>
 								<div className="flex items-center justify-between mb-1">
 									<div className="flex items-center gap-2">
 										<span className="font-semibold text-sm">{acc.name}</span>
-										<span className={`badge ${acc.type === "host" ? "badge-success" : "badge-neutral"}`}>
+										<span
+											className={`badge ${acc.type === "host" ? "badge-success" : "badge-neutral"}`}
+										>
 											{acc.type}
 										</span>
 									</div>

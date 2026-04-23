@@ -2,13 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type { PolkadotSigner } from "polkadot-api";
 import { formatDispatchError } from "../../utils/format";
 
-export type TxStage =
-	| "idle"
-	| "signing"
-	| "broadcasting"
-	| "in_block"
-	| "finalized"
-	| "error";
+export type TxStage = "idle" | "signing" | "broadcasting" | "in_block" | "finalized" | "error";
 
 export interface TxState {
 	stage: TxStage;
@@ -104,14 +98,23 @@ export function useTxTracker(): TxTracker {
 							// lets the normal lifecycle events drive state.
 							if (!ev || typeof ev !== "object") return;
 							if (ev.type === "signed") {
-								setState({ stage: "broadcasting", message: `${label}: Signed. Broadcasting...` });
+								setState({
+									stage: "broadcasting",
+									message: `${label}: Signed. Broadcasting...`,
+								});
 							} else if (ev.type === "broadcasted") {
-								setState({ stage: "broadcasting", message: `${label}: Broadcasted. Waiting for block...` });
+								setState({
+									stage: "broadcasting",
+									message: `${label}: Broadcasted. Waiting for block...`,
+								});
 							} else if (ev.type === "txBestBlocksState") {
 								if (ev.found) {
 									if (ev.ok === false) {
 										const errMsg = formatDispatchError(ev.dispatchError);
-										setState({ stage: "error", message: `${label} failed: ${errMsg}` });
+										setState({
+											stage: "error",
+											message: `${label} failed: ${errMsg}`,
+										});
 										subRef.current?.unsubscribe();
 										subRef.current = null;
 										resolve(false);
@@ -126,7 +129,10 @@ export function useTxTracker(): TxTracker {
 							} else if (ev.type === "finalized") {
 								if (ev.ok === false) {
 									const errMsg = formatDispatchError(ev.dispatchError);
-									setState({ stage: "error", message: `${label} failed: ${errMsg}` });
+									setState({
+										stage: "error",
+										message: `${label} failed: ${errMsg}`,
+									});
 									resolve(false);
 								} else {
 									setState({
@@ -134,7 +140,10 @@ export function useTxTracker(): TxTracker {
 										message: `${label}: Finalized!`,
 										blockHash: ev.block?.hash,
 									});
-									timerRef.current = setTimeout(() => setState(IDLE_STATE), AUTO_DISMISS_MS);
+									timerRef.current = setTimeout(
+										() => setState(IDLE_STATE),
+										AUTO_DISMISS_MS,
+									);
 									resolve(true);
 								}
 								subRef.current = null;
@@ -152,7 +161,10 @@ export function useTxTracker(): TxTracker {
 							// descriptor bug is tracked separately.
 							if (msg.includes("innerDecoder is not a function")) {
 								setState({ stage: "finalized", message: `${label}: Finalized!` });
-								timerRef.current = setTimeout(() => setState(IDLE_STATE), AUTO_DISMISS_MS);
+								timerRef.current = setTimeout(
+									() => setState(IDLE_STATE),
+									AUTO_DISMISS_MS,
+								);
 								subRef.current = null;
 								resolve(true);
 								return;

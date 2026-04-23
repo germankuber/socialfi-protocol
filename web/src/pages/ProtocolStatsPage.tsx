@@ -76,8 +76,17 @@ export default function ProtocolStatsPage() {
 
 	return (
 		<div className="space-y-6 animate-fade-in">
-			<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors">
-				<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+			<Link
+				to="/"
+				className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors"
+			>
+				<svg
+					className="w-3.5 h-3.5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					strokeWidth={2}
+				>
 					<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 				</svg>
 				Back
@@ -86,9 +95,12 @@ export default function ProtocolStatsPage() {
 			{/* Header */}
 			<div className="text-center space-y-2">
 				<h1 className="heading-1">Protocol Locked Funds</h1>
-				<p className="text-3xl font-bold font-mono text-brand-500">{formatUnit(totalLocked)} <span className="text-lg text-secondary">UNIT</span></p>
+				<p className="text-3xl font-bold font-mono text-brand-500">
+					{formatUnit(totalLocked)} <span className="text-lg text-secondary">UNIT</span>
+				</p>
 				<p className="text-secondary text-sm">
-					{bonds.filter((b) => b.type === "profile").length} profile bonds + {bonds.filter((b) => b.type === "app").length} app bonds
+					{bonds.filter((b) => b.type === "profile").length} profile bonds +{" "}
+					{bonds.filter((b) => b.type === "app").length} app bonds
 				</p>
 			</div>
 
@@ -110,16 +122,37 @@ export default function ProtocolStatsPage() {
 				) : (
 					<div className="divide-y divide-surface-800">
 						{bonds.map((bond, i) => (
-							<div key={`${bond.type}-${bond.address}-${bond.appId ?? i}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+							<div
+								key={`${bond.type}-${bond.address}-${bond.appId ?? i}`}
+								className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+							>
 								{/* Icon */}
-								<div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-									bond.type === "profile" ? "bg-purple-500/10" : "bg-orange-500/10"
-								}`}>
-									<svg className={`w-4 h-4 ${bond.type === "profile" ? "text-purple-500" : "text-orange-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+								<div
+									className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+										bond.type === "profile"
+											? "bg-purple-500/10"
+											: "bg-orange-500/10"
+									}`}
+								>
+									<svg
+										className={`w-4 h-4 ${bond.type === "profile" ? "text-purple-500" : "text-orange-500"}`}
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										strokeWidth={1.5}
+									>
 										{bond.type === "profile" ? (
-											<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+											/>
 										) : (
-											<path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
+											/>
 										)}
 									</svg>
 								</div>
@@ -127,18 +160,31 @@ export default function ProtocolStatsPage() {
 								{/* Info */}
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2">
-										<span className={`text-sm font-medium ${bond.type === "profile" ? "text-purple-400" : "text-orange-400"}`}>
-											{bond.type === "profile" ? "Profile Bond" : `App #${bond.appId} Bond`}
+										<span
+											className={`text-sm font-medium ${bond.type === "profile" ? "text-purple-400" : "text-orange-400"}`}
+										>
+											{bond.type === "profile"
+												? "Profile Bond"
+												: `App #${bond.appId} Bond`}
 										</span>
 										{bond.type === "app" && (
-											<Link to={`/app/${bond.appId}`} className="text-[10px] text-brand-500 hover:underline">
+											<Link
+												to={`/app/${bond.appId}`}
+												className="text-[10px] text-brand-500 hover:underline"
+											>
 												View App
 											</Link>
 										)}
 									</div>
 									<div className="flex items-center gap-2 mt-0.5">
-										<AuthorDisplay address={bond.address} size="sm" showIdentityStatus={false} />
-										<span className="text-[10px] text-surface-500 font-mono">Block #{bond.createdAt}</span>
+										<AuthorDisplay
+											address={bond.address}
+											size="sm"
+											showIdentityStatus={false}
+										/>
+										<span className="text-[10px] text-surface-500 font-mono">
+											Block #{bond.createdAt}
+										</span>
 									</div>
 								</div>
 

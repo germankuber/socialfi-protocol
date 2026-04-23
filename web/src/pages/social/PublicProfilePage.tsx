@@ -43,7 +43,10 @@ export default function PublicProfilePage() {
 			const api = getApi();
 
 			const data = await api.query.SocialProfiles.Profiles.getValue(targetAddress);
-			if (!data) { setProfile(null); return; }
+			if (!data) {
+				setProfile(null);
+				return;
+			}
 
 			const cid = data.metadata.asText();
 			const meta = await fetchProfileMetadata(cid);
@@ -65,7 +68,10 @@ export default function PublicProfilePage() {
 
 			// Check if current user follows this profile
 			if (account?.address && account.address !== targetAddress) {
-				const followEntry = await api.query.SocialGraph.Follows.getValue(account.address, targetAddress);
+				const followEntry = await api.query.SocialGraph.Follows.getValue(
+					account.address,
+					targetAddress,
+				);
 				setIsFollowing(followEntry != null);
 			}
 		} catch {
@@ -76,9 +82,14 @@ export default function PublicProfilePage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [targetAddress, account?.address]);
 
-	useEffect(() => { loadProfile(); }, [loadProfile]);
+	useEffect(() => {
+		loadProfile();
+	}, [loadProfile]);
 
-	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	async function handleFollow() {
 		if (!account) return;
@@ -109,7 +120,9 @@ export default function PublicProfilePage() {
 		return (
 			<div className="panel text-center py-12 space-y-3 animate-fade-in">
 				<p className="text-secondary">No profile found for this address.</p>
-				<Link to="/" className="btn-outline btn-sm inline-flex">Back</Link>
+				<Link to="/" className="btn-outline btn-sm inline-flex">
+					Back
+				</Link>
 			</div>
 		);
 	}
@@ -118,8 +131,17 @@ export default function PublicProfilePage() {
 
 	return (
 		<div className="space-y-4 animate-fade-in">
-			<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors">
-				<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+			<Link
+				to="/"
+				className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors"
+			>
+				<svg
+					className="w-3.5 h-3.5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					strokeWidth={2}
+				>
 					<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 				</svg>
 				Back
@@ -130,7 +152,11 @@ export default function PublicProfilePage() {
 				<div className="flex items-start gap-4">
 					{/* Avatar */}
 					{profile.avatar ? (
-						<img src={profile.avatar} alt={profile.name} className="w-20 h-20 rounded-full object-cover bg-surface-800 shrink-0" />
+						<img
+							src={profile.avatar}
+							alt={profile.name}
+							className="w-20 h-20 rounded-full object-cover bg-surface-800 shrink-0"
+						/>
 					) : (
 						<div className="w-20 h-20 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-2xl font-bold shrink-0">
 							{profile.name[0]?.toUpperCase() ?? "?"}
@@ -143,10 +169,17 @@ export default function PublicProfilePage() {
 							{identity?.verified && <VerifiedBadge size="md" />}
 						</h1>
 						<div className="flex items-center gap-2 mt-1">
-							<span className="text-xs font-mono text-secondary" title={targetAddress}>{truncated}</span>
+							<span
+								className="text-xs font-mono text-secondary"
+								title={targetAddress}
+							>
+								{truncated}
+							</span>
 							<VerificationBadge status={identityStatus(identity)} size="md" />
 						</div>
-						{profile.bio && <p className="text-sm text-secondary mt-2">{profile.bio}</p>}
+						{profile.bio && (
+							<p className="text-sm text-secondary mt-2">{profile.bio}</p>
+						)}
 
 						{/* Stats */}
 						<div className="flex items-center gap-4 mt-3">
@@ -161,7 +194,9 @@ export default function PublicProfilePage() {
 							{profile.followFee > 0n && (
 								<div>
 									<span className="text-xs text-secondary">Follow fee:</span>
-									<span className="font-mono text-xs ml-1">{profile.followFee.toString()}</span>
+									<span className="font-mono text-xs ml-1">
+										{profile.followFee.toString()}
+									</span>
 								</div>
 							)}
 						</div>
@@ -171,12 +206,20 @@ export default function PublicProfilePage() {
 					{account && !isOwnProfile && (
 						<div className="shrink-0">
 							{isFollowing ? (
-								<button onClick={handleUnfollow} disabled={busy} className="btn-outline btn-sm">
+								<button
+									onClick={handleUnfollow}
+									disabled={busy}
+									className="btn-outline btn-sm"
+								>
 									Unfollow
 								</button>
 							) : (
 								<button
-									onClick={() => profile.followFee > 0n ? setShowFollowConfirm(true) : handleFollow()}
+									onClick={() =>
+										profile.followFee > 0n
+											? setShowFollowConfirm(true)
+											: handleFollow()
+									}
 									disabled={busy}
 									className="btn-brand btn-sm"
 								>
@@ -208,10 +251,14 @@ export default function PublicProfilePage() {
 					<div className="rounded-xl bg-surface-800 p-3 space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-secondary">Follow fee (to {profile.name})</span>
-							<span className="font-mono font-semibold">{profile.followFee.toString()}</span>
+							<span className="font-mono font-semibold">
+								{profile.followFee.toString()}
+							</span>
 						</div>
 					</div>
-					<p className="text-xs text-secondary">This fee is transferred to the user you follow. No refund on unfollow.</p>
+					<p className="text-xs text-secondary">
+						This fee is transferred to the user you follow. No refund on unfollow.
+					</p>
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 				</div>
 			</ConfirmModal>

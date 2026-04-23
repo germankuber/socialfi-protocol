@@ -88,9 +88,7 @@ export function useNotifications(): NotificationsState {
 		if (!maybeRecipientTopic) {
 			// Defer the error to a microtask to keep the effect body
 			// free of sync setState calls.
-			queueMicrotask(() =>
-				setError(`Could not derive topic for account ${account.address}`),
-			);
+			queueMicrotask(() => setError(`Could not derive topic for account ${account.address}`));
 			return;
 		}
 		const recipientTopic: string = maybeRecipientTopic;

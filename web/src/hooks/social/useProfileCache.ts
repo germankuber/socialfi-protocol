@@ -11,10 +11,7 @@ export interface CachedProfile {
 	hasIdentity: boolean;
 }
 
-const IPFS_GATEWAYS = [
-	"https://ipfs.io/ipfs",
-	"https://dweb.link/ipfs",
-];
+const IPFS_GATEWAYS = ["https://ipfs.io/ipfs", "https://dweb.link/ipfs"];
 
 const profileCache = new Map<string, CachedProfile | null>();
 const pendingRequests = new Map<string, Promise<CachedProfile | null>>();

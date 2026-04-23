@@ -1,15 +1,15 @@
 type ClassValue = string | number | false | null | undefined | ClassValue[];
 
 export function cn(...values: ClassValue[]): string {
-  const out: string[] = [];
-  for (const v of values) {
-    if (!v) continue;
-    if (Array.isArray(v)) {
-      const nested = cn(...v);
-      if (nested) out.push(nested);
-      continue;
-    }
-    out.push(String(v));
-  }
-  return out.join(" ");
+	const out: string[] = [];
+	for (const v of values) {
+		if (!v) continue;
+		if (Array.isArray(v)) {
+			const nested = cn(...v);
+			if (nested) out.push(nested);
+			continue;
+		}
+		out.push(String(v));
+	}
+	return out.join(" ");
 }

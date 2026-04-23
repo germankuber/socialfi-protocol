@@ -23,7 +23,12 @@ interface NavItem {
 }
 
 const primary: NavItem[] = [
-	{ to: "/social", label: "Overview", icon: <LayoutDashboard size={15} strokeWidth={1.75} />, end: true },
+	{
+		to: "/social",
+		label: "Overview",
+		icon: <LayoutDashboard size={15} strokeWidth={1.75} />,
+		end: true,
+	},
 	{ to: "/social/feed", label: "Feed", icon: <Newspaper size={15} strokeWidth={1.75} /> },
 	{ to: "/social/profile", label: "Profile", icon: <User size={15} strokeWidth={1.75} /> },
 	{ to: "/social/graph", label: "Graph", icon: <Users size={15} strokeWidth={1.75} /> },
@@ -31,10 +36,22 @@ const primary: NavItem[] = [
 ];
 
 const secondary: NavItem[] = [
-	{ to: "/social/transactions", label: "Transactions", icon: <ArrowLeftRight size={15} strokeWidth={1.75} /> },
+	{
+		to: "/social/transactions",
+		label: "Transactions",
+		icon: <ArrowLeftRight size={15} strokeWidth={1.75} />,
+	},
 	{ to: "/social/accounts", label: "Accounts", icon: <Wallet size={15} strokeWidth={1.75} /> },
-	{ to: "/social/managers", label: "Managers", icon: <ShieldCheck size={15} strokeWidth={1.75} /> },
-	{ to: "/social/sponsorship", label: "Sponsorship", icon: <HandCoins size={15} strokeWidth={1.75} /> },
+	{
+		to: "/social/managers",
+		label: "Managers",
+		icon: <ShieldCheck size={15} strokeWidth={1.75} />,
+	},
+	{
+		to: "/social/sponsorship",
+		label: "Sponsorship",
+		icon: <HandCoins size={15} strokeWidth={1.75} />,
+	},
 ];
 
 export default function SocialLayout() {
@@ -163,12 +180,19 @@ function SidebarLink({ to, label, icon, end, hint }: NavItem) {
 							className="absolute left-0 h-4 w-0.5 -translate-x-0.5 rounded-r-full bg-brand shadow-[0_0_8px_rgb(var(--brand)/0.6)]"
 						/>
 					)}
-					<span className={cn("shrink-0", isActive ? "text-brand" : "text-ink-subtle group-hover:text-ink-muted")}>
+					<span
+						className={cn(
+							"shrink-0",
+							isActive ? "text-brand" : "text-ink-subtle group-hover:text-ink-muted",
+						)}
+					>
 						{icon}
 					</span>
 					<span className="truncate">{label}</span>
 					{hint ? (
-						<span className="ml-auto font-mono text-[10px] text-ink-subtle">{hint}</span>
+						<span className="ml-auto font-mono text-[10px] text-ink-subtle">
+							{hint}
+						</span>
 					) : null}
 				</>
 			)}

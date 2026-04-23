@@ -7,7 +7,8 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function AccountSelector() {
-	const { account, allAccounts, selectedAccountIndex, setSelectedAccountIndex } = useSelectedAccount();
+	const { account, allAccounts, selectedAccountIndex, setSelectedAccountIndex } =
+		useSelectedAccount();
 
 	if (!account) {
 		return (
@@ -37,11 +38,11 @@ export default function AccountSelector() {
 						</option>
 					))}
 				</select>
-				<p className="text-xs font-mono text-secondary mt-1 truncate">
-					{account.address}
-				</p>
+				<p className="text-xs font-mono text-secondary mt-1 truncate">{account.address}</p>
 			</div>
-			<span className={`badge ${account.type === "host" ? "badge-success" : "badge-neutral"}`}>
+			<span
+				className={`badge ${account.type === "host" ? "badge-success" : "badge-neutral"}`}
+			>
 				{account.type}
 			</span>
 		</div>

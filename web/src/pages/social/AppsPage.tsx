@@ -50,11 +50,19 @@ export default function AppsPage() {
 			for (const app of result) {
 				fetchProfileMetadata(app.metadata).then((meta) => {
 					if (meta) {
-						setApps((prev) => prev.map((a) => a.id === app.id ? {
-							...a,
-							resolvedName: (meta as { name?: string }).name || undefined,
-							resolvedIcon: (meta as { icon?: string }).icon || undefined,
-						} : a));
+						setApps((prev) =>
+							prev.map((a) =>
+								a.id === app.id
+									? {
+											...a,
+											resolvedName:
+												(meta as { name?: string }).name || undefined,
+											resolvedIcon:
+												(meta as { icon?: string }).icon || undefined,
+										}
+									: a,
+							),
+						);
 					}
 				});
 			}
@@ -66,16 +74,27 @@ export default function AppsPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	useEffect(() => { loadApps(); }, [loadApps]);
+	useEffect(() => {
+		loadApps();
+	}, [loadApps]);
 
-	const busy = tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	async function handleRegister(cid: string, hasImages: boolean) {
 		if (!account) return;
 		const api = getApi();
-		const tx = api.tx.SocialAppRegistry.register_app({ metadata: Binary.fromText(cid), has_images: hasImages });
+		const tx = api.tx.SocialAppRegistry.register_app({
+			metadata: Binary.fromText(cid),
+			has_images: hasImages,
+		});
 		const ok = await tracker.submit(tx, account.signer, "Register App");
-		if (ok) { setShowForm(false); loadApps(); }
+		if (ok) {
+			setShowForm(false);
+			loadApps();
+		}
 	}
 
 	async function deregisterApp(appId: number) {
@@ -89,13 +108,14 @@ export default function AppsPage() {
 	return (
 		<RequireProfile>
 			<div className="space-y-4">
-
 				{/* Register button or form */}
 				{showForm ? (
 					<div className="panel space-y-4">
 						<div className="flex items-center justify-between">
 							<h2 className="heading-2">Register App</h2>
-							<button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">Cancel</button>
+							<button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">
+								Cancel
+							</button>
 						</div>
 						<AppForm onSubmit={handleRegister} disabled={busy} />
 					</div>
@@ -115,7 +135,9 @@ export default function AppsPage() {
 					</div>
 
 					{apps.length === 0 ? (
-						<p className="text-secondary text-sm py-4 text-center">No apps registered yet.</p>
+						<p className="text-secondary text-sm py-4 text-center">
+							No apps registered yet.
+						</p>
 					) : (
 						<div className="divide-y divide-surface-800">
 							{apps.map((app) => (
@@ -123,7 +145,11 @@ export default function AppsPage() {
 									<div className="flex items-center gap-3">
 										{/* Icon */}
 										{app.resolvedIcon ? (
-											<img src={ipfsUrl(app.resolvedIcon)} alt="" className="w-10 h-10 rounded-xl object-cover bg-surface-800 shrink-0" />
+											<img
+												src={ipfsUrl(app.resolvedIcon)}
+												alt=""
+												className="w-10 h-10 rounded-xl object-cover bg-surface-800 shrink-0"
+											/>
 										) : (
 											<div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold shrink-0">
 												{app.id}
@@ -134,20 +160,34 @@ export default function AppsPage() {
 												<span className="font-semibold text-sm">
 													{app.resolvedName || `App #${app.id}`}
 												</span>
-												<span className={app.status === "Active" ? "badge-success" : "badge-neutral"}>
+												<span
+													className={
+														app.status === "Active"
+															? "badge-success"
+															: "badge-neutral"
+													}
+												>
 													{app.status}
 												</span>
 											</div>
 											<div className="text-xs text-secondary flex items-center gap-2">
 												<AddressDisplay address={app.owner} />
-												<span className="font-mono">Block #{app.createdAt}</span>
+												<span className="font-mono">
+													Block #{app.createdAt}
+												</span>
 											</div>
 										</div>
-										{app.status === "Active" && account && app.owner === account.address && (
-											<button onClick={() => deregisterApp(app.id)} disabled={busy} className="btn-danger btn-sm">
-												Deregister
-											</button>
-										)}
+										{app.status === "Active" &&
+											account &&
+											app.owner === account.address && (
+												<button
+													onClick={() => deregisterApp(app.id)}
+													disabled={busy}
+													className="btn-danger btn-sm"
+												>
+													Deregister
+												</button>
+											)}
 									</div>
 								</div>
 							))}

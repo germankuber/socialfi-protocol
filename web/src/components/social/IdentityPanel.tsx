@@ -110,12 +110,8 @@ export default function IdentityPanel() {
 			const meta = await fetchProfileMetadata(data.metadata.asText());
 			if (meta) {
 				setDisplay((meta as { name?: string }).name || "");
-				setTwitter(
-					(meta as { links?: { twitter?: string } }).links?.twitter || "",
-				);
-				setWeb(
-					(meta as { links?: { website?: string } }).links?.website || "",
-				);
+				setTwitter((meta as { links?: { twitter?: string } }).links?.twitter || "");
+				setWeb((meta as { links?: { website?: string } }).links?.website || "");
 			}
 		} catch {
 			/* ignore */
@@ -182,11 +178,15 @@ export default function IdentityPanel() {
 				<div>
 					<h2 className="heading-2 flex items-center gap-2">
 						Polkadot People Identity
-						<VerificationBadge status={identityStatus(identity)} size="md" showNoneLabel={false} />
+						<VerificationBadge
+							status={identityStatus(identity)}
+							size="md"
+							showNoneLabel={false}
+						/>
 					</h2>
 					<p className="text-[11px] text-secondary mt-0.5">
-						Identity lives on the Polkadot People parachain. Requires DOT on
-						that chain to cover the registration deposit and fees.
+						Identity lives on the Polkadot People parachain. Requires DOT on that chain
+						to cover the registration deposit and fees.
 					</p>
 				</div>
 				{identity?.hasIdentity && (
@@ -246,7 +246,11 @@ export default function IdentityPanel() {
 
 					{/* Actions */}
 					{!identity.verified && identity.judgement !== "FeePaid" && (
-						<button onClick={requestJudgement} disabled={busy} className="btn-brand btn-sm">
+						<button
+							onClick={requestJudgement}
+							disabled={busy}
+							className="btn-brand btn-sm"
+						>
 							Request Verification
 						</button>
 					)}
@@ -254,9 +258,9 @@ export default function IdentityPanel() {
 			) : (
 				<div className="space-y-3">
 					<p className="text-secondary text-sm">
-						Register your display name, website, email, or Twitter on the
-						Polkadot People parachain. Once a registrar issues a judgement
-						your profile will show as verified everywhere across Polkadot.
+						Register your display name, website, email, or Twitter on the Polkadot
+						People parachain. Once a registrar issues a judgement your profile will show
+						as verified everywhere across Polkadot.
 					</p>
 					{!showForm ? (
 						<button
@@ -270,7 +274,10 @@ export default function IdentityPanel() {
 						</button>
 					) : (
 						<div className="space-y-3">
-							<button onClick={prefillFromProfile} className="text-xs text-brand-500 hover:underline">
+							<button
+								onClick={prefillFromProfile}
+								className="text-xs text-brand-500 hover:underline"
+							>
 								Pre-fill from social profile
 							</button>
 							<div>
@@ -318,7 +325,10 @@ export default function IdentityPanel() {
 								requires DOT on People to cover the deposit (refunded on clear).
 							</p>
 							<div className="flex gap-2">
-								<button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">
+								<button
+									onClick={() => setShowForm(false)}
+									className="btn-ghost btn-sm"
+								>
 									Cancel
 								</button>
 								<button
@@ -336,49 +346,54 @@ export default function IdentityPanel() {
 
 			<TxToast state={tracker.state} onDismiss={tracker.reset} />
 
-			{alreadyRegisteredOpen && (() => {
-				const dismissAndGoBack = () => {
-					setAlreadyRegisteredOpen(false);
-					navigate("/profile/edit");
-				};
-				return (
-					<div
-						className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-						role="dialog"
-						aria-modal="true"
-						onClick={dismissAndGoBack}
-					>
+			{alreadyRegisteredOpen &&
+				(() => {
+					const dismissAndGoBack = () => {
+						setAlreadyRegisteredOpen(false);
+						navigate("/profile/edit");
+					};
+					return (
 						<div
-							className="panel max-w-sm w-full space-y-4"
-							onClick={(e) => e.stopPropagation()}
+							className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+							role="dialog"
+							aria-modal="true"
+							onClick={dismissAndGoBack}
 						>
-							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
-									<svg
-										className="w-5 h-5 text-success"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-										strokeWidth={2.5}
-									>
-										<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-									</svg>
+							<div
+								className="panel max-w-sm w-full space-y-4"
+								onClick={(e) => e.stopPropagation()}
+							>
+								<div className="flex items-center gap-3">
+									<div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+										<svg
+											className="w-5 h-5 text-success"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											strokeWidth={2.5}
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M5 13l4 4L19 7"
+											/>
+										</svg>
+									</div>
+									<h3 className="heading-2">You&apos;re already registered</h3>
 								</div>
-								<h3 className="heading-2">You&apos;re already registered</h3>
-							</div>
-							<p className="text-sm text-secondary">
-								Your identity is registered on Polkadot People. No further
-								action is needed.
-							</p>
-							<div className="flex justify-end">
-								<button onClick={dismissAndGoBack} className="btn-brand btn-sm">
-									Got it
-								</button>
+								<p className="text-sm text-secondary">
+									Your identity is registered on Polkadot People. No further
+									action is needed.
+								</p>
+								<div className="flex justify-end">
+									<button onClick={dismissAndGoBack} className="btn-brand btn-sm">
+										Got it
+									</button>
+								</div>
 							</div>
 						</div>
-					</div>
-				);
-			})()}
+					);
+				})()}
 		</div>
 	);
 }

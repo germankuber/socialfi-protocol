@@ -12,7 +12,10 @@ export function useProfileGate() {
 	const accountAddress = account?.address ?? null;
 
 	const check = useCallback(async () => {
-		if (!accountAddress) { setHasProfile(null); return; }
+		if (!accountAddress) {
+			setHasProfile(null);
+			return;
+		}
 		try {
 			setLoading(true);
 			const api = getApi();
@@ -26,7 +29,9 @@ export function useProfileGate() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
-	useEffect(() => { check(); }, [check]);
+	useEffect(() => {
+		check();
+	}, [check]);
 
 	return { hasProfile, loading, recheck: check, account };
 }

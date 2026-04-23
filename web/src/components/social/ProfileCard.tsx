@@ -78,10 +78,7 @@ export default function ProfileCard({
 						<span className="h-1 w-1 rounded-full bg-ink-faint" />
 						block #{createdAt}
 					</span>
-					<span
-						className="truncate"
-						title={cid}
-					>
+					<span className="truncate" title={cid}>
 						{cid.length > 30 ? `${cid.slice(0, 12)}…${cid.slice(-8)}` : cid}
 					</span>
 				</div>

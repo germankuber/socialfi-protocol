@@ -11,7 +11,14 @@ interface ProfileFormProps {
 	disabled?: boolean;
 }
 
-export default function ProfileForm({ initial, initialFollowFee, showFollowFee = true, onSubmit, submitLabel, disabled }: ProfileFormProps) {
+export default function ProfileForm({
+	initial,
+	initialFollowFee,
+	showFollowFee = true,
+	onSubmit,
+	submitLabel,
+	disabled,
+}: ProfileFormProps) {
 	const { uploadImage, ipfsUrl } = useIpfs();
 	const [name, setName] = useState(initial?.name ?? "");
 	const [bio, setBio] = useState(initial?.bio ?? "");
@@ -75,32 +82,63 @@ export default function ProfileForm({ initial, initialFollowFee, showFollowFee =
 							src={avatarPreviewUrl}
 							alt="Avatar"
 							className="w-16 h-16 rounded-full object-cover bg-surface-800 shrink-0"
-							onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+							onError={(e) => {
+								(e.target as HTMLImageElement).style.display = "none";
+							}}
 						/>
 					) : (
 						<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center shrink-0">
-							<svg className="w-6 h-6 text-surface-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+							<svg
+								className="w-6 h-6 text-surface-600"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={1.5}
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+								/>
 							</svg>
 						</div>
 					)}
 					<div className="space-y-2">
-						<input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-						<button type="button" onClick={() => fileRef.current?.click()} disabled={uploadingImage} className="btn-outline btn-sm">
+						<input
+							ref={fileRef}
+							type="file"
+							accept="image/*"
+							onChange={handleImageSelect}
+							className="hidden"
+						/>
+						<button
+							type="button"
+							onClick={() => fileRef.current?.click()}
+							disabled={uploadingImage}
+							className="btn-outline btn-sm"
+						>
 							{uploadingImage ? (
 								<span className="flex items-center gap-2">
 									<span className="w-3 h-3 border-2 border-surface-600 border-t-brand-500 rounded-full animate-spin" />
 									Uploading to IPFS...
 								</span>
-							) : "Upload Image"}
+							) : (
+								"Upload Image"
+							)}
 						</button>
 						{avatarCid && (
-							<button type="button" onClick={() => setAvatarCid("")} className="btn-ghost btn-sm text-danger">
+							<button
+								type="button"
+								onClick={() => setAvatarCid("")}
+								className="btn-ghost btn-sm text-danger"
+							>
 								Remove
 							</button>
 						)}
 						{avatarCid && (
-							<p className="text-[10px] font-mono text-surface-500 truncate max-w-[200px]">{avatarCid}</p>
+							<p className="text-[10px] font-mono text-surface-500 truncate max-w-[200px]">
+								{avatarCid}
+							</p>
 						)}
 						{imageError && <p className="text-xs text-danger">{imageError}</p>}
 					</div>
@@ -110,28 +148,65 @@ export default function ProfileForm({ initial, initialFollowFee, showFollowFee =
 
 			<div>
 				<label className="form-label">Display Name *</label>
-				<input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name..." className="input" required />
+				<input
+					type="text"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+					placeholder="Your name..."
+					className="input"
+					required
+				/>
 			</div>
 
 			<div>
 				<label className="form-label">Bio</label>
-				<textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself..." rows={3} className="input resize-none" />
+				<textarea
+					value={bio}
+					onChange={(e) => setBio(e.target.value)}
+					placeholder="Tell people about yourself..."
+					rows={3}
+					className="input resize-none"
+				/>
 			</div>
 
 			<div className="space-y-3">
 				<p className="form-label">Links</p>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div>
-						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">Twitter</label>
-						<input type="text" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="@handle" className="input" />
+						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">
+							Twitter
+						</label>
+						<input
+							type="text"
+							value={twitter}
+							onChange={(e) => setTwitter(e.target.value)}
+							placeholder="@handle"
+							className="input"
+						/>
 					</div>
 					<div>
-						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">GitHub</label>
-						<input type="text" value={github} onChange={(e) => setGithub(e.target.value)} placeholder="username" className="input" />
+						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">
+							GitHub
+						</label>
+						<input
+							type="text"
+							value={github}
+							onChange={(e) => setGithub(e.target.value)}
+							placeholder="username"
+							className="input"
+						/>
 					</div>
 					<div>
-						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">Website</label>
-						<input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." className="input" />
+						<label className="text-[10px] text-surface-500 uppercase tracking-wider mb-1 block">
+							Website
+						</label>
+						<input
+							type="text"
+							value={website}
+							onChange={(e) => setWebsite(e.target.value)}
+							placeholder="https://..."
+							className="input"
+						/>
 					</div>
 				</div>
 			</div>
@@ -163,7 +238,11 @@ export default function ProfileForm({ initial, initialFollowFee, showFollowFee =
 				</div>
 			)}
 
-			<button type="submit" disabled={!name.trim() || disabled || uploadingImage} className="btn-brand w-full">
+			<button
+				type="submit"
+				disabled={!name.trim() || disabled || uploadingImage}
+				className="btn-brand w-full"
+			>
 				{disabled ? "Uploading to IPFS..." : submitLabel}
 			</button>
 		</form>

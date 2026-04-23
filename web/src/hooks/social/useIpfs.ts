@@ -42,23 +42,29 @@ export function useIpfs() {
 	}, []);
 
 	/** Upload profile metadata JSON to IPFS. Returns the CID. */
-	const uploadProfileMetadata = useCallback(async (metadata: ProfileMetadata): Promise<string> => {
-		const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-		return uploadToIpfs(blob, "profile.json");
-	}, []);
+	const uploadProfileMetadata = useCallback(
+		async (metadata: ProfileMetadata): Promise<string> => {
+			const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
+			return uploadToIpfs(blob, "profile.json");
+		},
+		[],
+	);
 
 	/** Fetch profile metadata from IPFS by CID. Tries multiple gateways. */
-	const fetchProfileMetadata = useCallback(async (cid: string): Promise<ProfileMetadata | null> => {
-		for (const gw of IPFS_GATEWAYS) {
-			try {
-				const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(10000) });
-				if (res.ok) return await res.json();
-			} catch {
-				continue;
+	const fetchProfileMetadata = useCallback(
+		async (cid: string): Promise<ProfileMetadata | null> => {
+			for (const gw of IPFS_GATEWAYS) {
+				try {
+					const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(10000) });
+					if (res.ok) return await res.json();
+				} catch {
+					continue;
+				}
 			}
-		}
-		return null;
-	}, []);
+			return null;
+		},
+		[],
+	);
 
 	/** Get a public IPFS gateway URL for a CID. */
 	const ipfsUrl = useCallback((cid: string): string => {
@@ -66,28 +72,41 @@ export function useIpfs() {
 	}, []);
 
 	/** Upload a post to IPFS. Optionally with an image CID. Returns the CID. */
-	const uploadPostContent = useCallback(async (text: string, imageCid?: string): Promise<string> => {
-		const payload: Record<string, unknown> = { text, ts: Date.now() };
-		if (imageCid) payload.image = imageCid;
-		const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-		return uploadToIpfs(blob, "post.json");
-	}, []);
+	const uploadPostContent = useCallback(
+		async (text: string, imageCid?: string): Promise<string> => {
+			const payload: Record<string, unknown> = { text, ts: Date.now() };
+			if (imageCid) payload.image = imageCid;
+			const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+			return uploadToIpfs(blob, "post.json");
+		},
+		[],
+	);
 
 	/** Fetch post content from IPFS. Returns { text, image? }. */
-	const fetchPostContent = useCallback(async (cid: string): Promise<{ text: string; image?: string } | null> => {
-		for (const gw of IPFS_GATEWAYS) {
-			try {
-				const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(10000) });
-				if (res.ok) {
-					const data = await res.json();
-					return { text: data.text ?? JSON.stringify(data), image: data.image };
+	const fetchPostContent = useCallback(
+		async (cid: string): Promise<{ text: string; image?: string } | null> => {
+			for (const gw of IPFS_GATEWAYS) {
+				try {
+					const res = await fetch(`${gw}/${cid}`, { signal: AbortSignal.timeout(10000) });
+					if (res.ok) {
+						const data = await res.json();
+						return { text: data.text ?? JSON.stringify(data), image: data.image };
+					}
+				} catch {
+					continue;
 				}
-			} catch {
-				continue;
 			}
-		}
-		return null;
-	}, []);
+			return null;
+		},
+		[],
+	);
 
-	return { uploadImage, uploadProfileMetadata, fetchProfileMetadata, uploadPostContent, fetchPostContent, ipfsUrl };
+	return {
+		uploadImage,
+		uploadProfileMetadata,
+		fetchProfileMetadata,
+		uploadPostContent,
+		fetchPostContent,
+		ipfsUrl,
+	};
 }

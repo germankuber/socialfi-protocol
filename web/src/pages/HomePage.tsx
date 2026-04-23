@@ -125,7 +125,8 @@ export default function HomePage() {
 											...a,
 											resolvedName: (meta as { name?: string }).name,
 											resolvedIcon: (meta as { icon?: string }).icon,
-											resolvedDescription: (meta as { description?: string }).description,
+											resolvedDescription: (meta as { description?: string })
+												.description,
 										}
 									: a,
 							),
@@ -182,7 +183,11 @@ export default function HomePage() {
 							{canUse && loggedIn && hasProfile === true ? (
 								<>
 									<Link to="/social">
-										<Button variant="primary" size="lg" trailingIcon={<ArrowUpRight size={16} />}>
+										<Button
+											variant="primary"
+											size="lg"
+											trailingIcon={<ArrowUpRight size={16} />}
+										>
 											Open app
 										</Button>
 									</Link>
@@ -194,13 +199,22 @@ export default function HomePage() {
 								</>
 							) : canUse && loggedIn && hasProfile === false ? (
 								<Link to="/create-profile">
-									<Button variant="primary" size="lg" leadingIcon={<UserPlus size={16} />}>
+									<Button
+										variant="primary"
+										size="lg"
+										leadingIcon={<UserPlus size={16} />}
+									>
 										Create your profile
 									</Button>
 								</Link>
 							) : (
 								<>
-									<Button variant="primary" size="lg" leadingIcon={<Plug size={16} />} disabled>
+									<Button
+										variant="primary"
+										size="lg"
+										leadingIcon={<Plug size={16} />}
+										disabled
+									>
 										Connect wallet to start
 									</Button>
 									<Link to="/protocol">
@@ -244,8 +258,9 @@ export default function HomePage() {
 							</div>
 							<p className="mt-4 font-display text-lg font-normal leading-snug text-ink text-pretty">
 								<span className="text-brand">“</span>
-								Identity, content and attention are primitives — not features. Put them on
-								Polkadot, bond them with capital, and let every app compose the rest.
+								Identity, content and attention are primitives — not features. Put
+								them on Polkadot, bond them with capital, and let every app compose
+								the rest.
 								<span className="text-brand">”</span>
 							</p>
 
@@ -296,8 +311,8 @@ export default function HomePage() {
 							<div>
 								<p className="font-semibold text-ink">Social pallets not found</p>
 								<p className="mt-1 text-sm text-ink-muted">
-									The connected chain doesn't expose the social pallets. Point at a node
-									running this runtime.
+									The connected chain doesn't expose the social pallets. Point at
+									a node running this runtime.
 								</p>
 							</div>
 						</div>
@@ -314,7 +329,11 @@ export default function HomePage() {
 						description="Everything below is read directly from chain storage on each refresh."
 						action={
 							<Link to="/protocol">
-								<Button variant="ghost" size="sm" trailingIcon={<ArrowUpRight size={14} />}>
+								<Button
+									variant="ghost"
+									size="sm"
+									trailingIcon={<ArrowUpRight size={14} />}
+								>
 									Breakdown
 								</Button>
 							</Link>
@@ -373,12 +392,16 @@ export default function HomePage() {
 									Mint your identity, then everything else.
 								</h3>
 								<p className="mt-3 text-sm text-ink-muted text-pretty">
-									Posting, following, registering apps — all of it requires a profile. It's
-									a one-time 10 UNIT bond, refundable on-chain.
+									Posting, following, registering apps — all of it requires a
+									profile. It's a one-time 10 UNIT bond, refundable on-chain.
 								</p>
 								<div className="mt-6 flex items-center gap-3">
 									<Link to="/create-profile">
-										<Button variant="primary" size="lg" leadingIcon={<UserPlus size={16} />}>
+										<Button
+											variant="primary"
+											size="lg"
+											leadingIcon={<UserPlus size={16} />}
+										>
 											Create profile
 										</Button>
 									</Link>
@@ -392,16 +415,26 @@ export default function HomePage() {
 
 							<div className="hidden items-center justify-center md:flex">
 								<div className="relative">
-									<div className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+									<div
+										className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl"
+										aria-hidden
+									/>
 									<div className="grid grid-cols-3 gap-3">
 										{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
 											<div
 												key={i}
 												className={cn(
 													"h-12 w-12 rounded-full border border-hairline/[0.08]",
-													i === 4 && "border-brand/40 bg-brand/10 shadow-glow-sm",
+													i === 4 &&
+														"border-brand/40 bg-brand/10 shadow-glow-sm",
 												)}
-												style={i !== 4 ? { background: `rgb(255 255 255 / ${0.02 + (i % 4) * 0.02})` } : undefined}
+												style={
+													i !== 4
+														? {
+																background: `rgb(255 255 255 / ${0.02 + (i % 4) * 0.02})`,
+															}
+														: undefined
+												}
 											/>
 										))}
 									</div>
@@ -433,7 +466,11 @@ export default function HomePage() {
 						description="Each app bonds 10 UNIT, owns its moderation, and composes the shared feed."
 						action={
 							<Link to="/social/apps">
-								<Button variant="ghost" size="sm" trailingIcon={<ArrowUpRight size={14} />}>
+								<Button
+									variant="ghost"
+									size="sm"
+									trailingIcon={<ArrowUpRight size={14} />}
+								>
 									View all
 								</Button>
 							</Link>
@@ -463,7 +500,11 @@ export default function HomePage() {
 								description="Be the first to register an app on the protocol."
 								action={
 									<Link to="/social/apps">
-										<Button variant="primary" size="md" leadingIcon={<UserPlus size={14} />}>
+										<Button
+											variant="primary"
+											size="md"
+											leadingIcon={<UserPlus size={14} />}
+										>
 											Register first app
 										</Button>
 									</Link>
@@ -509,9 +550,14 @@ export default function HomePage() {
 													</p>
 												)}
 												<div className="mt-3 flex items-center gap-1.5 text-[10px] text-ink-subtle">
-													<span className="uppercase tracking-[0.12em]">Owner</span>
+													<span className="uppercase tracking-[0.12em]">
+														Owner
+													</span>
 													<span className="font-mono">
-														<AddressDisplay address={app.owner} chars={5} />
+														<AddressDisplay
+															address={app.owner}
+															chars={5}
+														/>
 													</span>
 												</div>
 											</div>

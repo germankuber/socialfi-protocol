@@ -32,7 +32,9 @@ export default function VerificationBadge({
 		return (
 			<span className="inline-flex items-center gap-1">
 				<VerifiedBadge size={size} />
-				<span className={`inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 font-semibold text-success ${textSize(size)}`}>
+				<span
+					className={`inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 font-semibold text-success ${textSize(size)}`}
+				>
 					Verified
 				</span>
 			</span>
@@ -67,10 +69,15 @@ function textSize(size: "sm" | "md"): string {
 }
 
 /** Derive the status triple from a `useIdentity` result. */
-export function identityStatus(identity: {
-	hasIdentity?: boolean;
-	verified?: boolean;
-} | null | undefined): VerificationStatus {
+export function identityStatus(
+	identity:
+		| {
+				hasIdentity?: boolean;
+				verified?: boolean;
+		  }
+		| null
+		| undefined,
+): VerificationStatus {
 	if (identity?.verified) return "verified";
 	if (identity?.hasIdentity) return "pending";
 	return "none";

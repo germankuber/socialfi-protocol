@@ -101,7 +101,9 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 					.then((result) => {
 						if (!result) return;
 						setRows((prev) =>
-							prev.map((r) => (r.id === row.id ? { ...r, resolvedText: result.text } : r)),
+							prev.map((r) =>
+								r.id === row.id ? { ...r, resolvedText: result.text } : r,
+							),
 						);
 					})
 					.catch(() => {});
@@ -129,11 +131,7 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 						{total === null ? "Loading…" : `${total} total · via view functions`}
 					</p>
 				</div>
-				<button
-					onClick={() => void load()}
-					disabled={loading}
-					className="btn-ghost btn-sm"
-				>
+				<button onClick={() => void load()} disabled={loading} className="btn-ghost btn-sm">
 					{loading ? "…" : "Refresh"}
 				</button>
 			</div>
@@ -159,23 +157,33 @@ export default function AuthorFeedSection({ address, pageSize = 5 }: AuthorFeedS
 						<span>Block #{row.createdAt}</span>
 						<div className="flex items-center gap-2">
 							{row.visibility !== "Public" && (
-								<span className={`badge ${row.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
+								<span
+									className={`badge ${row.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}
+								>
 									{row.visibility}
 								</span>
 							)}
-							{row.appId !== null && <span className="text-info">App #{row.appId}</span>}
-							<Link to={`/post/${row.id.toString()}`} className="hover:text-brand-500 transition-colors">
+							{row.appId !== null && (
+								<span className="text-info">App #{row.appId}</span>
+							)}
+							<Link
+								to={`/post/${row.id.toString()}`}
+								className="hover:text-brand-500 transition-colors"
+							>
 								#{row.id.toString()}
 							</Link>
 						</div>
 					</div>
 					{row.visibility === "Public" || isOwnProfile ? (
 						<p className="text-sm whitespace-pre-wrap break-words">
-							{row.resolvedText ?? <span className="text-surface-500 italic">Loading content…</span>}
+							{row.resolvedText ?? (
+								<span className="text-surface-500 italic">Loading content…</span>
+							)}
 						</p>
 					) : (
 						<p className="text-xs text-secondary italic">
-							Content is {row.visibility.toLowerCase()} — open the post to unlock for {row.unlockFee.toString()} units.
+							Content is {row.visibility.toLowerCase()} — open the post to unlock for{" "}
+							{row.unlockFee.toString()} units.
 						</p>
 					)}
 				</div>

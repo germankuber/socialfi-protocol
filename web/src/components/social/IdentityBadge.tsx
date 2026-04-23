@@ -15,11 +15,7 @@ export default function IdentityBadge({ address }: IdentityBadgeProps) {
 	const profile = getProfile(address);
 	if (!profile) return null;
 
-	const status = profile.verified
-		? "verified"
-		: profile.hasIdentity
-			? "pending"
-			: "none";
+	const status = profile.verified ? "verified" : profile.hasIdentity ? "pending" : "none";
 
 	return <VerificationBadge status={status} />;
 }

@@ -30,15 +30,8 @@ export default function ManagersPage() {
 	const { account } = useSelectedAccount();
 	const blockNumber = useChainStore((s) => s.blockNumber);
 	const ownerAddress = account?.address ?? null;
-	const {
-		managers,
-		loading,
-		error,
-		tracker,
-		addManager,
-		removeManager,
-		removeAllManagers,
-	} = useManagers(ownerAddress);
+	const { managers, loading, error, tracker, addManager, removeManager, removeAllManagers } =
+		useManagers(ownerAddress);
 
 	return (
 		<RequireProfile>
@@ -46,9 +39,9 @@ export default function ManagersPage() {
 				<header className="space-y-3">
 					<h1 className="heading-1">Profile Managers</h1>
 					<p className="text-secondary text-sm max-w-2xl">
-						Let another account post, follow, or update your profile on your
-						behalf — without handing over your keys. Each authorization is
-						scoped, optionally expires, and can be revoked instantly.
+						Let another account post, follow, or update your profile on your behalf —
+						without handing over your keys. Each authorization is scoped, optionally
+						expires, and can be revoked instantly.
 					</p>
 					<div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-semibold text-brand-500">
 						<svg
@@ -130,22 +123,11 @@ interface AddManagerCardProps {
  * most likely to delegate to), with a "paste an address" escape hatch for the
  * less-common case of authorizing a fresh account.
  */
-function AddManagerCard({
-	ownerAddress,
-	existingManagers,
-	disabled,
-	onAdd,
-}: AddManagerCardProps) {
+function AddManagerCard({ ownerAddress, existingManagers, disabled, onAdd }: AddManagerCardProps) {
 	const [manager, setManager] = useState("");
-	const [selectedScopes, setSelectedScopes] = useState<ManagerScopeKey[]>([
-		"Post",
-	]);
-	const [duration, setDuration] = useState<"7d" | "30d" | "90d" | "never">(
-		"30d",
-	);
-	const [pickerMode, setPickerMode] = useState<"following" | "address">(
-		"following",
-	);
+	const [selectedScopes, setSelectedScopes] = useState<ManagerScopeKey[]>(["Post"]);
+	const [duration, setDuration] = useState<"7d" | "30d" | "90d" | "never">("30d");
+	const [pickerMode, setPickerMode] = useState<"following" | "address">("following");
 	const [localError, setLocalError] = useState<string | null>(null);
 	const blockNumber = useChainStore((s) => s.blockNumber);
 
@@ -199,11 +181,7 @@ function AddManagerCard({
 						stroke="currentColor"
 						strokeWidth={1.7}
 					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M12 4v16m8-8H4"
-						/>
+						<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
 					</svg>
 				</div>
 				<div>
@@ -343,8 +321,8 @@ function AddManagerCard({
 					))}
 				</div>
 				<p className="text-[11px] text-surface-500">
-					Short expirations are a defence-in-depth move: even if you forget to
-					revoke, the authorization dies on its own.
+					Short expirations are a defence-in-depth move: even if you forget to revoke, the
+					authorization dies on its own.
 				</p>
 			</div>
 
@@ -378,12 +356,7 @@ interface ManagersListProps {
 	onRemove: (manager: string) => Promise<void>;
 }
 
-function ManagersList({
-	managers,
-	loading,
-	currentBlock,
-	onRemove,
-}: ManagersListProps) {
+function ManagersList({ managers, loading, currentBlock, onRemove }: ManagersListProps) {
 	if (loading) {
 		return (
 			<div className="panel flex items-center justify-center py-10">
@@ -412,8 +385,8 @@ function ManagersList({
 				</div>
 				<h3 className="text-base font-semibold">No managers yet</h3>
 				<p className="text-sm text-secondary max-w-sm mx-auto">
-					Authorize another account above to let them post or interact on your
-					behalf without sharing your keys.
+					Authorize another account above to let them post or interact on your behalf
+					without sharing your keys.
 				</p>
 			</div>
 		);
@@ -465,10 +438,8 @@ function ManagerRow({
 	const profile = getProfile(manager);
 	const truncated = `${manager.slice(0, 8)}…${manager.slice(-6)}`;
 
-	const expiresInBlocks =
-		expiresAt === null ? null : Math.max(0, expiresAt - currentBlock);
-	const expiresInDays =
-		expiresInBlocks === null ? null : Math.floor(expiresInBlocks / 14_400);
+	const expiresInBlocks = expiresAt === null ? null : Math.max(0, expiresAt - currentBlock);
+	const expiresInDays = expiresInBlocks === null ? null : Math.floor(expiresInBlocks / 14_400);
 	const isExpired = expiresAt !== null && expiresAt <= currentBlock;
 
 	return (
@@ -516,9 +487,7 @@ function ManagerRow({
 				) : isExpired ? (
 					<span className="text-[11px] text-danger font-medium">Expired</span>
 				) : (
-					<span className="text-[11px] text-surface-400">
-						~{expiresInDays}d left
-					</span>
+					<span className="text-[11px] text-surface-400">~{expiresInDays}d left</span>
 				)}
 				{deposit > 0n && (
 					<div className="text-[10px] text-surface-600 mt-0.5">
@@ -561,12 +530,10 @@ function PanicButton({ onRevokeAll }: { onRevokeAll: () => Promise<void> }) {
 					</svg>
 				</div>
 				<div className="flex-1">
-					<h3 className="text-sm font-semibold text-danger">
-						Revoke every manager
-					</h3>
+					<h3 className="text-sm font-semibold text-danger">Revoke every manager</h3>
 					<p className="text-[11px] text-surface-400 mt-0.5">
-						Wipes every authorization in a single transaction and refunds all
-						reserved deposits. Use if you suspect key compromise.
+						Wipes every authorization in a single transaction and refunds all reserved
+						deposits. Use if you suspect key compromise.
 					</p>
 				</div>
 			</div>
@@ -642,8 +609,7 @@ function FollowingPicker({
 				setLoading(true);
 				setLoadError(null);
 				const api = getApi();
-				const entries =
-					await api.query.SocialGraph.Follows.getEntries(ownerAddress);
+				const entries = await api.query.SocialGraph.Follows.getEntries(ownerAddress);
 				if (cancelled) return;
 				setFollowing(entries.map((e) => e.keyArgs[1].toString()));
 			} catch (e) {
@@ -687,7 +653,7 @@ function FollowingPicker({
 				<p className="text-xs text-secondary max-w-sm mx-auto">
 					{noFollows
 						? "Follow someone first, then come back here to authorize them as a manager."
-						: "Everyone you follow is already a manager. Revoke one first, or use the \"Paste address\" tab."}
+						: 'Everyone you follow is already a manager. Revoke one first, or use the "Paste address" tab.'}
 				</p>
 				<Link
 					to={noFollows ? "/people" : "/social/graph"}
@@ -767,9 +733,7 @@ function FollowingCard({
 					</span>
 					{profile?.verified && <VerifiedBadge size="sm" />}
 				</div>
-				<span className="text-[11px] font-mono text-surface-500 truncate">
-					{truncated}
-				</span>
+				<span className="text-[11px] font-mono text-surface-500 truncate">{truncated}</span>
 			</div>
 			<div
 				className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
@@ -784,11 +748,7 @@ function FollowingCard({
 						stroke="currentColor"
 						strokeWidth={3}
 					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M5 13l4 4L19 7"
-						/>
+						<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
 					</svg>
 				)}
 			</div>

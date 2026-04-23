@@ -85,8 +85,7 @@ export function useManagers(ownerAddress: string | null) {
 				setLoading(true);
 				setError(null);
 				const api = getApi();
-				const entries =
-					await api.query.SocialManagers.ProfileManagers.getEntries(address);
+				const entries = await api.query.SocialManagers.ProfileManagers.getEntries(address);
 
 				const decoded: ManagerRecord[] = entries.map((entry) => {
 					const manager = entry.keyArgs[1].toString();
@@ -197,8 +196,7 @@ export function useActingAs(managerAddress: string | null) {
 			// Full scan across the double map — fine for hackathon scale. For
 			// production we'd add a reverse index `ManagersOf: Map<manager,
 			// BoundedVec<owner>>` to avoid this.
-			const entries =
-				await api.query.SocialManagers.ProfileManagers.getEntries();
+			const entries = await api.query.SocialManagers.ProfileManagers.getEntries();
 			const authorized = entries
 				.filter((e) => e.keyArgs[1].toString() === managerAddress)
 				.map((e) => {

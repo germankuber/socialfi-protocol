@@ -144,11 +144,17 @@ export default function FeedPage() {
 			}
 
 			for (const p of originals) {
-				if (p.visibility === "Public" || p.author === accountAddress || unlockedSet.has(p.id)) {
+				if (
+					p.visibility === "Public" ||
+					p.author === accountAddress ||
+					unlockedSet.has(p.id)
+				) {
 					fetchPostContent(p.contentCid).then((result) => {
 						if (result) {
 							setPosts((prev) =>
-								prev.map((pp) => (pp.id === p.id ? { ...pp, resolvedText: result.text } : pp)),
+								prev.map((pp) =>
+									pp.id === p.id ? { ...pp, resolvedText: result.text } : pp,
+								),
 							);
 						}
 					});
@@ -301,14 +307,13 @@ export default function FeedPage() {
 				{/* ── Composer ───────────────────────────────── */}
 				<Card tone="default" padding="lg" className="space-y-4">
 					<div className="flex gap-3">
-						{account && (
-							<Avatar size="md" seed={account.address} alt={account.name} />
-						)}
+						{account && <Avatar size="md" seed={account.address} alt={account.name} />}
 						<div className="flex-1 space-y-2">
 							<Textarea
 								value={content}
 								onChange={(e) => {
-									if (e.target.value.length <= MAX_CHARS) setContent(e.target.value);
+									if (e.target.value.length <= MAX_CHARS)
+										setContent(e.target.value);
 								}}
 								placeholder="What's happening on-chain?"
 								rows={3}
@@ -386,7 +391,11 @@ export default function FeedPage() {
 							onClick={loadPosts}
 							disabled={loading}
 							leadingIcon={
-								<RefreshCw size={13} strokeWidth={1.75} className={loading ? "animate-spin" : ""} />
+								<RefreshCw
+									size={13}
+									strokeWidth={1.75}
+									className={loading ? "animate-spin" : ""}
+								/>
 							}
 						>
 							Refresh
@@ -431,7 +440,11 @@ export default function FeedPage() {
 											<AuthorDisplay address={post.author} size="md" />
 											<div className="ml-auto flex items-center gap-2">
 												{post.visibility !== "Public" && (
-													<Badge tone={meta.tone} size="sm" icon={<Icon size={10} />}>
+													<Badge
+														tone={meta.tone}
+														size="sm"
+														icon={<Icon size={10} />}
+													>
 														{meta.label}
 													</Badge>
 												)}
@@ -453,7 +466,9 @@ export default function FeedPage() {
 											{visible ? (
 												<p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ink">
 													{post.resolvedText ?? (
-														<span className="italic text-ink-subtle">Loading content…</span>
+														<span className="italic text-ink-subtle">
+															Loading content…
+														</span>
 													)}
 												</p>
 											) : (
@@ -463,7 +478,8 @@ export default function FeedPage() {
 													</div>
 													<div className="min-w-0 flex-1">
 														<p className="text-sm font-medium text-ink">
-															Content is {post.visibility.toLowerCase()}
+															Content is{" "}
+															{post.visibility.toLowerCase()}
 														</p>
 														<p className="mt-0.5 font-mono text-[11px] text-ink-subtle">
 															unlock_fee = {post.unlockFee.toString()}
@@ -474,7 +490,9 @@ export default function FeedPage() {
 														size="sm"
 														variant="primary"
 														disabled={busy}
-														leadingIcon={<Zap size={12} strokeWidth={1.75} />}
+														leadingIcon={
+															<Zap size={12} strokeWidth={1.75} />
+														}
 													>
 														Unlock
 													</Button>
@@ -507,13 +525,17 @@ export default function FeedPage() {
 													onClick={() => toggle(post.id)}
 													className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
 												>
-													{isExpanded ? "Hide replies" : `Show ${postReplies.length} replies`}
+													{isExpanded
+														? "Hide replies"
+														: `Show ${postReplies.length} replies`}
 												</button>
 											)}
 											{account && visible && (
 												<button
 													onClick={() =>
-														setReplyingTo(replyingTo === post.id ? null : post.id)
+														setReplyingTo(
+															replyingTo === post.id ? null : post.id,
+														)
 													}
 													className="text-xs font-medium text-brand transition-colors hover:text-ink"
 												>
@@ -527,7 +549,8 @@ export default function FeedPage() {
 												<Textarea
 													value={replyContent}
 													onChange={(e) => {
-														if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value);
+														if (e.target.value.length <= MAX_CHARS)
+															setReplyContent(e.target.value);
 													}}
 													placeholder="Write a reply…"
 													rows={2}
@@ -542,7 +565,12 @@ export default function FeedPage() {
 														disabled={!replyContent.trim() || busy}
 														variant="primary"
 														size="sm"
-														leadingIcon={<CornerDownRight size={13} strokeWidth={1.75} />}
+														leadingIcon={
+															<CornerDownRight
+																size={13}
+																strokeWidth={1.75}
+															/>
+														}
 													>
 														Reply
 													</Button>
@@ -555,14 +583,19 @@ export default function FeedPage() {
 												{postReplies.map((r) => (
 													<div key={r.id} className="space-y-1">
 														<div className="flex items-center gap-2 text-xs">
-															<AuthorDisplay address={r.author} size="sm" />
+															<AuthorDisplay
+																address={r.author}
+																size="sm"
+															/>
 															<span className="font-mono text-[10px] text-ink-subtle">
 																#{r.createdAt}
 															</span>
 														</div>
 														<p className="whitespace-pre-wrap break-words text-sm text-ink">
 															{r.resolvedText ?? (
-																<span className="italic text-ink-subtle">Loading…</span>
+																<span className="italic text-ink-subtle">
+																	Loading…
+																</span>
 															)}
 														</p>
 													</div>
@@ -592,17 +625,23 @@ export default function FeedPage() {
 				>
 					{(() => {
 						const parent =
-							confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
+							confirmReplyTo !== null
+								? posts.find((p) => p.id === confirmReplyTo)
+								: null;
 						return (
 							<div className="space-y-3 text-sm">
 								<div className="space-y-2 rounded-lg border border-hairline/[0.06] bg-canvas-sunken p-3">
 									<div className="flex items-center justify-between">
 										<span className="text-ink-muted">Post fee</span>
-										<span className="font-mono font-semibold text-ink">Tx Fee</span>
+										<span className="font-mono font-semibold text-ink">
+											Tx Fee
+										</span>
 									</div>
 									{parent && parent.replyFee > 0n ? (
 										<div className="flex items-center justify-between">
-											<span className="text-ink-muted">Reply fee (to author)</span>
+											<span className="text-ink-muted">
+												Reply fee (to author)
+											</span>
 											<span className="font-mono font-semibold text-ink">
 												{parent.replyFee.toString()}
 											</span>

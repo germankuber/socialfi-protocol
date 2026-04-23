@@ -12,7 +12,11 @@ export default function ThemeToggle() {
 			title={`Switch to ${next} mode`}
 			aria-label={`Switch to ${next} mode`}
 		>
-			{theme === "dark" ? <Sun size={16} strokeWidth={1.75} /> : <Moon size={16} strokeWidth={1.75} />}
+			{theme === "dark" ? (
+				<Sun size={16} strokeWidth={1.75} />
+			) : (
+				<Moon size={16} strokeWidth={1.75} />
+			)}
 		</button>
 	);
 }

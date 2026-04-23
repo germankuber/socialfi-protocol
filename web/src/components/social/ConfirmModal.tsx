@@ -29,7 +29,11 @@ export default function ConfirmModal({
 					<button onClick={onCancel} className="btn-ghost btn-sm">
 						Cancel
 					</button>
-					<button onClick={onConfirm} disabled={confirmDisabled} className="btn-brand btn-sm">
+					<button
+						onClick={onConfirm}
+						disabled={confirmDisabled}
+						className="btn-brand btn-sm"
+					>
 						{confirmLabel}
 					</button>
 				</div>

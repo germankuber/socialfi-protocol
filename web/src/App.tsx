@@ -69,9 +69,22 @@ export default function App() {
 					</Link>
 
 					<nav className="ml-4 hidden items-center gap-0.5 md:flex">
-						<TopNavLink to="/" label="Overview" exact current={location.pathname === "/"} />
-						<TopNavLink to="/people" label="People" current={location.pathname === "/people"} />
-						<TopNavLink to="/protocol" label="Protocol" current={location.pathname === "/protocol"} />
+						<TopNavLink
+							to="/"
+							label="Overview"
+							exact
+							current={location.pathname === "/"}
+						/>
+						<TopNavLink
+							to="/people"
+							label="People"
+							current={location.pathname === "/people"}
+						/>
+						<TopNavLink
+							to="/protocol"
+							label="Protocol"
+							current={location.pathname === "/protocol"}
+						/>
 						{showSocialNav && (
 							<TopNavLink
 								to="/social"
@@ -126,18 +139,13 @@ function TopNavLink({
 			end={exact}
 			className={cn(
 				"relative inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-				current
-					? "text-ink"
-					: "text-ink-muted hover:text-ink hover:bg-hairline/[0.04]",
+				current ? "text-ink" : "text-ink-muted hover:text-ink hover:bg-hairline/[0.04]",
 			)}
 		>
 			{label}
 			{trailing}
 			{current && (
-				<span
-					aria-hidden
-					className="absolute inset-x-3 -bottom-[13px] h-px bg-ink"
-				/>
+				<span aria-hidden className="absolute inset-x-3 -bottom-[13px] h-px bg-ink" />
 			)}
 		</NavLink>
 	);
@@ -219,7 +227,9 @@ function ChainChip({ connected, blockNumber }: { connected: boolean; blockNumber
 						#{blockNumber || "—"}
 					</span>
 				) : (
-					<span className="hidden text-[11px] font-medium text-danger sm:inline">Offline</span>
+					<span className="hidden text-[11px] font-medium text-danger sm:inline">
+						Offline
+					</span>
 				)}
 			</button>
 
@@ -229,14 +239,21 @@ function ChainChip({ connected, blockNumber }: { connected: boolean; blockNumber
 						<div className="flex items-center gap-2">
 							<Radio size={14} className="text-ink-muted" strokeWidth={1.75} />
 							<span className="text-sm font-semibold text-ink">Network</span>
-							<Badge tone={connected ? "success" : "danger"} size="sm" dot className="ml-auto">
+							<Badge
+								tone={connected ? "success" : "danger"}
+								size="sm"
+								dot
+								className="ml-auto"
+							>
 								{connected ? "Live" : "Offline"}
 							</Badge>
 						</div>
 						{connected && (
 							<div className="mt-3 flex items-baseline justify-between">
 								<span className="text-xs text-ink-muted">{chainName ?? "…"}</span>
-								<span className="font-mono text-sm tabular text-ink">#{blockNumber}</span>
+								<span className="font-mono text-sm tabular text-ink">
+									#{blockNumber}
+								</span>
 							</div>
 						)}
 					</div>
@@ -251,7 +268,12 @@ function ChainChip({ connected, blockNumber }: { connected: boolean; blockNumber
 								placeholder="ws://localhost:9944"
 								className="h-9 flex-1 rounded-md border border-hairline/[0.1] bg-canvas-sunken px-3 font-mono text-xs text-ink placeholder:text-ink-subtle focus:border-brand/50 focus:outline-none focus:shadow-[0_0_0_3px_rgb(var(--brand)/0.15)]"
 							/>
-							<Button onClick={handleConnect} loading={connecting} variant="primary" size="sm">
+							<Button
+								onClick={handleConnect}
+								loading={connecting}
+								variant="primary"
+								size="sm"
+							>
 								Connect
 							</Button>
 						</div>
@@ -278,7 +300,8 @@ const WALLET_LABEL: Record<string, string> = {
 function WalletButton() {
 	const navigate = useNavigate();
 	const setExternalAccounts = useChainStore((s) => s.setExternalAccounts);
-	const { account, allAccounts, selectedAccountIndex, setSelectedAccountIndex } = useSelectedAccount();
+	const { account, allAccounts, selectedAccountIndex, setSelectedAccountIndex } =
+		useSelectedAccount();
 	const wallet = useWallet();
 	const [open, setOpen] = useState(false);
 	const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
@@ -352,13 +375,20 @@ function WalletButton() {
 											<Wallet size={14} strokeWidth={1.75} />
 										</div>
 										<div className="flex-1">
-											<p className="text-sm font-medium text-ink">{WALLET_LABEL[name] || name}</p>
-											<p className="text-[10px] text-ink-subtle">Browser extension</p>
+											<p className="text-sm font-medium text-ink">
+												{WALLET_LABEL[name] || name}
+											</p>
+											<p className="text-[10px] text-ink-subtle">
+												Browser extension
+											</p>
 										</div>
 										{connectingWallet === name ? (
 											<div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-hairline/20 border-t-brand" />
 										) : (
-											<ChevronDown size={14} className="-rotate-90 text-ink-subtle" />
+											<ChevronDown
+												size={14}
+												className="-rotate-90 text-ink-subtle"
+											/>
 										)}
 									</button>
 								))
@@ -367,9 +397,32 @@ function WalletButton() {
 									<p className="text-xs text-ink-muted">No wallets detected</p>
 									<p className="text-[11px] text-ink-subtle text-pretty">
 										Install{" "}
-										<a href="https://talisman.xyz" target="_blank" rel="noreferrer" className="text-brand hover:underline">Talisman</a>,{" "}
-										<a href="https://polkadot.js.org/extension/" target="_blank" rel="noreferrer" className="text-brand hover:underline">Polkadot.js</a>, or{" "}
-										<a href="https://subwallet.app" target="_blank" rel="noreferrer" className="text-brand hover:underline">SubWallet</a>
+										<a
+											href="https://talisman.xyz"
+											target="_blank"
+											rel="noreferrer"
+											className="text-brand hover:underline"
+										>
+											Talisman
+										</a>
+										,{" "}
+										<a
+											href="https://polkadot.js.org/extension/"
+											target="_blank"
+											rel="noreferrer"
+											className="text-brand hover:underline"
+										>
+											Polkadot.js
+										</a>
+										, or{" "}
+										<a
+											href="https://subwallet.app"
+											target="_blank"
+											rel="noreferrer"
+											className="text-brand hover:underline"
+										>
+											SubWallet
+										</a>
 									</p>
 								</div>
 							)}
@@ -377,7 +430,8 @@ function WalletButton() {
 							{wallet.spektrStatus === "connected" && (
 								<div className="mx-1 mt-2 rounded-md border border-success/20 bg-success/5 px-3 py-2">
 									<p className="text-xs font-medium text-success">
-										Polkadot Host connected · {wallet.spektrAccounts.length} accounts
+										Polkadot Host connected · {wallet.spektrAccounts.length}{" "}
+										accounts
 									</p>
 								</div>
 							)}
@@ -397,7 +451,9 @@ function WalletButton() {
 				className="inline-flex items-center gap-2 rounded-md border border-hairline/[0.08] py-1 pl-1 pr-2 transition-colors hover:border-hairline/[0.16]"
 			>
 				<Avatar size="xs" seed={account.address} alt={account.name} />
-				<span className="hidden font-mono text-[11px] tabular text-ink-muted sm:inline">{truncated}</span>
+				<span className="hidden font-mono text-[11px] tabular text-ink-muted sm:inline">
+					{truncated}
+				</span>
 				<ChevronDown
 					size={12}
 					className={cn("text-ink-subtle transition-transform", open && "rotate-180")}
@@ -427,12 +483,16 @@ function WalletButton() {
 								<Avatar size="sm" seed={acc.address} alt={acc.name} />
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center gap-1.5">
-										<p className="truncate text-sm font-medium text-ink">{acc.name}</p>
+										<p className="truncate text-sm font-medium text-ink">
+											{acc.name}
+										</p>
 										<Badge tone="neutral" size="sm" variant="outline">
 											{acc.type}
 										</Badge>
 									</div>
-									<p className="truncate font-mono text-[10px] text-ink-subtle">{acc.address}</p>
+									<p className="truncate font-mono text-[10px] text-ink-subtle">
+										{acc.address}
+									</p>
 								</div>
 								{i === selectedAccountIndex && (
 									<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand shadow-[0_0_8px_rgb(var(--brand))]" />

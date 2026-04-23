@@ -129,23 +129,40 @@ export default function SocialDashboard() {
 						{apps.map((app) => (
 							<Link key={app.id} to={`/app/${app.id}`} className="panel-hover block">
 								<div className="flex items-center gap-3">
-									<div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${APP_COLORS[app.id % APP_COLORS.length]} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
+									<div
+										className={`w-10 h-10 rounded-xl bg-gradient-to-br ${APP_COLORS[app.id % APP_COLORS.length]} flex items-center justify-center text-white text-sm font-bold shrink-0`}
+									>
 										{app.id}
 									</div>
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-2">
-											<p className="font-semibold text-sm truncate">App #{app.id}</p>
+											<p className="font-semibold text-sm truncate">
+												App #{app.id}
+											</p>
 											<span className="badge-success">Active</span>
 										</div>
-										<p className="text-xs font-mono text-surface-500 truncate mt-0.5" title={app.metadata}>
+										<p
+											className="text-xs font-mono text-surface-500 truncate mt-0.5"
+											title={app.metadata}
+										>
 											{app.metadata}
 										</p>
 										<div className="text-[11px] text-secondary mt-1">
 											Owner: <AddressDisplay address={app.owner} chars={6} />
 										</div>
 									</div>
-									<svg className="w-4 h-4 text-surface-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-										<path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+									<svg
+										className="w-4 h-4 text-surface-600 shrink-0"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										strokeWidth={2}
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M9 5l7 7-7 7"
+										/>
 									</svg>
 								</div>
 							</Link>
@@ -153,7 +170,6 @@ export default function SocialDashboard() {
 					</div>
 				)}
 			</div>
-
-			</div>
+		</div>
 	);
 }
