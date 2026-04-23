@@ -1,11 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+	ArrowUpRight,
+	Sparkles,
+	Plug,
+	UserPlus,
+	Users,
+	Layers,
+	MessageSquare,
+	Coins,
+} from "lucide-react";
 import { useChainStore } from "../store/chainStore";
 import { useSelectedAccount } from "../hooks/social/useSelectedAccount";
 import { useProfileGate } from "../hooks/social/useProfileGate";
 import { useSocialApi } from "../hooks/social/useSocialApi";
 import { useIpfs } from "../hooks/social/useIpfs";
 import AddressDisplay from "../components/social/AddressDisplay";
+import {
+	Avatar,
+	Badge,
+	Button,
+	Card,
+	EmptyState,
+	SectionHeading,
+	Skeleton,
+	StatTile,
+	cn,
+} from "../components/ui";
 
 interface AppData {
 	id: number;
@@ -17,14 +38,16 @@ interface AppData {
 	resolvedDescription?: string;
 }
 
-const APP_COLORS = [
-	"from-brand-500 to-purple-600",
-	"from-blue-500 to-cyan-500",
-	"from-emerald-500 to-teal-500",
-	"from-orange-500 to-amber-500",
-	"from-pink-500 to-rose-500",
-	"from-indigo-500 to-violet-500",
-];
+interface ProtocolStats {
+	profiles: number;
+	apps: number;
+	activeApps: number;
+	posts: number;
+	totalLocked: bigint;
+}
+
+const APP_BOND = 10_000_000_000n;
+const PROFILE_BOND = 10_000_000_000n;
 
 export default function HomePage() {
 	const { connected, socialAvailable } = useChainStore();
@@ -34,7 +57,13 @@ export default function HomePage() {
 	const { getApi } = useSocialApi();
 	const [apps, setApps] = useState<AppData[]>([]);
 	const [loadingApps, setLoadingApps] = useState(false);
-	const [protocolStats, setProtocolStats] = useState({ profiles: 0, apps: 0, activeApps: 0, posts: 0, totalLocked: 0n });
+	const [stats, setStats] = useState<ProtocolStats>({
+		profiles: 0,
+		apps: 0,
+		activeApps: 0,
+		posts: 0,
+		totalLocked: 0n,
+	});
 
 	const loggedIn = !!account;
 	const canUse = connected && socialAvailable;
@@ -42,11 +71,11 @@ export default function HomePage() {
 	useEffect(() => {
 		if (!canUse) return;
 		loadApps();
-		loadProtocolStats();
+		loadStats();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [canUse]);
 
-	async function loadProtocolStats() {
+	async function loadStats() {
 		try {
 			const api = getApi();
 			const [profileCount, nextAppId, nextPostId, appEntries] = await Promise.all([
@@ -56,19 +85,18 @@ export default function HomePage() {
 				api.query.SocialAppRegistry.Apps.getEntries(),
 			]);
 			const activeApps = appEntries.filter((e) => e.value.status.type === "Active").length;
-			// AppBond = 10 * EXISTENTIAL_DEPOSIT = 10_000_000_000 (10 milli-UNIT)
-			// ProfileBond = 10 * EXISTENTIAL_DEPOSIT
-			const appBond = 10_000_000_000n;
-			const profileBond = 10_000_000_000n;
-			const totalLocked = BigInt(activeApps) * appBond + BigInt(Number(profileCount)) * profileBond;
-			setProtocolStats({
+			const totalLocked =
+				BigInt(activeApps) * APP_BOND + BigInt(Number(profileCount)) * PROFILE_BOND;
+			setStats({
 				profiles: Number(profileCount),
 				apps: Number(nextAppId),
 				activeApps,
 				posts: Number(nextPostId),
 				totalLocked,
 			});
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
 	async function loadApps() {
@@ -87,16 +115,21 @@ export default function HomePage() {
 				.sort((a, b) => b.id - a.id);
 			setApps(appList);
 
-			// Resolve IPFS metadata (name, icon, description) in background
 			for (const app of appList) {
 				fetchProfileMetadata(app.metadata).then((meta) => {
 					if (meta) {
-						setApps((prev) => prev.map((a) => a.id === app.id ? {
-							...a,
-							resolvedName: (meta as { name?: string }).name,
-							resolvedIcon: (meta as { icon?: string }).icon,
-							resolvedDescription: (meta as { description?: string }).description,
-						} : a));
+						setApps((prev) =>
+							prev.map((a) =>
+								a.id === app.id
+									? {
+											...a,
+											resolvedName: (meta as { name?: string }).name,
+											resolvedIcon: (meta as { icon?: string }).icon,
+											resolvedDescription: (meta as { description?: string }).description,
+										}
+									: a,
+							),
+						);
 					}
 				});
 			}
@@ -116,161 +149,385 @@ export default function HomePage() {
 	}
 
 	return (
-		<div className="space-y-8 animate-fade-in">
-			{/* Hero */}
-			<div className="py-12 text-center space-y-4">
-				<div className="inline-flex items-center gap-2 rounded-full bg-brand-500/10 border border-brand-500/20 px-3 py-1 text-xs font-semibold text-brand-500">
-					<span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
-					Polkadot Parachain
-				</div>
-				<h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
-					SocialFi Protocol
-				</h1>
-				<p className="text-secondary text-lg max-w-lg mx-auto">
-					On-chain profiles, app registry, feeds, and social graph. Shared
-					primitives for decentralized social networks.
-				</p>
-			</div>
+		<div className="relative">
+			{/* ── Hero ─────────────────────────────────────── */}
+			<section className="relative mx-auto max-w-7xl px-5 pt-14 pb-20 md:pt-20 md:pb-28">
+				<div className="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-8">
+					<div className="md:col-span-8">
+						<div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-brand animate-fade-in">
+							<span className="relative flex h-1.5 w-1.5">
+								<span className="absolute inline-block h-1.5 w-1.5 animate-ping rounded-full bg-brand opacity-75" />
+								<span className="absolute inline-block h-1.5 w-1.5 rounded-full bg-brand" />
+							</span>
+							Polkadot Parachain · Testnet
+						</div>
 
-			{/* Protocol stats */}
-			{canUse && (
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-					<div className="panel text-center py-3">
-						<p className="text-xl font-bold font-mono">{protocolStats.profiles}</p>
-						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Profiles</p>
-					</div>
-					<div className="panel text-center py-3">
-						<p className="text-xl font-bold font-mono">{protocolStats.apps}</p>
-						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Apps</p>
-					</div>
-					<div className="panel text-center py-3">
-						<p className="text-xl font-bold font-mono">{protocolStats.posts}</p>
-						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Posts</p>
-					</div>
-					<Link to="/protocol" className="panel-hover text-center py-3 block">
-						<p className="text-xl font-bold font-mono text-brand-500">{formatUnit(protocolStats.totalLocked)} <span className="text-xs font-normal text-secondary">UNIT</span></p>
-						<p className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">Total Locked</p>
-						<p className="text-[9px] text-surface-500 mt-1">{protocolStats.profiles} profiles + {protocolStats.activeApps} apps</p>
-					</Link>
-				</div>
-			)}
+						<h1 className="mt-6 font-display text-5xl font-medium tracking-[-0.035em] text-ink text-balance md:text-7xl animate-fade-up">
+							The substrate for <em className="italic text-brand">social capital</em>.
+						</h1>
 
-			{/* Not connected */}
+						<p
+							className="mt-6 max-w-xl text-base text-ink-muted text-pretty md:text-lg animate-fade-up"
+							style={{ animationDelay: "80ms" }}
+						>
+							On-chain profiles, app registry, encrypted feeds and monetizable social
+							graph. Shared primitives for decentralized social networks — forkable,
+							composable, bonded.
+						</p>
+
+						<div
+							className="mt-9 flex flex-wrap items-center gap-3 animate-fade-up"
+							style={{ animationDelay: "160ms" }}
+						>
+							{canUse && loggedIn && hasProfile === true ? (
+								<>
+									<Link to="/social">
+										<Button variant="primary" size="lg" trailingIcon={<ArrowUpRight size={16} />}>
+											Open app
+										</Button>
+									</Link>
+									<Link to="/social/feed">
+										<Button variant="outline" size="lg">
+											Go to feed
+										</Button>
+									</Link>
+								</>
+							) : canUse && loggedIn && hasProfile === false ? (
+								<Link to="/create-profile">
+									<Button variant="primary" size="lg" leadingIcon={<UserPlus size={16} />}>
+										Create your profile
+									</Button>
+								</Link>
+							) : (
+								<>
+									<Button variant="primary" size="lg" leadingIcon={<Plug size={16} />} disabled>
+										Connect wallet to start
+									</Button>
+									<Link to="/protocol">
+										<Button variant="outline" size="lg">
+											Read the protocol
+										</Button>
+									</Link>
+								</>
+							)}
+						</div>
+
+						{/* Micro-metadata row: commits the "terminal" aesthetic */}
+						<div
+							className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] text-ink-subtle animate-fade-up"
+							style={{ animationDelay: "240ms" }}
+						>
+							<span className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-ink-faint" />
+								pallet-social-profiles@51
+							</span>
+							<span className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-ink-faint" />
+								pallet-social-feeds@54
+							</span>
+							<span className="inline-flex items-center gap-1.5">
+								<span className="h-1 w-1 rounded-full bg-ink-faint" />
+								pallet-sponsorship@56
+							</span>
+						</div>
+					</div>
+
+					{/* Hero sidecard: editorial quote + live block */}
+					<div className="md:col-span-4">
+						<div
+							className="relative rounded-2xl border border-hairline/[0.08] bg-canvas-raised p-6 shadow-raised animate-fade-up"
+							style={{ animationDelay: "120ms" }}
+						>
+							<div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-subtle">
+								<Sparkles size={12} strokeWidth={1.75} className="text-brand" />
+								Thesis
+							</div>
+							<p className="mt-4 font-display text-lg font-normal leading-snug text-ink text-pretty">
+								<span className="text-brand">“</span>
+								Identity, content and attention are primitives — not features. Put them on
+								Polkadot, bond them with capital, and let every app compose the rest.
+								<span className="text-brand">”</span>
+							</p>
+
+							<div className="mt-6 border-t border-hairline/[0.06] pt-4">
+								<p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-subtle">
+									Bond structure
+								</p>
+								<dl className="mt-3 space-y-2 font-mono text-xs tabular">
+									<div className="flex justify-between">
+										<dt className="text-ink-muted">Profile bond</dt>
+										<dd className="text-ink">10 UNIT</dd>
+									</div>
+									<div className="flex justify-between">
+										<dt className="text-ink-muted">App bond</dt>
+										<dd className="text-ink">10 UNIT</dd>
+									</div>
+									<div className="flex justify-between">
+										<dt className="text-ink-muted">Statement store</dt>
+										<dd className="text-ink">on-chain</dd>
+									</div>
+								</dl>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* ── Connection gates ─────────────────────────── */}
 			{!connected && (
-				<div className="panel text-center py-10 space-y-3">
-					<div className="w-12 h-12 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
-						<span className="w-3 h-3 rounded-full bg-danger" />
-					</div>
-					<p className="text-secondary">Connect to a chain using the indicator in the top bar.</p>
-					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
-				</div>
+				<section className="mx-auto max-w-7xl px-5 pb-12">
+					<Card tone="overlay" padding="lg" className="text-center">
+						<EmptyState
+							icon={<Plug size={20} />}
+							title="Not connected"
+							description="Use the chain indicator in the top bar to point at a node."
+						/>
+					</Card>
+				</section>
 			)}
 
 			{connected && socialAvailable === false && (
-				<div className="panel text-center py-8">
-					<p className="text-danger text-sm">Social pallets not found on the connected chain.</p>
-				</div>
+				<section className="mx-auto max-w-7xl px-5 pb-12">
+					<Card tone="overlay" padding="lg">
+						<div className="flex items-start gap-3">
+							<span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-danger/10 text-danger">
+								<Plug size={14} />
+							</span>
+							<div>
+								<p className="font-semibold text-ink">Social pallets not found</p>
+								<p className="mt-1 text-sm text-ink-muted">
+									The connected chain doesn't expose the social pallets. Point at a node
+									running this runtime.
+								</p>
+							</div>
+						</div>
+					</Card>
+				</section>
 			)}
 
-			{/* Wallet connected but no profile — just show create profile */}
-			{canUse && loggedIn && hasProfile === false && (
-				<div className="panel text-center py-12 space-y-4">
-					<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
-						<svg className="w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-						</svg>
-					</div>
-					<h2 className="text-lg font-semibold">Create your profile</h2>
-					<p className="text-secondary text-sm max-w-sm mx-auto">
-						You need a profile to use the protocol. Create one to start exploring apps, posting, and following users.
-					</p>
-					<Link to="/create-profile" className="btn-brand inline-flex">
-						Create Profile
-					</Link>
-					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
-				</div>
-			)}
+			{/* ── Stats ─────────────────────────────────────── */}
+			{canUse && (
+				<section className="mx-auto max-w-7xl px-5 pb-16">
+					<SectionHeading
+						eyebrow="Protocol"
+						title="Live state of the network"
+						description="Everything below is read directly from chain storage on each refresh."
+						action={
+							<Link to="/protocol">
+								<Button variant="ghost" size="sm" trailingIcon={<ArrowUpRight size={14} />}>
+									Breakdown
+								</Button>
+							</Link>
+						}
+						className="mb-6"
+					/>
 
-			{/* Wallet connected but no wallet */}
-			{canUse && !loggedIn && (
-				<div className="panel text-center py-10 space-y-3">
-					<p className="text-secondary text-sm">Connect your wallet to get started.</p>
-				</div>
-			)}
-
-			{/* Apps grid — only when logged in with profile */}
-			{canUse && loggedIn && hasProfile === true && (
-				<div>
-					<div className="flex items-center justify-between mb-4">
-						<h2 className="heading-2">Apps</h2>
-						<Link to="/social/apps" className="text-xs text-brand-500 hover:underline">
-							View all
+					<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+						<StatTile
+							label="Profiles"
+							value={stats.profiles.toLocaleString()}
+							icon={<Users size={14} strokeWidth={1.75} />}
+						/>
+						<StatTile
+							label="Apps"
+							value={stats.apps.toLocaleString()}
+							icon={<Layers size={14} strokeWidth={1.75} />}
+							delta={{
+								value: `${stats.activeApps} active`,
+								tone: "flat",
+							}}
+						/>
+						<StatTile
+							label="Posts"
+							value={stats.posts.toLocaleString()}
+							icon={<MessageSquare size={14} strokeWidth={1.75} />}
+						/>
+						<Link to="/protocol" className="group block">
+							<StatTile
+								label="Total Locked"
+								value={formatUnit(stats.totalLocked)}
+								unit="UNIT"
+								accent
+								icon={<Coins size={14} strokeWidth={1.75} />}
+								delta={{
+									value: `${stats.profiles} profiles + ${stats.activeApps} apps`,
+									tone: "flat",
+								}}
+								className="h-full transition-colors group-hover:border-brand/30"
+							/>
 						</Link>
 					</div>
+				</section>
+			)}
 
-					{loadingApps ? (
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-							{[0, 1, 2, 3].map((i) => (
-								<div key={i} className="panel animate-pulse">
-									<div className="flex items-center gap-3">
-										<div className="w-12 h-12 rounded-xl bg-surface-800" />
-										<div className="space-y-2 flex-1">
-											<div className="h-4 w-24 rounded bg-surface-800" />
-											<div className="h-3 w-40 rounded bg-surface-800" />
-										</div>
+			{/* ── Profile gate ─────────────────────────────── */}
+			{canUse && loggedIn && hasProfile === false && (
+				<section className="mx-auto max-w-7xl px-5 pb-16">
+					<Card tone="overlay" padding="lg" glow className="overflow-hidden">
+						<div className="grid gap-8 md:grid-cols-2 md:items-center">
+							<div>
+								<Badge tone="brand" variant="outline" size="sm" dot>
+									Onboarding
+								</Badge>
+								<h3 className="mt-3 font-display text-3xl font-medium tracking-tight text-ink text-balance">
+									Mint your identity, then everything else.
+								</h3>
+								<p className="mt-3 text-sm text-ink-muted text-pretty">
+									Posting, following, registering apps — all of it requires a profile. It's
+									a one-time 10 UNIT bond, refundable on-chain.
+								</p>
+								<div className="mt-6 flex items-center gap-3">
+									<Link to="/create-profile">
+										<Button variant="primary" size="lg" leadingIcon={<UserPlus size={16} />}>
+											Create profile
+										</Button>
+									</Link>
+									<Link to="/protocol">
+										<Button variant="ghost" size="lg">
+											Learn more
+										</Button>
+									</Link>
+								</div>
+							</div>
+
+							<div className="hidden items-center justify-center md:flex">
+								<div className="relative">
+									<div className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-3xl" aria-hidden />
+									<div className="grid grid-cols-3 gap-3">
+										{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+											<div
+												key={i}
+												className={cn(
+													"h-12 w-12 rounded-full border border-hairline/[0.08]",
+													i === 4 && "border-brand/40 bg-brand/10 shadow-glow-sm",
+												)}
+												style={i !== 4 ? { background: `rgb(255 255 255 / ${0.02 + (i % 4) * 0.02})` } : undefined}
+											/>
+										))}
 									</div>
 								</div>
+							</div>
+						</div>
+					</Card>
+				</section>
+			)}
+
+			{canUse && !loggedIn && (
+				<section className="mx-auto max-w-7xl px-5 pb-16">
+					<Card tone="overlay" padding="lg">
+						<EmptyState
+							icon={<Plug size={20} />}
+							title="Wallet not connected"
+							description="Connect a Substrate wallet from the top bar to see profiles, apps and feeds."
+						/>
+					</Card>
+				</section>
+			)}
+
+			{/* ── Apps grid ─────────────────────────────────── */}
+			{canUse && loggedIn && hasProfile === true && (
+				<section className="mx-auto max-w-7xl px-5 pb-24">
+					<SectionHeading
+						eyebrow="Registry"
+						title="Apps on the protocol"
+						description="Each app bonds 10 UNIT, owns its moderation, and composes the shared feed."
+						action={
+							<Link to="/social/apps">
+								<Button variant="ghost" size="sm" trailingIcon={<ArrowUpRight size={14} />}>
+									View all
+								</Button>
+							</Link>
+						}
+						className="mb-6"
+					/>
+
+					{loadingApps ? (
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+							{[0, 1, 2, 3, 4, 5].map((i) => (
+								<Card key={i} padding="md">
+									<div className="flex items-center gap-4">
+										<Skeleton rounded="lg" className="h-12 w-12" />
+										<div className="flex-1 space-y-2">
+											<Skeleton className="h-3 w-24" />
+											<Skeleton className="h-2.5 w-40" />
+										</div>
+									</div>
+								</Card>
 							))}
-							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 						</div>
 					) : apps.length === 0 ? (
-						<div className="panel text-center py-10 space-y-3">
-							<p className="text-secondary text-sm">No apps registered yet.</p>
-							{loggedIn && hasProfile && (
-								<Link to="/social/apps" className="btn-brand btn-sm inline-flex">
-									Register the first app
-								</Link>
-							)}
-						</div>
+						<Card tone="overlay" padding="lg">
+							<EmptyState
+								icon={<Layers size={20} />}
+								title="No apps yet"
+								description="Be the first to register an app on the protocol."
+								action={
+									<Link to="/social/apps">
+										<Button variant="primary" size="md" leadingIcon={<UserPlus size={14} />}>
+											Register first app
+										</Button>
+									</Link>
+								}
+							/>
+						</Card>
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 							{apps.map((app) => (
-								<Link
-									key={app.id}
-									to={`/app/${app.id}`}
-									className="panel-hover block"
-								>
-									<div className="flex items-center gap-3">
-										{app.resolvedIcon ? (
-											<img src={ipfsUrl(app.resolvedIcon)} alt="" className="w-12 h-12 rounded-xl object-cover bg-surface-800 shrink-0" />
-										) : (
-											<div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${APP_COLORS[app.id % APP_COLORS.length]} flex items-center justify-center text-white text-lg font-bold shrink-0`}>
-												{app.id}
-											</div>
-										)}
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center gap-2">
-												<p className="font-semibold">{app.resolvedName || `App #${app.id}`}</p>
-												<span className="badge-success">Active</span>
-											</div>
-											{app.resolvedDescription && (
-												<p className="text-xs text-secondary mt-0.5 line-clamp-1">{app.resolvedDescription}</p>
+								<Link key={app.id} to={`/app/${app.id}`} className="group">
+									<Card interactive padding="md" className="h-full">
+										<div className="flex items-start gap-4">
+											{app.resolvedIcon ? (
+												<img
+													src={ipfsUrl(app.resolvedIcon)}
+													alt=""
+													className="h-12 w-12 shrink-0 rounded-lg object-cover"
+												/>
+											) : (
+												<Avatar
+													size="lg"
+													shape="square"
+													seed={`app-${app.id}`}
+													alt={`App ${app.id}`}
+												/>
 											)}
-											<div className="text-[11px] text-secondary mt-1">
-												Owner: <AddressDisplay address={app.owner} chars={6} />
+											<div className="min-w-0 flex-1">
+												<div className="flex items-center gap-2">
+													<p className="truncate text-sm font-semibold text-ink">
+														{app.resolvedName || `App #${app.id}`}
+													</p>
+													<Badge tone="success" size="sm" dot>
+														Active
+													</Badge>
+												</div>
+												{app.resolvedDescription ? (
+													<p className="mt-1 line-clamp-2 text-xs text-ink-muted">
+														{app.resolvedDescription}
+													</p>
+												) : (
+													<p className="mt-1 font-mono text-[10px] text-ink-subtle">
+														no metadata
+													</p>
+												)}
+												<div className="mt-3 flex items-center gap-1.5 text-[10px] text-ink-subtle">
+													<span className="uppercase tracking-[0.12em]">Owner</span>
+													<span className="font-mono">
+														<AddressDisplay address={app.owner} chars={5} />
+													</span>
+												</div>
 											</div>
+											<ArrowUpRight
+												size={14}
+												className="text-ink-faint transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand"
+												strokeWidth={1.75}
+											/>
 										</div>
-										<svg className="w-4 h-4 text-surface-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-										</svg>
-									</div>
+									</Card>
 								</Link>
 							))}
 						</div>
 					)}
-				</div>
+				</section>
 			)}
-
 		</div>
 	);
 }

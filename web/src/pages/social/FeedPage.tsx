@@ -1,6 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Binary, FixedSizeBinary } from "polkadot-api";
+import {
+	RefreshCw,
+	Lock,
+	Globe,
+	EyeOff,
+	MessageCircle,
+	Send,
+	CornerDownRight,
+	Zap,
+	Sparkles,
+} from "lucide-react";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
@@ -16,6 +27,17 @@ import TxToast from "../../components/social/TxToast";
 import ConfirmModal from "../../components/social/ConfirmModal";
 import AuthorDisplay from "../../components/social/AuthorDisplay";
 import FeeRangeInput from "../../components/social/FeeRangeInput";
+import {
+	Avatar,
+	Badge,
+	Button,
+	Card,
+	EmptyState,
+	SectionHeading,
+	Skeleton,
+	Textarea,
+	cn,
+} from "../../components/ui";
 
 type Visibility = "Public" | "Obfuscated" | "Private";
 const MAX_CHARS = 400;
@@ -33,6 +55,15 @@ interface PostData {
 	createdAt: number;
 }
 
+const VISIBILITY_META: Record<
+	Visibility,
+	{ label: string; tone: "success" | "info" | "warning"; icon: typeof Globe }
+> = {
+	Public: { label: "Public", tone: "success", icon: Globe },
+	Obfuscated: { label: "Obfuscated", tone: "info", icon: EyeOff },
+	Private: { label: "Private", tone: "warning", icon: Lock },
+};
+
 export default function FeedPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
@@ -42,23 +73,17 @@ export default function FeedPage() {
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [replies, setReplies] = useState<Record<number, PostData[]>>({});
 	const [unlocked, setUnlocked] = useState<Set<number>>(new Set());
-	// Posts the viewer has paid to unlock but for which the OCW has
-	// not yet delivered the wrapped key. While this set is non-empty
-	// the feed polls for updates so the reply button can unlock
-	// without a manual refresh.
 	const [pendingUnlocks, setPendingUnlocks] = useState<Set<number>>(new Set());
 	const [expanded, setExpanded] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(true);
 	const [uploading, setUploading] = useState(false);
 
-	// Compose state
 	const [content, setContent] = useState("");
 	const [replyFee, setReplyFee] = useState("0");
 	const [appId, setAppId] = useState("");
 	const [visibility, setVisibility] = useState<Visibility>("Public");
 	const [unlockFeeInput, setUnlockFeeInput] = useState("0");
 
-	// Reply state
 	const [replyingTo, setReplyingTo] = useState<number | null>(null);
 	const [replyContent, setReplyContent] = useState("");
 	const [replyAppId, setReplyAppId] = useState("");
@@ -97,48 +122,38 @@ export default function FeedPage() {
 				}
 			}
 			setReplies(rMap);
-
-			// Auto-expand posts that have replies
-			setExpanded(new Set(originals.filter((p) => (rMap[p.id]?.length || 0) > 0).map((p) => p.id)));
+			setExpanded(
+				new Set(originals.filter((p) => (rMap[p.id]?.length || 0) > 0).map((p) => p.id)),
+			);
 
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
-				// `Unlocks` is keyed by (post_id, viewer). A post counts
-				// as unlocked only once the OCW has delivered the wrapped
-				// key. Entries where the viewer matches but the key is
-				// still missing are "pending": the payment went through
-				// but the collator hasn't sealed the key yet.
-				const all = await api.query.SocialFeeds.Unlocks.getEntries();
-				const mine = all.filter(
+				const allUnlocks = await api.query.SocialFeeds.Unlocks.getEntries();
+				const mine = allUnlocks.filter(
 					(e: { keyArgs: [bigint, string]; value: { wrapped_key: unknown } }) =>
 						e.keyArgs[1].toString() === accountAddress,
 				);
 				unlockedSet = new Set(
-					mine
-						.filter((e) => !!e.value.wrapped_key)
-						.map((e) => Number(e.keyArgs[0])),
+					mine.filter((e) => !!e.value.wrapped_key).map((e) => Number(e.keyArgs[0])),
 				);
 				const pending = new Set(
-					mine
-						.filter((e) => !e.value.wrapped_key)
-						.map((e) => Number(e.keyArgs[0])),
+					mine.filter((e) => !e.value.wrapped_key).map((e) => Number(e.keyArgs[0])),
 				);
 				setUnlocked(unlockedSet);
 				setPendingUnlocks(pending);
 			}
 
-			// Resolve text content from IPFS in background
-			// Public: always. Non-public: if author or unlocked.
 			for (const p of originals) {
 				if (p.visibility === "Public" || p.author === accountAddress || unlockedSet.has(p.id)) {
 					fetchPostContent(p.contentCid).then((result) => {
 						if (result) {
-							setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: result.text } : pp));
+							setPosts((prev) =>
+								prev.map((pp) => (pp.id === p.id ? { ...pp, resolvedText: result.text } : pp)),
+							);
 						}
 					});
 				}
 			}
-			// Also resolve replies
 			for (const parentId of Object.keys(rMap)) {
 				for (const r of rMap[Number(parentId)]) {
 					fetchPostContent(r.contentCid).then((result) => {
@@ -161,24 +176,27 @@ export default function FeedPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
-	useEffect(() => { loadPosts(); }, [loadPosts]);
+	useEffect(() => {
+		loadPosts();
+	}, [loadPosts]);
 
-	// While there are unlocks the collator OCW has not yet delivered
-	// (payment went through, wrapped_key is still None), re-poll every
-	// 3 seconds so the UI switches from "Content is private" to the
-	// reply-enabled state without requiring a manual refresh.
 	useEffect(() => {
 		if (pendingUnlocks.size === 0) return;
 		const handle = setInterval(() => loadPosts(), 3000);
 		return () => clearInterval(handle);
 	}, [pendingUnlocks, loadPosts]);
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	function toggle(id: number) {
 		setExpanded((prev) => {
 			const n = new Set(prev);
-			n.has(id) ? n.delete(id) : n.add(id);
+			if (n.has(id)) n.delete(id);
+			else n.add(id);
 			return n;
 		});
 	}
@@ -252,12 +270,6 @@ export default function FeedPage() {
 
 	async function unlockPost(postId: number) {
 		if (!account) return;
-		// Encrypted-post unlock: generate ephemeral X25519 keypair,
-		// stash the secret in sessionStorage, submit with the public
-		// key. The collator OCW eventually delivers the wrapped key;
-		// the full decrypt flow lives on `AppDetailPage` where the
-		// per-post component polls + decrypts. From the global feed we
-		// only kick off the payment; deep-read happens on the post page.
 		const kp = await generateX25519Keypair();
 		stashBuyerSk(postId, kp.secretKey);
 		const api = getApi();
@@ -279,186 +291,295 @@ export default function FeedPage() {
 
 	return (
 		<RequireProfile>
-			<div className="space-y-4">
+			<div className="mx-auto max-w-3xl space-y-8">
+				<SectionHeading
+					eyebrow="Feed"
+					title="What's on the chain"
+					description="Public posts stream directly from pallet-social-feeds. Private posts require on-chain unlock."
+				/>
 
-				{/* Compose */}
-				<div className="panel space-y-3">
-					<div className="flex items-center gap-3">
+				{/* ── Composer ───────────────────────────────── */}
+				<Card tone="default" padding="lg" className="space-y-4">
+					<div className="flex gap-3">
 						{account && (
-							<div className="avatar bg-brand-500 text-xs shrink-0">
-								{account.name[0]}
-							</div>
+							<Avatar size="md" seed={account.address} alt={account.name} />
 						)}
-						<div className="flex-1">
-							<textarea
+						<div className="flex-1 space-y-2">
+							<Textarea
 								value={content}
 								onChange={(e) => {
 									if (e.target.value.length <= MAX_CHARS) setContent(e.target.value);
 								}}
-								placeholder="What's happening?"
+								placeholder="What's happening on-chain?"
 								rows={3}
-								className="input resize-none w-full"
+								className="resize-none border-0 bg-transparent !shadow-none focus:!shadow-none focus:border-transparent px-0 text-base"
 							/>
-							<div className="flex items-center justify-between mt-1">
-								<span className={`text-xs ${charsLeft < 50 ? (charsLeft < 0 ? "text-danger" : "text-warning") : "text-surface-500"}`}>
-									{charsLeft} characters left
+							<div className="flex items-center justify-between">
+								<VisibilityPicker value={visibility} onChange={setVisibility} />
+								<span
+									className={cn(
+										"font-mono text-xs tabular",
+										charsLeft < 0
+											? "text-danger"
+											: charsLeft < 50
+												? "text-warning"
+												: "text-ink-subtle",
+									)}
+								>
+									{charsLeft}
 								</span>
 							</div>
 						</div>
 					</div>
 
-					{/* Options row */}
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-						<div>
-							<label className="form-label">Visibility</label>
-							<select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="input">
-								<option value="Public">Public</option>
-								<option value="Obfuscated">Obfuscated</option>
-								<option value="Private">Private</option>
-							</select>
-						</div>
+					<div className="grid grid-cols-1 gap-3 border-t border-hairline/[0.06] pt-4 sm:grid-cols-3">
 						<div>
 							<label className="form-label">App ID</label>
-							<input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="Optional" className="input" />
+							<input
+								value={appId}
+								onChange={(e) => setAppId(e.target.value)}
+								placeholder="Optional"
+								className="h-9 w-full rounded-md border border-hairline/[0.08] bg-canvas-sunken px-3 font-mono text-xs text-ink placeholder:text-ink-subtle focus:border-brand/50 focus:outline-none focus:shadow-[0_0_0_3px_rgb(var(--brand)/0.15)]"
+							/>
 						</div>
 						<FeeRangeInput label="Reply Fee" value={replyFee} onChange={setReplyFee} />
-						{visibility !== "Public" && (
-							<FeeRangeInput label="Unlock Fee" value={unlockFeeInput} onChange={setUnlockFeeInput} />
+						{visibility !== "Public" ? (
+							<FeeRangeInput
+								label="Unlock Fee"
+								value={unlockFeeInput}
+								onChange={setUnlockFeeInput}
+							/>
+						) : (
+							<div className="hidden sm:block" />
 						)}
 					</div>
 
-					<button onClick={createPost} disabled={!content.trim() || !account || busy} className="btn-brand w-full">
-						{uploading ? "Uploading to IPFS..." : "Post"}
-					</button>
-				</div>
+					<div className="flex items-center justify-between pt-1">
+						<p className="text-[10px] text-ink-subtle">
+							Content uploads to IPFS before the on-chain call.
+						</p>
+						<Button
+							onClick={createPost}
+							variant="primary"
+							size="md"
+							disabled={!content.trim() || !account || busy}
+							loading={uploading}
+							leadingIcon={<Send size={14} strokeWidth={1.75} />}
+						>
+							{uploading ? "Uploading…" : "Post"}
+						</Button>
+					</div>
+				</Card>
 
-				{/* Feed */}
-				<div className="space-y-3">
-					<div className="flex items-center justify-between">
-						<h2 className="heading-2">Feed</h2>
-						<button onClick={loadPosts} disabled={loading} className="btn-ghost btn-sm">
-							{loading ? "..." : "Refresh"}
-						</button>
+				{/* ── Feed ───────────────────────────────────── */}
+				<div>
+					<div className="mb-4 flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<h3 className="font-display text-xl font-medium text-ink">Stream</h3>
+							<Badge tone="neutral" size="sm" dot>
+								{posts.length} posts
+							</Badge>
+						</div>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={loadPosts}
+							disabled={loading}
+							leadingIcon={
+								<RefreshCw size={13} strokeWidth={1.75} className={loading ? "animate-spin" : ""} />
+							}
+						>
+							Refresh
+						</Button>
 					</div>
 
-					{posts.length === 0 ? (
-						<div className="panel text-center py-8 text-secondary text-sm">No posts yet.</div>
-					) : (
-						posts.map((post) => {
-							const postReplies = replies[post.id] || [];
-							const isExpanded = expanded.has(post.id);
-							const visible = canSeeContent(post);
-
-							return (
-								<div key={post.id} className="panel space-y-3">
-									{/* Header */}
-									<div className="flex items-center gap-3">
-										<AuthorDisplay address={post.author} size="md" />
-										<div className="flex-1 min-w-0">
-											<p className="text-[11px] text-surface-500 font-mono">
-												Block #{post.createdAt}
-												{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
-											</p>
+					{loading && posts.length === 0 ? (
+						<div className="space-y-3">
+							{[0, 1, 2].map((i) => (
+								<Card key={i} padding="md">
+									<div className="flex gap-3">
+										<Skeleton rounded="full" className="h-10 w-10" />
+										<div className="flex-1 space-y-2.5">
+											<Skeleton className="h-3 w-32" />
+											<Skeleton className="h-4 w-full" />
+											<Skeleton className="h-4 w-3/4" />
 										</div>
-										<div className="flex items-center gap-2">
-											{post.visibility !== "Public" && (
-												<span className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
-													{post.visibility}
+									</div>
+								</Card>
+							))}
+						</div>
+					) : posts.length === 0 ? (
+						<Card tone="overlay" padding="lg">
+							<EmptyState
+								icon={<Sparkles size={20} />}
+								title="Nothing here yet"
+								description="The feed is quiet. Be the first to post."
+							/>
+						</Card>
+					) : (
+						<div className="space-y-3">
+							{posts.map((post) => {
+								const postReplies = replies[post.id] || [];
+								const isExpanded = expanded.has(post.id);
+								const visible = canSeeContent(post);
+								const meta = VISIBILITY_META[post.visibility];
+								const Icon = meta.icon;
+
+								return (
+									<Card key={post.id} padding="md" className="space-y-3">
+										<div className="flex items-center gap-3">
+											<AuthorDisplay address={post.author} size="md" />
+											<div className="ml-auto flex items-center gap-2">
+												{post.visibility !== "Public" && (
+													<Badge tone={meta.tone} size="sm" icon={<Icon size={10} />}>
+														{meta.label}
+													</Badge>
+												)}
+												{post.appId !== null && (
+													<Badge tone="info" size="sm" variant="outline">
+														App · {post.appId}
+													</Badge>
+												)}
+												<Link
+													to={`/post/${post.id}`}
+													className="font-mono text-[11px] tabular text-ink-subtle transition-colors hover:text-brand"
+												>
+													#{post.id}
+												</Link>
+											</div>
+										</div>
+
+										<div className="pl-[52px]">
+											{visible ? (
+												<p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ink">
+													{post.resolvedText ?? (
+														<span className="italic text-ink-subtle">Loading content…</span>
+													)}
+												</p>
+											) : (
+												<div className="flex items-center gap-4 rounded-lg border border-hairline/[0.08] bg-canvas-sunken p-4">
+													<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
+														<Lock size={16} strokeWidth={1.75} />
+													</div>
+													<div className="min-w-0 flex-1">
+														<p className="text-sm font-medium text-ink">
+															Content is {post.visibility.toLowerCase()}
+														</p>
+														<p className="mt-0.5 font-mono text-[11px] text-ink-subtle">
+															unlock_fee = {post.unlockFee.toString()}
+														</p>
+													</div>
+													<Button
+														onClick={() => unlockPost(post.id)}
+														size="sm"
+														variant="primary"
+														disabled={busy}
+														leadingIcon={<Zap size={12} strokeWidth={1.75} />}
+													>
+														Unlock
+													</Button>
+												</div>
+											)}
+										</div>
+
+										<div className="flex items-center gap-4 pl-[52px] pt-1 font-mono text-[11px] tabular text-ink-subtle">
+											<span className="inline-flex items-center gap-1">
+												<span className="h-1 w-1 rounded-full bg-ink-faint" />
+												block #{post.createdAt}
+											</span>
+											{postReplies.length > 0 && (
+												<span className="inline-flex items-center gap-1">
+													<MessageCircle size={11} strokeWidth={1.75} />
+													{postReplies.length}
 												</span>
 											)}
-											<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
-										</div>
-									</div>
-
-									{/* Content */}
-									<div className="pl-[52px]">
-										{visible ? (
-											<p className="text-sm whitespace-pre-wrap break-words">
-												{post.resolvedText ?? <span className="text-surface-500 italic">Loading content...</span>}
-											</p>
-										) : (
-											<div className="rounded-xl bg-surface-800 border border-surface-700 p-4 text-center space-y-2">
-												<svg className="w-6 h-6 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-												</svg>
-												<p className="text-xs text-secondary">Content is {post.visibility.toLowerCase()}</p>
-												<button onClick={() => unlockPost(post.id)} disabled={busy} className="btn-brand btn-sm">
-													Unlock for {post.unlockFee.toString()} units
-												</button>
-												<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
-											</div>
-										)}
-									</div>
-
-									{/* Footer */}
-									<div className="flex items-center gap-4 pl-[52px] text-xs">
-										<span className="text-surface-500">
-											{postReplies.length} {postReplies.length === 1 ? "reply" : "replies"}
-										</span>
-										{post.replyFee > 0n && (
-											<span className="text-surface-500">Reply fee: {post.replyFee.toString()}</span>
-										)}
-										{postReplies.length > 0 && visible && (
-											<button onClick={() => toggle(post.id)} className="text-info hover:underline">
-												{isExpanded ? "Hide" : "Show"}
-											</button>
-										)}
-										{account && visible && (
-											<button
-												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-												className="text-brand-500 hover:underline"
-											>
-												Reply
-											</button>
-										)}
-									</div>
-
-									{/* Reply compose */}
-									{replyingTo === post.id && (
-										<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
-											<textarea
-												value={replyContent}
-												onChange={(e) => {
-													if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value);
-												}}
-												placeholder="Write a reply..."
-												rows={2}
-												className="input resize-none w-full"
-											/>
-											<div className="flex items-center justify-between">
-												<span className="text-[10px] text-surface-500">
-													{MAX_CHARS - replyContent.length} chars left
+											{post.replyFee > 0n && (
+												<span className="inline-flex items-center gap-1">
+													<Zap size={11} strokeWidth={1.75} />
+													reply {post.replyFee.toString()}
 												</span>
-												<button onClick={() => setConfirmReplyTo(post.id)} disabled={!replyContent.trim() || busy}
-													className="btn-brand btn-sm">
+											)}
+										</div>
+
+										<div className="flex items-center gap-2 pl-[52px] pt-1">
+											{postReplies.length > 0 && visible && (
+												<button
+													onClick={() => toggle(post.id)}
+													className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+												>
+													{isExpanded ? "Hide replies" : `Show ${postReplies.length} replies`}
+												</button>
+											)}
+											{account && visible && (
+												<button
+													onClick={() =>
+														setReplyingTo(replyingTo === post.id ? null : post.id)
+													}
+													className="text-xs font-medium text-brand transition-colors hover:text-ink"
+												>
 													Reply
 												</button>
-											</div>
+											)}
 										</div>
-									)}
 
-									{/* Replies */}
-									{isExpanded && visible && postReplies.map((r) => (
-										<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
-											<div className="flex items-center gap-2 text-xs">
-												<AuthorDisplay address={r.author} size="sm" />
-												<span className="text-surface-600 font-mono">#{r.createdAt}</span>
+										{replyingTo === post.id && (
+											<div className="ml-[52px] space-y-2 border-l-2 border-brand/30 pl-4">
+												<Textarea
+													value={replyContent}
+													onChange={(e) => {
+														if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value);
+													}}
+													placeholder="Write a reply…"
+													rows={2}
+													className="resize-none text-sm"
+												/>
+												<div className="flex items-center justify-between">
+													<span className="font-mono text-[10px] tabular text-ink-subtle">
+														{MAX_CHARS - replyContent.length} chars left
+													</span>
+													<Button
+														onClick={() => setConfirmReplyTo(post.id)}
+														disabled={!replyContent.trim() || busy}
+														variant="primary"
+														size="sm"
+														leadingIcon={<CornerDownRight size={13} strokeWidth={1.75} />}
+													>
+														Reply
+													</Button>
+												</div>
 											</div>
-											<p className="text-sm whitespace-pre-wrap break-words">
-												{r.resolvedText ?? <span className="text-surface-500 italic">Loading...</span>}
-											</p>
-										</div>
-									))}
-								</div>
-							);
-						})
+										)}
+
+										{isExpanded && visible && postReplies.length > 0 && (
+											<div className="ml-[52px] space-y-3 border-l-2 border-hairline/[0.06] pl-4">
+												{postReplies.map((r) => (
+													<div key={r.id} className="space-y-1">
+														<div className="flex items-center gap-2 text-xs">
+															<AuthorDisplay address={r.author} size="sm" />
+															<span className="font-mono text-[10px] text-ink-subtle">
+																#{r.createdAt}
+															</span>
+														</div>
+														<p className="whitespace-pre-wrap break-words text-sm text-ink">
+															{r.resolvedText ?? (
+																<span className="italic text-ink-subtle">Loading…</span>
+															)}
+														</p>
+													</div>
+												))}
+											</div>
+										)}
+									</Card>
+								);
+							})}
+						</div>
 					)}
 				</div>
 
 				<ConfirmModal
 					open={confirmReplyTo !== null}
 					title="Reply Cost"
-					confirmLabel={busy ? "Sending..." : "Confirm & Reply"}
+					confirmLabel={busy ? "Sending…" : "Confirm & Reply"}
 					confirmDisabled={busy}
 					onCancel={() => setConfirmReplyTo(null)}
 					onConfirm={async () => {
@@ -470,29 +591,32 @@ export default function FeedPage() {
 					}}
 				>
 					{(() => {
-						const parent = confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
+						const parent =
+							confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
 						return (
 							<div className="space-y-3 text-sm">
-								<div className="rounded-xl bg-surface-800 p-3 space-y-2">
+								<div className="space-y-2 rounded-lg border border-hairline/[0.06] bg-canvas-sunken p-3">
 									<div className="flex items-center justify-between">
-										<span className="text-secondary">Post fee</span>
-										<span className="font-mono font-semibold">Post Fee</span>
+										<span className="text-ink-muted">Post fee</span>
+										<span className="font-mono font-semibold text-ink">Tx Fee</span>
 									</div>
-									{parent && parent.replyFee > 0n && (
+									{parent && parent.replyFee > 0n ? (
 										<div className="flex items-center justify-between">
-											<span className="text-secondary">Reply fee (to author)</span>
-											<span className="font-mono font-semibold">{parent.replyFee.toString()}</span>
+											<span className="text-ink-muted">Reply fee (to author)</span>
+											<span className="font-mono font-semibold text-ink">
+												{parent.replyFee.toString()}
+											</span>
 										</div>
-									)}
-									{parent && parent.replyFee === 0n && (
+									) : (
 										<div className="flex items-center justify-between">
-											<span className="text-secondary">Reply fee</span>
+											<span className="text-ink-muted">Reply fee</span>
 											<span className="font-mono text-success">Free</span>
 										</div>
 									)}
 								</div>
-								<p className="text-xs text-secondary">Fees are deducted when the reply is submitted.</p>
-								<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
+								<p className="text-xs text-ink-subtle">
+									Fees are deducted when the reply is submitted.
+								</p>
 							</div>
 						);
 					})()}
@@ -501,5 +625,40 @@ export default function FeedPage() {
 				<TxToast state={tracker.state} onDismiss={tracker.reset} />
 			</div>
 		</RequireProfile>
+	);
+}
+
+function VisibilityPicker({
+	value,
+	onChange,
+}: {
+	value: Visibility;
+	onChange: (v: Visibility) => void;
+}) {
+	const options: Visibility[] = ["Public", "Obfuscated", "Private"];
+	return (
+		<div className="inline-flex items-center gap-0.5 rounded-md border border-hairline/[0.08] bg-canvas-sunken p-0.5">
+			{options.map((opt) => {
+				const meta = VISIBILITY_META[opt];
+				const Icon = meta.icon;
+				const active = value === opt;
+				return (
+					<button
+						key={opt}
+						type="button"
+						onClick={() => onChange(opt)}
+						className={cn(
+							"inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors",
+							active
+								? "bg-canvas-raised text-ink shadow-[0_1px_0_0_rgb(255_255_255/0.04)_inset]"
+								: "text-ink-subtle hover:text-ink",
+						)}
+					>
+						<Icon size={11} strokeWidth={1.75} />
+						{opt}
+					</button>
+				);
+			})}
+		</div>
 	);
 }

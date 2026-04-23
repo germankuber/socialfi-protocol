@@ -1,24 +1,35 @@
+import { AtSign, Link as LinkIcon, Globe } from "lucide-react";
 import type { ProfileMetadata } from "../../hooks/social/useIpfs";
 import { useIpfs } from "../../hooks/social/useIpfs";
+import { Avatar, Skeleton } from "../ui";
 
 interface ProfileCardProps {
 	metadata: ProfileMetadata | null;
 	cid: string;
 	createdAt: number;
 	loading?: boolean;
+	address?: string;
 }
 
-export default function ProfileCard({ metadata, cid, createdAt, loading }: ProfileCardProps) {
+export default function ProfileCard({
+	metadata,
+	cid,
+	createdAt,
+	loading,
+	address,
+}: ProfileCardProps) {
 	const { ipfsUrl } = useIpfs();
-	const avatarSrc = metadata?.avatar ? ipfsUrl(metadata.avatar) : "";
+	const avatarSrc = metadata?.avatar ? ipfsUrl(metadata.avatar) : undefined;
+	const seed = address ?? metadata?.name ?? cid;
 
 	if (loading) {
 		return (
-			<div className="flex items-center gap-3 animate-pulse">
-				<div className="w-14 h-14 rounded-full bg-surface-800" />
-				<div className="space-y-2">
-					<div className="h-4 w-32 rounded bg-surface-800" />
-					<div className="h-3 w-48 rounded bg-surface-800" />
+			<div className="flex items-start gap-4">
+				<Skeleton rounded="full" className="h-14 w-14" />
+				<div className="flex-1 space-y-2">
+					<Skeleton className="h-4 w-32" />
+					<Skeleton className="h-3 w-56" />
+					<Skeleton className="h-3 w-40" />
 				</div>
 			</div>
 		);
@@ -26,75 +37,77 @@ export default function ProfileCard({ metadata, cid, createdAt, loading }: Profi
 
 	return (
 		<div className="flex items-start gap-4">
-			{/* Avatar */}
-			{avatarSrc ? (
-				<img
-					src={avatarSrc}
-					alt={metadata?.name ?? ""}
-					className="w-14 h-14 rounded-full object-cover bg-surface-800 shrink-0"
-					onError={(e) => {
-						(e.target as HTMLImageElement).style.display = "none";
-						(e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-					}}
-				/>
-			) : null}
-			{!avatarSrc && (
-				<div className="w-14 h-14 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-500 text-lg font-bold shrink-0">
-					{metadata?.name?.[0]?.toUpperCase() ?? "?"}
-				</div>
-			)}
+			<Avatar src={avatarSrc} size="xl" seed={seed} alt={metadata?.name ?? ""} />
 
-			{/* Info */}
-			<div className="flex-1 min-w-0">
-				<h3 className="font-semibold text-lg">{metadata?.name ?? "Unknown"}</h3>
-				{metadata?.bio && (
-					<p className="text-sm text-secondary mt-0.5">{metadata.bio}</p>
-				)}
+			<div className="min-w-0 flex-1">
+				<h3 className="font-display text-2xl font-medium text-ink tracking-tight">
+					{metadata?.name ?? "Untitled profile"}
+				</h3>
+				{metadata?.bio ? (
+					<p className="mt-1 text-sm text-ink-muted text-pretty">{metadata.bio}</p>
+				) : null}
 
-				{/* Links */}
 				{metadata?.links && Object.keys(metadata.links).length > 0 && (
-					<div className="flex flex-wrap gap-3 mt-2">
+					<div className="mt-3 flex flex-wrap gap-3">
 						{metadata.links.twitter && (
-							<a
+							<ProfileLink
 								href={`https://twitter.com/${metadata.links.twitter.replace("@", "")}`}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-xs text-info hover:underline"
-							>
-								@{metadata.links.twitter.replace("@", "")}
-							</a>
+								icon={<AtSign size={12} strokeWidth={1.75} />}
+								label={`@${metadata.links.twitter.replace("@", "")}`}
+							/>
 						)}
 						{metadata.links.github && (
-							<a
+							<ProfileLink
 								href={`https://github.com/${metadata.links.github}`}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-xs text-info hover:underline"
-							>
-								github.com/{metadata.links.github}
-							</a>
+								icon={<LinkIcon size={12} strokeWidth={1.75} />}
+								label={metadata.links.github}
+							/>
 						)}
 						{metadata.links.website && (
-							<a
+							<ProfileLink
 								href={metadata.links.website}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-xs text-info hover:underline"
-							>
-								{metadata.links.website.replace(/^https?:\/\//, "")}
-							</a>
+								icon={<Globe size={12} strokeWidth={1.75} />}
+								label={metadata.links.website.replace(/^https?:\/\//, "")}
+							/>
 						)}
 					</div>
 				)}
 
-				{/* Meta */}
-				<div className="flex items-center gap-3 mt-2 text-[11px] text-surface-500">
-					<span className="font-mono">Block #{createdAt}</span>
-					<span className="font-mono truncate" title={cid}>
-						{cid.length > 30 ? `${cid.slice(0, 15)}...${cid.slice(-10)}` : cid}
+				<div className="mt-4 flex flex-wrap items-center gap-4 font-mono text-[11px] tabular text-ink-subtle">
+					<span className="inline-flex items-center gap-1.5">
+						<span className="h-1 w-1 rounded-full bg-ink-faint" />
+						block #{createdAt}
+					</span>
+					<span
+						className="truncate"
+						title={cid}
+					>
+						{cid.length > 30 ? `${cid.slice(0, 12)}…${cid.slice(-8)}` : cid}
 					</span>
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function ProfileLink({
+	href,
+	icon,
+	label,
+}: {
+	href: string;
+	icon: React.ReactNode;
+	label: string;
+}) {
+	return (
+		<a
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="inline-flex items-center gap-1.5 rounded-md border border-hairline/[0.08] bg-canvas-sunken px-2 py-1 text-[11px] text-ink-muted transition-colors hover:border-brand/30 hover:text-brand"
+		>
+			{icon}
+			{label}
+		</a>
 	);
 }
