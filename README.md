@@ -168,3 +168,7 @@ does not touch GitHub Actions.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+Built by [Germán Küber](https://germankuber.com).
