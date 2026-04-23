@@ -30,41 +30,58 @@ export function useWallet() {
 	const [spektrStatus, setSpektrStatus] = useState<SpektrStatus>("detecting");
 	const [extensionAccounts, setExtensionAccounts] = useState<InjectedPolkadotAccount[]>([]);
 	const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-	const [availableWallets, setAvailableWallets] = useState<string[]>([]);
-
-	// Detect browser extensions
-	useEffect(() => {
+	// Detecting extensions is a synchronous read of window.injectedWeb3,
+	// so we initialise it lazily at mount rather than inside a useEffect
+	// (which would trigger a cascading render just to land the same value).
+	const [availableWallets] = useState<string[]>(() => {
 		try {
-			const wallets = getInjectedExtensions().filter((name) => name !== SpektrExtensionName);
-			setAvailableWallets(wallets);
+			return getInjectedExtensions().filter((name) => name !== SpektrExtensionName);
 		} catch {
-			// no extensions
+			return [];
 		}
-	}, []);
+	});
 
 	// Detect and inject Spektr
 	useEffect(() => {
 		let cancelled = false;
 		async function initSpektr() {
-			if (!isInHost()) { setSpektrStatus("unavailable"); return; }
+			if (!isInHost()) {
+				setSpektrStatus("unavailable");
+				return;
+			}
 			setSpektrStatus("injecting");
 			try {
 				let injected = false;
 				for (let i = 0; i < 10; i++) {
-					if (await injectSpektrExtension()) { injected = true; break; }
+					if (await injectSpektrExtension()) {
+						injected = true;
+						break;
+					}
 					if (i < 9) await new Promise((r) => setTimeout(r, 500));
 				}
-				if (!injected) { setSpektrStatus("failed"); return; }
+				if (!injected) {
+					setSpektrStatus("failed");
+					return;
+				}
 				const ext = await connectInjectedExtension(SpektrExtensionName);
-				if (cancelled) { ext.disconnect(); return; }
+				if (cancelled) {
+					ext.disconnect();
+					return;
+				}
 				setSpektrAccounts(ext.getAccounts());
 				setSpektrStatus("connected");
 				spektrUnsub.current?.();
 				spektrUnsub.current = ext.subscribe(setSpektrAccounts);
-			} catch { setSpektrStatus("failed"); }
+			} catch {
+				setSpektrStatus("failed");
+			}
 		}
 		initSpektr();
-		return () => { cancelled = true; spektrUnsub.current?.(); spektrUnsub.current = null; };
+		return () => {
+			cancelled = true;
+			spektrUnsub.current?.();
+			spektrUnsub.current = null;
+		};
 	}, []);
 
 	// Connect to a wallet extension

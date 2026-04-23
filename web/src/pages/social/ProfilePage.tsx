@@ -10,13 +10,7 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
-import {
-	Badge,
-	Button,
-	Card,
-	EmptyState,
-	SectionHeading,
-} from "../../components/ui";
+import { Badge, Button, Card, EmptyState, SectionHeading } from "../../components/ui";
 
 interface ProfileData {
 	cid: string;
@@ -90,7 +84,7 @@ export default function ProfilePage() {
 		loadProfile();
 	}, [loadProfile]);
 
-	async function handleCreate(metadata: ProfileMetadata, _followFee: string) {
+	async function handleCreate(metadata: ProfileMetadata, followFee: string) {
 		if (!account) return;
 		try {
 			setError(null);
@@ -102,7 +96,7 @@ export default function ProfilePage() {
 			const api = getApi();
 			const tx = api.tx.SocialProfiles.create_profile({
 				metadata: Binary.fromText(cid),
-				follow_fee: 0n,
+				follow_fee: BigInt(followFee || "0"),
 			});
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (ok) {
@@ -169,7 +163,11 @@ export default function ProfilePage() {
 						profile ? (
 							<div className="flex items-center gap-2">
 								<Link to="/profile/edit">
-									<Button variant="secondary" size="sm" leadingIcon={<Pencil size={13} />}>
+									<Button
+										variant="secondary"
+										size="sm"
+										leadingIcon={<Pencil size={13} />}
+									>
 										Edit
 									</Button>
 								</Link>
@@ -234,7 +232,9 @@ export default function ProfilePage() {
 								/>
 								<MetricCard
 									label="Following"
-									value={followingCount !== null ? followingCount.toString() : "—"}
+									value={
+										followingCount !== null ? followingCount.toString() : "—"
+									}
 								/>
 								<MetricCard
 									label="Follow fee"
@@ -254,7 +254,11 @@ export default function ProfilePage() {
 						{profile && (
 							<Card tone="default" padding="lg" className="space-y-4">
 								<div className="flex items-center gap-2">
-									<Hash size={14} className="text-ink-subtle" strokeWidth={1.75} />
+									<Hash
+										size={14}
+										className="text-ink-subtle"
+										strokeWidth={1.75}
+									/>
 									<h4 className="font-display text-lg font-medium text-ink">
 										On-chain record
 									</h4>
@@ -263,9 +267,18 @@ export default function ProfilePage() {
 									</Badge>
 								</div>
 								<dl className="grid grid-cols-1 gap-x-6 gap-y-3 border-t border-hairline/[0.06] pt-4 md:grid-cols-3">
-									<Entry label="Address" value={accountAddress ?? "—"} mono truncate />
+									<Entry
+										label="Address"
+										value={accountAddress ?? "—"}
+										mono
+										truncate
+									/>
 									<Entry label="Metadata CID" value={profile.cid} mono truncate />
-									<Entry label="Follow fee" value={`${profile.followFee.toString()}`} mono />
+									<Entry
+										label="Follow fee"
+										value={`${profile.followFee.toString()}`}
+										mono
+									/>
 								</dl>
 							</Card>
 						)}
@@ -277,8 +290,8 @@ export default function ProfilePage() {
 										{profile ? "Update profile" : "Create profile"}
 									</h3>
 									<p className="mt-1 text-xs text-ink-subtle">
-										Profile data and images are uploaded to IPFS. Only the CID (46 bytes) is
-										stored on-chain.
+										Profile data and images are uploaded to IPFS. Only the CID
+										(46 bytes) is stored on-chain.
 									</p>
 								</div>
 
