@@ -38,7 +38,15 @@ pub struct KeyServiceInfo<AccountId: codec::Codec> {
 /// and their ephemeral X25519 public key is captured. The offchain
 /// worker fills `wrapped_key` with the re-sealed content key.
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[scale_info(skip_type_params(T))]
 pub struct UnlockRecord<T: Config> {

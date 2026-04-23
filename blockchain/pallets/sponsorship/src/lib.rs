@@ -114,11 +114,7 @@ pub mod pallet {
 		/// A sponsor withdrew remaining pot funds.
 		PotWithdrawn { sponsor: T::AccountId, amount: BalanceOf<T> },
 		/// A transaction's fee was covered by the sponsor.
-		FeeSponsored {
-			sponsor: T::AccountId,
-			beneficiary: T::AccountId,
-			fee: BalanceOf<T>,
-		},
+		FeeSponsored { sponsor: T::AccountId, beneficiary: T::AccountId, fee: BalanceOf<T> },
 	}
 
 	#[pallet::error]
@@ -193,8 +189,8 @@ pub mod pallet {
 			beneficiary: T::AccountId,
 		) -> DispatchResult {
 			let sponsor = ensure_signed(origin)?;
-			let current = SponsorOf::<T>::get(&beneficiary)
-				.ok_or(Error::<T>::NotYourBeneficiary)?;
+			let current =
+				SponsorOf::<T>::get(&beneficiary).ok_or(Error::<T>::NotYourBeneficiary)?;
 			ensure!(current == sponsor, Error::<T>::NotYourBeneficiary);
 
 			SponsorOf::<T>::remove(&beneficiary);
@@ -217,8 +213,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::revoke_my_sponsor())]
 		pub fn revoke_my_sponsor(origin: OriginFor<T>) -> DispatchResult {
 			let beneficiary = ensure_signed(origin)?;
-			let sponsor = SponsorOf::<T>::take(&beneficiary)
-				.ok_or(Error::<T>::NoActiveSponsor)?;
+			let sponsor = SponsorOf::<T>::take(&beneficiary).ok_or(Error::<T>::NoActiveSponsor)?;
 			BeneficiaryCount::<T>::mutate(&sponsor, |c| *c = c.saturating_sub(1));
 
 			log::info!(
@@ -310,10 +305,7 @@ pub mod pallet {
 		/// O(1) lookup used by the TransactionExtension. Returns `None`
 		/// when the signer has no sponsor, when the sponsor's pot is
 		/// below `MinimumPotBalance`, or when the pot cannot cover `fee`.
-		pub fn resolve_sponsor(
-			signer: &T::AccountId,
-			fee: BalanceOf<T>,
-		) -> Option<T::AccountId> {
+		pub fn resolve_sponsor(signer: &T::AccountId, fee: BalanceOf<T>) -> Option<T::AccountId> {
 			let sponsor = SponsorOf::<T>::get(signer)?;
 			let pot = SponsorPots::<T>::get(&sponsor);
 			if pot < T::MinimumPotBalance::get() || pot < fee {

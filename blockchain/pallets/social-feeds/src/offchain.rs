@@ -19,17 +19,15 @@
 
 use crate::{
 	dev_key,
-	pallet::{
-		Call, Config, DeliverUnlockPayload, KeyService, PendingUnlocks, Posts, Unlocks,
-	},
+	pallet::{Call, Config, DeliverUnlockPayload, KeyService, PendingUnlocks, Posts, Unlocks},
 	types::{SEALED_KEY_LEN, X25519_PK_LEN},
 };
 use codec::Encode;
 use crypto_box::PublicKey as CboxPublic;
+use frame::deps::frame_system::offchain::{SendUnsignedTransaction, Signer};
 use frame::{
 	deps::{
-		frame_system,
-		sp_io,
+		frame_system, sp_io,
 		sp_runtime::offchain::{
 			storage_lock::{BlockAndTime, StorageLock},
 			Duration,
@@ -37,7 +35,6 @@ use frame::{
 	},
 	prelude::*,
 };
-use frame::deps::frame_system::offchain::{SendUnsignedTransaction, Signer};
 use rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
 use scale_info::prelude::vec::Vec;
 

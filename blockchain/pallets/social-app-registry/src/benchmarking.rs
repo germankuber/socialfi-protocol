@@ -66,12 +66,8 @@ mod benchmarks {
 		// benchmark might interact with (Apps, AppsByOwner, NextAppId,
 		// reserved deposit) is in the state the runtime actually
 		// reaches after a real registration.
-		Pallet::<T>::register_app(
-			RawOrigin::Signed(caller.clone()).into(),
-			md,
-			false,
-		)
-		.expect("register succeeds after funding");
+		Pallet::<T>::register_app(RawOrigin::Signed(caller.clone()).into(), md, false)
+			.expect("register succeeds after funding");
 		let app_id = T::AppId::default();
 
 		#[extrinsic_call]
@@ -93,12 +89,8 @@ mod benchmarks {
 		fund::<T>(&caller);
 		let md = metadata::<T>();
 
-		Pallet::<T>::register_app(
-			RawOrigin::Signed(caller.clone()).into(),
-			md,
-			false,
-		)
-		.map_err(|_| BenchmarkError::Stop("register_app setup failed"))?;
+		Pallet::<T>::register_app(RawOrigin::Signed(caller.clone()).into(), md, false)
+			.map_err(|_| BenchmarkError::Stop("register_app setup failed"))?;
 		let app_id = T::AppId::default();
 
 		// Nested call: a moderation-class dispatch the owner could
@@ -114,9 +106,5 @@ mod benchmarks {
 		Ok(())
 	}
 
-	impl_benchmark_test_suite!(
-		SocialAppRegistry,
-		crate::mock::new_test_ext(),
-		crate::mock::Test,
-	);
+	impl_benchmark_test_suite!(SocialAppRegistry, crate::mock::new_test_ext(), crate::mock::Test,);
 }

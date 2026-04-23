@@ -33,9 +33,9 @@ use super::{
 	AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, ConsensusHook, Hash,
 	MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys,
-	SocialAppRegistry, SocialProfiles, System, XcmpQueue,
-	AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	MICRO_UNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
+	SocialAppRegistry, SocialProfiles, System, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO,
+	EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICRO_UNIT, NORMAL_DISPATCH_RATIO,
+	SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -303,10 +303,7 @@ pub struct NotificationStatementSubmitter;
 impl social_notifications_primitives::StatementSubmitter<AccountId>
 	for NotificationStatementSubmitter
 {
-	fn submit_statement(
-		account: AccountId,
-		statement: sp_statement_store::Statement,
-	) {
+	fn submit_statement(account: AccountId, statement: sp_statement_store::Statement) {
 		pallet_statement::Pallet::<Runtime>::submit_statement(account, statement);
 	}
 }
@@ -354,8 +351,8 @@ impl pallet_social_graph::BenchmarkHelper<AccountId> for GraphBenchmarkHelper {
 		// Mirror `FeedsBenchmarkHelper::register_profile` — direct
 		// storage insert so benchmarks do not pay the cost of the
 		// social-profiles `create_profile` dispatch on every iteration.
-		use pallet_social_profiles::types::ProfileInfo;
 		use frame_support::BoundedVec;
+		use pallet_social_profiles::types::ProfileInfo;
 		let info: ProfileInfo<Runtime> = ProfileInfo {
 			metadata: BoundedVec::default(),
 			follow_fee: 0,
@@ -414,8 +411,8 @@ pub struct FeedsBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_social_feeds::BenchmarkHelper<AccountId, u32> for FeedsBenchmarkHelper {
 	fn register_profile(who: &AccountId) {
-		use pallet_social_profiles::types::ProfileInfo;
 		use frame_support::BoundedVec;
+		use pallet_social_profiles::types::ProfileInfo;
 		// Direct storage insert. Going through `create_profile` would
 		// reserve a bond on every benchmark invocation and inflate the
 		// measured weights with pallet-social-profiles' costs.
@@ -427,8 +424,8 @@ impl pallet_social_feeds::BenchmarkHelper<AccountId, u32> for FeedsBenchmarkHelp
 		pallet_social_profiles::Profiles::<Runtime>::insert(who, info);
 	}
 	fn register_app(owner: &AccountId) -> u32 {
-		use pallet_social_app_registry::types::{AppInfo, AppStatus};
 		use frame_support::BoundedVec;
+		use pallet_social_app_registry::types::{AppInfo, AppStatus};
 		let app_id = pallet_social_app_registry::NextAppId::<Runtime>::get();
 		let next = app_id.saturating_add(1);
 		pallet_social_app_registry::NextAppId::<Runtime>::put(next);

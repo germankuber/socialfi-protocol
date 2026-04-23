@@ -112,9 +112,9 @@ where
 	type Val = Val<T, S::Val>;
 	type Pre = Pre<S::Pre>;
 
-	fn metadata() -> scale_info::prelude::vec::Vec<
-		frame::deps::sp_runtime::traits::TransactionExtensionMetadata,
-	> {
+	fn metadata(
+	) -> scale_info::prelude::vec::Vec<frame::deps::sp_runtime::traits::TransactionExtensionMetadata>
+	{
 		S::metadata()
 	}
 
@@ -125,9 +125,7 @@ where
 	fn weight(&self, call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
 		// Sponsorship adds a pot read + pot write + a currency transfer
 		// on top of the inner extension's own weight.
-		self.0
-			.weight(call)
-			.saturating_add(T::DbWeight::get().reads_writes(2, 2))
+		self.0.weight(call).saturating_add(T::DbWeight::get().reads_writes(2, 2))
 	}
 
 	fn validate(
@@ -232,7 +230,9 @@ where
 		result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
 		match pre {
-			Pre::Apply(inner_pre) => S::post_dispatch_details(inner_pre, info, post_info, len, result),
+			Pre::Apply(inner_pre) => {
+				S::post_dispatch_details(inner_pre, info, post_info, len, result)
+			},
 			// No refund in the sponsored path yet — over-estimation
 			// remains in the fee destination rather than being returned
 			// to the sponsor's pot. Matches the previous MVP behaviour.
@@ -251,4 +251,3 @@ impl<T: Config, S> ChargeSponsored<T, S> {
 		Pallet::<T>::pallet_account()
 	}
 }
-

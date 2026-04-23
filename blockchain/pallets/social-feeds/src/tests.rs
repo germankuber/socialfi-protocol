@@ -517,8 +517,12 @@ fn unlock_post_author_does_not_write_storage() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1]);
 		assert_ok!(SocialFeeds::create_post(
-			RuntimeOrigin::signed(1), test_content(), None, 0,
-			PostVisibility::Obfuscated, 50,
+			RuntimeOrigin::signed(1),
+			test_content(),
+			None,
+			0,
+			PostVisibility::Obfuscated,
+			50,
 			Some(BoundedVec::try_from(vec![1u8; 80]).unwrap()),
 		));
 		// Author calls unlock on own post.
@@ -580,12 +584,7 @@ fn timeline_populated_on_create_reply() {
 			None,
 		));
 		set_block(5);
-		assert_ok!(SocialFeeds::create_reply(
-			RuntimeOrigin::signed(2),
-			0,
-			test_content(),
-			None,
-		));
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, test_content(), None,));
 		assert!(PostsTimeline::<Test>::contains_key(2, (5u64, 1u64)));
 	});
 }
@@ -810,12 +809,7 @@ fn create_reply_emits_event_with_all_fields() {
 			0,
 			None,
 		));
-		assert_ok!(SocialFeeds::create_reply(
-			RuntimeOrigin::signed(2),
-			0,
-			test_content(),
-			None,
-		));
+		assert_ok!(SocialFeeds::create_reply(RuntimeOrigin::signed(2), 0, test_content(), None,));
 		frame_system::Pallet::<Test>::assert_last_event(
 			crate::Event::ReplyCreated {
 				post_id: 1,
@@ -846,12 +840,8 @@ fn set_key_service_first_write_has_version_one_and_no_previous() {
 		assert_eq!(stored.account, 77);
 		assert_eq!(stored.version, 1);
 		frame_system::Pallet::<Test>::assert_last_event(
-			crate::Event::KeyServiceUpdated {
-				version: 1,
-				account: 77,
-				previous_account: None,
-			}
-			.into(),
+			crate::Event::KeyServiceUpdated { version: 1, account: 77, previous_account: None }
+				.into(),
 		);
 	});
 }
@@ -884,12 +874,8 @@ fn set_key_service_emits_previous_account_on_rotation() {
 		// service — rotating to 43 must surface 42 as previous_account.
 		assert_ok!(SocialFeeds::set_key_service(RuntimeOrigin::root(), 43u64, [9u8; 32]));
 		frame_system::Pallet::<Test>::assert_last_event(
-			crate::Event::KeyServiceUpdated {
-				version: 2,
-				account: 43,
-				previous_account: Some(42),
-			}
-			.into(),
+			crate::Event::KeyServiceUpdated { version: 2, account: 43, previous_account: Some(42) }
+				.into(),
 		);
 	});
 }
@@ -931,13 +917,7 @@ fn unlock_post_emits_event() {
 		));
 		assert_ok!(SocialFeeds::unlock_post(RuntimeOrigin::signed(2), 0, [1u8; 32]));
 		frame_system::Pallet::<Test>::assert_last_event(
-			crate::Event::PostUnlocked {
-				post_id: 0,
-				viewer: 2,
-				author: 1,
-				fee_paid: 25,
-			}
-			.into(),
+			crate::Event::PostUnlocked { post_id: 0, viewer: 2, author: 1, fee_paid: 25 }.into(),
 		);
 	});
 }
@@ -1181,19 +1161,10 @@ fn make_payload(
 	signer: UintAuthorityId,
 	wrapped_key: BoundedVec<u8, frame::traits::ConstU32<{ SEALED_KEY_LEN }>>,
 ) -> DeliverUnlockPayload<Test> {
-	DeliverUnlockPayload {
-		public: signer,
-		block_number,
-		post_id,
-		viewer,
-		wrapped_key,
-	}
+	DeliverUnlockPayload { public: signer, block_number, post_id, viewer, wrapped_key }
 }
 
-fn sign_payload(
-	payload: &DeliverUnlockPayload<Test>,
-	signer: UintAuthorityId,
-) -> TestSignature {
+fn sign_payload(payload: &DeliverUnlockPayload<Test>, signer: UintAuthorityId) -> TestSignature {
 	// `UintAuthorityId::sign` would work here, but `TestSignature(id, msg)`
 	// is just an equality check against the payload bytes — constructing it
 	// directly keeps the test readable and avoids the optional return.
@@ -1227,11 +1198,9 @@ fn deliver_unlock_unsigned_delivers_key_and_clears_pending() {
 		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
 		let signature = sign_payload(&payload, signer);
 
-		assert_ok!(SocialFeeds::deliver_unlock_unsigned(
-			RuntimeOrigin::none(),
-			payload,
-			signature,
-		));
+		assert_ok!(
+			SocialFeeds::deliver_unlock_unsigned(RuntimeOrigin::none(), payload, signature,)
+		);
 
 		let record = Unlocks::<Test>::get(0u64, 2).expect("unlock record");
 		assert!(record.wrapped_key.is_some());
@@ -1290,8 +1259,7 @@ fn validate_unsigned_rejects_external_source() {
 		let signature = sign_payload(&payload, signer);
 		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
 
-		let result =
-			crate::Pallet::<Test>::validate_unsigned(TransactionSource::External, &call);
+		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::External, &call);
 		assert_eq!(result, Err(InvalidTransaction::Call.into()));
 	});
 }
@@ -1309,10 +1277,7 @@ fn validate_unsigned_rejects_stale_payload() {
 		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
 
 		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
-		assert_eq!(
-			result,
-			Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into())
-		);
+		assert_eq!(result, Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into()));
 	});
 }
 
@@ -1327,10 +1292,7 @@ fn validate_unsigned_rejects_future_payload() {
 		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature };
 
 		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
-		assert_eq!(
-			result,
-			Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into())
-		);
+		assert_eq!(result, Err(InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into()));
 	});
 }
 
@@ -1380,10 +1342,7 @@ fn validate_unsigned_rejects_bad_signature() {
 		let payload = make_payload(0, 2, block, signer.clone(), wrapped_key_bytes());
 		// Signature does not match the payload bytes.
 		let bad_signature = TestSignature(KEY_SERVICE_ACCOUNT, b"wrong-message".to_vec());
-		let call = Call::<Test>::deliver_unlock_unsigned {
-			payload,
-			signature: bad_signature,
-		};
+		let call = Call::<Test>::deliver_unlock_unsigned { payload, signature: bad_signature };
 
 		let result = crate::Pallet::<Test>::validate_unsigned(TransactionSource::Local, &call);
 		assert_eq!(result, Err(InvalidTransaction::BadProof.into()));

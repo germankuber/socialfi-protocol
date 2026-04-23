@@ -55,9 +55,5 @@ mod benchmarks {
 		assert!(!Follows::<T>::contains_key(&caller, &target));
 	}
 
-	impl_benchmark_test_suite!(
-		SocialGraph,
-		crate::mock::new_test_ext(),
-		crate::mock::Test,
-	);
+	impl_benchmark_test_suite!(SocialGraph, crate::mock::new_test_ext(), crate::mock::Test,);
 }

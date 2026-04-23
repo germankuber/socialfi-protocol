@@ -242,10 +242,7 @@ fn unfollow_unsigned_origin_rejected() {
 	new_test_ext().execute_with(|| {
 		setup_profiles(&[1, 2]);
 		assert_ok!(SocialGraph::follow(RuntimeOrigin::signed(1), 2));
-		assert_noop!(
-			SocialGraph::unfollow(RuntimeOrigin::none(), 2),
-			DispatchError::BadOrigin,
-		);
+		assert_noop!(SocialGraph::unfollow(RuntimeOrigin::none(), 2), DispatchError::BadOrigin,);
 	});
 }
 

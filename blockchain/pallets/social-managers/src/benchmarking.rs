@@ -118,11 +118,7 @@ mod benchmarks {
 		ProfileManagers::<T>::insert(
 			&owner,
 			&manager,
-			crate::types::ManagerInfo::<T> {
-				scopes,
-				expires_at: None,
-				deposit: base,
-			},
+			crate::types::ManagerInfo::<T> { scopes, expires_at: None, deposit: base },
 		);
 		T::Currency::reserve(&owner, base).expect("owner funded");
 		ManagerCount::<T>::mutate(&owner, |c| *c = c.saturating_add(1));
@@ -135,9 +131,5 @@ mod benchmarks {
 		Ok(())
 	}
 
-	impl_benchmark_test_suite!(
-		SocialManagers,
-		crate::mock::new_test_ext(),
-		crate::mock::Test,
-	);
+	impl_benchmark_test_suite!(SocialManagers, crate::mock::new_test_ext(), crate::mock::Test,);
 }

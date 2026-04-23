@@ -36,9 +36,8 @@ fn testnet_genesis(
 	// to sign `deliver_unlock_unsigned`. Kept distinct from Alice/Bob
 	// so it's obvious that unlock deliveries do not come from the same
 	// account the UI signs with.
-	let key_service_account = sp_core::crypto::AccountId32::from(
-		pallet_social_feeds::dev_key::key_service_account_id(),
-	);
+	let key_service_account =
+		sp_core::crypto::AccountId32::from(pallet_social_feeds::dev_key::key_service_account_id());
 
 	// Endow it so the on-chain `KeyServiceInfo::account` resolves to a
 	// real, reachable account (the unsigned payload carries the public
@@ -51,11 +50,7 @@ fn testnet_genesis(
 
 	build_struct_json_patch!(RuntimeGenesisConfig {
 		balances: BalancesConfig {
-			balances: endowed
-				.iter()
-				.cloned()
-				.map(|k| (k, 1u128 << 60))
-				.collect::<Vec<_>>(),
+			balances: endowed.iter().cloned().map(|k| (k, 1u128 << 60)).collect::<Vec<_>>(),
 		},
 		parachain_info: ParachainInfoConfig { parachain_id: id },
 		collator_selection: CollatorSelectionConfig {
@@ -121,11 +116,9 @@ fn development_config_genesis() -> Value {
 	endowed.extend(eth_dev_accounts());
 
 	// External account: 5G1aK2V7kWbpiikhcj4G8eGFXyJKuwr4qZ67SA1LS1gnxxBy
-	endowed.push(
-		sp_core::crypto::AccountId32::from(hex_literal::hex!(
-			"ae8dcc076817fa8242467f97d4bc29b5b7f2a0263e4f6739d9e928b231536b5b"
-		)),
-	);
+	endowed.push(sp_core::crypto::AccountId32::from(hex_literal::hex!(
+		"ae8dcc076817fa8242467f97d4bc29b5b7f2a0263e4f6739d9e928b231536b5b"
+	)));
 
 	testnet_genesis(
 		vec![

@@ -93,9 +93,7 @@ pub mod pallet {
 		}
 
 		fn follow_fee(account: &T::AccountId) -> BalanceOf<T> {
-			Profiles::<T>::get(account)
-				.map(|p| p.follow_fee)
-				.unwrap_or_else(Zero::zero)
+			Profiles::<T>::get(account).map(|p| p.follow_fee).unwrap_or_else(Zero::zero)
 		}
 	}
 
@@ -176,10 +174,7 @@ pub mod pallet {
 		/// Set to 0 for free follows.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::set_follow_fee())]
-		pub fn set_follow_fee(
-			origin: OriginFor<T>,
-			fee: BalanceOf<T>,
-		) -> DispatchResult {
+		pub fn set_follow_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			Profiles::<T>::try_mutate(&who, |maybe_profile| -> DispatchResult {
