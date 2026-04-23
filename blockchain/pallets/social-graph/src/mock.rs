@@ -2,7 +2,7 @@ use core::cell::RefCell;
 
 use frame::{
 	deps::{
-		frame_support::{derive_impl, parameter_types, weights::constants::RocksDbWeight},
+		frame_support::{derive_impl, weights::constants::RocksDbWeight},
 		frame_system::GenesisConfig,
 		sp_runtime::BuildStorage,
 	},
@@ -52,9 +52,8 @@ impl ProfileProvider<u64, u64> for MockProfileProvider {
 	}
 
 	fn follow_fee(account: &u64) -> u64 {
-		FOLLOW_FEES.with(|v| {
-			v.borrow().iter().find(|(a, _)| a == account).map(|(_, f)| *f).unwrap_or(0)
-		})
+		FOLLOW_FEES
+			.with(|v| v.borrow().iter().find(|(a, _)| a == account).map(|(_, f)| *f).unwrap_or(0))
 	}
 }
 

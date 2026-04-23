@@ -3,7 +3,7 @@ use crate::{
 	pallet::{Error, ProfileCount, Profiles},
 	ProfileProvider,
 };
-use frame::{testing_prelude::*, traits::Currency};
+use frame::testing_prelude::*;
 
 fn test_metadata() -> BoundedVec<u8, MaxMetadataLen> {
 	BoundedVec::try_from(b"QmProfileCid123".to_vec()).unwrap()
