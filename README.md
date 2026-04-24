@@ -8,6 +8,9 @@
 
 # Polkadot Stack Template
 
+[![CI — Rust](https://github.com/germankuber/socialfi-protocol/actions/workflows/ci-rust.yml/badge.svg?branch=main)](https://github.com/germankuber/socialfi-protocol/actions/workflows/ci-rust.yml)
+[![CI — Web](https://github.com/germankuber/socialfi-protocol/actions/workflows/ci-web.yml/badge.svg?branch=main)](https://github.com/germankuber/socialfi-protocol/actions/workflows/ci-web.yml)
+
 A SocialFi reference implementation on Polkadot. Profiles, posts with public/obfuscated/private visibility, follows, a permissionless app registry, delegated managers, sponsored transactions, and real-time notifications via the Substrate Statement Store — all on a single parachain runtime.
 
 **Live deployment**: [socialfi.dot.li](https://socialfi.dot.li) — served through DotNS + Bulletin Chain on Paseo.

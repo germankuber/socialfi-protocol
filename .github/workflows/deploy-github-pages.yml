@@ -30,6 +30,12 @@ jobs:
         working-directory: web
         run: |
           npm ci
+          # Regenerate PAPI descriptors from committed .scale metadata.
+          # See ci-web.yml for the rationale — the content-hashed bundle
+          # names change across PAPI CLI versions, so the dist/ tree
+          # shipped in the repo is only a local-dev convenience.
+          rm -rf .papi/descriptors/dist .papi/descriptors/generated.json
+          npx papi generate
           npm run build
 
       - uses: actions/configure-pages@v5

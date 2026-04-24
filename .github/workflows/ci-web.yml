@@ -48,5 +48,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      # Regenerate PAPI descriptors from the committed .scale metadata.
+      # The content-hashed filenames under .papi/descriptors/dist/ change
+      # whenever the PAPI CLI version bumps, so we can't rely on the
+      # dist/ tree the repo ships with — we always recompute it here from
+      # .papi/metadata/ and .papi/polkadot-api.json, both of which are
+      # committed and versioned as the source of truth.
+      - name: Regenerate PAPI descriptors
+        run: |
+          rm -rf .papi/descriptors/dist .papi/descriptors/generated.json
+          npx papi generate
       - run: npx tsc -b
       - run: npm run build
