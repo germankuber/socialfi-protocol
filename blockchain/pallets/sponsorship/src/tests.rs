@@ -62,10 +62,7 @@ fn withdraw_happy_path_no_longer_panics() {
 #[test]
 fn register_beneficiary_sets_pointer_and_counter() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_eq!(SponsorOf::<Test>::get(BENEFICIARY), Some(SPONSOR));
 		assert_eq!(BeneficiaryCount::<Test>::get(SPONSOR), 1);
 	});
@@ -84,10 +81,7 @@ fn register_beneficiary_rejects_self_sponsor() {
 #[test]
 fn register_beneficiary_reassignment_updates_counters() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_eq!(BeneficiaryCount::<Test>::get(SPONSOR), 1);
 		// OTHER steals the beneficiary.
 		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(OTHER), BENEFICIARY));
@@ -100,14 +94,8 @@ fn register_beneficiary_reassignment_updates_counters() {
 #[test]
 fn revoke_beneficiary_removes_pointer() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
-		assert_ok!(Sponsorship::revoke_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
+		assert_ok!(Sponsorship::revoke_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert!(SponsorOf::<Test>::get(BENEFICIARY).is_none());
 		assert_eq!(BeneficiaryCount::<Test>::get(SPONSOR), 0);
 	});
@@ -117,10 +105,7 @@ fn revoke_beneficiary_removes_pointer() {
 fn revoke_beneficiary_rejects_non_sponsor() {
 	// OTHER cannot revoke SPONSOR's beneficiary.
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_noop!(
 			Sponsorship::revoke_beneficiary(RuntimeOrigin::signed(OTHER), BENEFICIARY),
 			Error::<Test>::NotYourBeneficiary
@@ -131,10 +116,7 @@ fn revoke_beneficiary_rejects_non_sponsor() {
 #[test]
 fn revoke_my_sponsor_is_the_beneficiary_escape_hatch() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_ok!(Sponsorship::revoke_my_sponsor(RuntimeOrigin::signed(BENEFICIARY)));
 		assert!(SponsorOf::<Test>::get(BENEFICIARY).is_none());
 	});
@@ -145,19 +127,13 @@ fn resolve_sponsor_honors_minimum_pot_balance() {
 	// resolve_sponsor returns None when the pot is below the minimum
 	// threshold, even if the pointer exists and the balance is positive.
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_ok!(Sponsorship::top_up(RuntimeOrigin::signed(SPONSOR), 5)); // under MinimumPotBalance=10
 		assert!(crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 1).is_none());
 
 		// Top up to cross the threshold.
 		assert_ok!(Sponsorship::top_up(RuntimeOrigin::signed(SPONSOR), 10));
-		assert_eq!(
-			crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 1),
-			Some(SPONSOR)
-		);
+		assert_eq!(crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 1), Some(SPONSOR));
 	});
 }
 
@@ -206,10 +182,7 @@ fn top_up_fails_with_insufficient_funds() {
 fn register_beneficiary_emits_event_with_no_previous_sponsor() {
 	new_test_ext().execute_with(|| {
 		frame_system::Pallet::<Test>::set_block_number(1);
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY,
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY,));
 		frame_system::Pallet::<Test>::assert_last_event(
 			crate::Event::BeneficiaryRegistered {
 				sponsor: SPONSOR,
@@ -225,14 +198,8 @@ fn register_beneficiary_emits_event_with_no_previous_sponsor() {
 fn register_beneficiary_emits_previous_sponsor_on_reassign() {
 	new_test_ext().execute_with(|| {
 		frame_system::Pallet::<Test>::set_block_number(1);
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY,
-		));
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(OTHER),
-			BENEFICIARY,
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY,));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(OTHER), BENEFICIARY,));
 		frame_system::Pallet::<Test>::assert_last_event(
 			crate::Event::BeneficiaryRegistered {
 				sponsor: OTHER,
@@ -248,20 +215,10 @@ fn register_beneficiary_emits_previous_sponsor_on_reassign() {
 fn revoke_beneficiary_emits_event() {
 	new_test_ext().execute_with(|| {
 		frame_system::Pallet::<Test>::set_block_number(1);
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY,
-		));
-		assert_ok!(Sponsorship::revoke_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY,
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY,));
+		assert_ok!(Sponsorship::revoke_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY,));
 		frame_system::Pallet::<Test>::assert_last_event(
-			crate::Event::BeneficiaryRevoked {
-				sponsor: SPONSOR,
-				beneficiary: BENEFICIARY,
-			}
-			.into(),
+			crate::Event::BeneficiaryRevoked { sponsor: SPONSOR, beneficiary: BENEFICIARY }.into(),
 		);
 	});
 }
@@ -270,17 +227,10 @@ fn revoke_beneficiary_emits_event() {
 fn revoke_my_sponsor_emits_event() {
 	new_test_ext().execute_with(|| {
 		frame_system::Pallet::<Test>::set_block_number(1);
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY,
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY,));
 		assert_ok!(Sponsorship::revoke_my_sponsor(RuntimeOrigin::signed(BENEFICIARY)));
 		frame_system::Pallet::<Test>::assert_last_event(
-			crate::Event::SponsorAbandoned {
-				sponsor: SPONSOR,
-				beneficiary: BENEFICIARY,
-			}
-			.into(),
+			crate::Event::SponsorAbandoned { sponsor: SPONSOR, beneficiary: BENEFICIARY }.into(),
 		);
 	});
 }
@@ -326,32 +276,20 @@ fn extrinsics_reject_unsigned_origin() {
 			Sponsorship::revoke_my_sponsor(RuntimeOrigin::none()),
 			DispatchError::BadOrigin,
 		);
-		assert_noop!(
-			Sponsorship::top_up(RuntimeOrigin::none(), 100),
-			DispatchError::BadOrigin,
-		);
-		assert_noop!(
-			Sponsorship::withdraw(RuntimeOrigin::none(), 100),
-			DispatchError::BadOrigin,
-		);
+		assert_noop!(Sponsorship::top_up(RuntimeOrigin::none(), 100), DispatchError::BadOrigin,);
+		assert_noop!(Sponsorship::withdraw(RuntimeOrigin::none(), 100), DispatchError::BadOrigin,);
 	});
 }
 
 #[test]
 fn resolve_sponsor_returns_none_when_fee_exceeds_pot() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Sponsorship::register_beneficiary(
-			RuntimeOrigin::signed(SPONSOR),
-			BENEFICIARY
-		));
+		assert_ok!(Sponsorship::register_beneficiary(RuntimeOrigin::signed(SPONSOR), BENEFICIARY));
 		assert_ok!(Sponsorship::top_up(RuntimeOrigin::signed(SPONSOR), 50));
 		// fee (100) > pot (50).
 		assert!(crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 100).is_none());
 		// fee (30) ≤ pot (50).
-		assert_eq!(
-			crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 30),
-			Some(SPONSOR)
-		);
+		assert_eq!(crate::Pallet::<Test>::resolve_sponsor(&BENEFICIARY, 30), Some(SPONSOR));
 	});
 }
 
@@ -377,9 +315,7 @@ mod extension_tests {
 		pallet_prelude::TransactionSource,
 	};
 	use frame::deps::sp_runtime::{
-		traits::{
-			DispatchInfoOf, Implication, TransactionExtension, TxBaseImplication,
-		},
+		traits::{DispatchInfoOf, Implication, TransactionExtension, TxBaseImplication},
 		transaction_validity::{InvalidTransaction, TransactionValidityError, ValidTransaction},
 		DispatchError,
 	};
@@ -400,7 +336,9 @@ mod extension_tests {
 		static INNER_VALIDATE_FAILS: Cell<bool> = const { Cell::new(false) };
 	}
 
-	#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo, Default, Debug)]
+	#[derive(
+		Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo, Default, Debug,
+	)]
 	pub struct MockInner;
 
 	impl<Call> TransactionExtension<Call> for MockInner

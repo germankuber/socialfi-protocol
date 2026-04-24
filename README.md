@@ -10,6 +10,10 @@
 
 A SocialFi reference implementation on Polkadot. Profiles, posts with public/obfuscated/private visibility, follows, a permissionless app registry, delegated managers, sponsored transactions, and real-time notifications via the Substrate Statement Store — all on a single parachain runtime.
 
+**Live deployment**: [socialfi.dot.li](https://socialfi.dot.li) — served through DotNS + Bulletin Chain on Paseo.
+
+**Path**: Substrate pallets (backend) + static web app (frontend). Deployed end-to-end on Paseo via Bulletin Chain + DotNS.
+
 ## Architecture at a Glance
 
 ```mermaid
@@ -84,6 +88,8 @@ flowchart TB
 - **Sponsored transaction**: `ChargeSponsored.validate` detects a funded sponsor for the signer → `prepare` debits the pot and tops up the beneficiary → native `ChargeTransactionPayment` withdraws the fee (net zero on the beneficiary).
 - **Real-time notification**: Pallet emits a statement → `NotificationStatementSubmitter` forwards to `pallet-statement` → OCW attaches `Proof::OnChain` → gossip → frontend `@polkadot-apps/statement-store` subscription updates the bell.
 
+For the four sequence diagrams (runtime composition, notifications, encrypted posts, topic contract) see [`docs/FLOWS.md`](docs/FLOWS.md).
+
 ## Commands
 
 Every day-to-day operation is exposed through `make`. Run `make help`
@@ -114,16 +120,41 @@ terminal so the published bundle can reach your local node through
 the ngrok URL. `make deploy-with-tunnel` is fully self-contained and
 does not touch GitHub Actions.
 
-## Documentation
+## What works
 
-- [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) — Whole-stack walkthrough
-- [docs/NOTIFICATIONS_FLOW.md](docs/NOTIFICATIONS_FLOW.md) — End-to-end notification sequence
-- [docs/NOTIFICATIONS_TOPICS.md](docs/NOTIFICATIONS_TOPICS.md) — Topic + payload contract
-- [docs/ENCRYPTED_POSTS_WORKFLOW.md](docs/ENCRYPTED_POSTS_WORKFLOW.md) — Encrypted posts deep dive
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Deployment guide
-- [docs/INSTALL.md](docs/INSTALL.md) — Local setup
+- **Six custom pallets** composed in a single runtime: `social-app-registry` (51), `social-profiles` (52), `social-graph` (53), `social-feeds` (54), `social-managers` (55), `sponsorship` (56), wired alongside `pallet-statement` (40).
+- **Profiles** with IPFS-stored metadata, refundable 10 UNIT bond, editable display/bio/links, optional Polkadot People identity verification.
+- **Feed** with `Public` / `Obfuscated` / `Private` visibility. Public posts are readable by anyone; non-public ones are encrypted client-side with XChaCha20-Poly1305 and only decrypt after on-chain `unlock_post` + Key Service delivery.
+- **Social graph** with configurable follow fee paid from follower to target, native follower/following counters.
+- **App registry** with its own 10 UNIT bond; posts can be scoped to an app and moderated by its owner.
+- **Managers**: delegation with scoped authorizations (`post` / `follow` / `update profile`), optional expiration, panic revoke.
+- **Sponsorship**: `ChargeSponsored` transaction extension re-routes the fee to a funded sponsor pot — enables gasless onboarding without precious tokens.
+- **Live notifications** via Statement Store gossip. No polling, no centralized indexer in the notification path.
+- **Frontend (web)**: React + Vite + PAPI, dark/light theme, wallet integration (Polkadot.js / Talisman / SubWallet / Polkadot Host), composer for all post visibilities, unlock flow end-to-end.
+- **CLI** (`cli/`, Rust + subxt) covers the same extrinsics for scripting.
+- **Indexer** (`indexer/`, lowdb) exposes denormalized tx/event history over HTTP for the transactions page.
+- **Deploy** to Paseo via Bulletin Chain + DotNS — reachable at [socialfi.dot.li](https://socialfi.dot.li). `make deploy-with-tunnel` runs the whole pipeline from a clean tree.
 
-## Key Versions
+## What doesn't (yet)
+
+- **Key Service is a dev stub.** `blockchain/pallets/social-feeds/src/dev_key.rs` hardcodes the X25519 secret — anyone with the source can decrypt every capsule. Production needs an external Key Service (TEE / DKG / threshold) plus `author_insertKey` for the sr25519 signing identity. The capsule + delivery pipeline is already wired to talk to an external service; only the key custody is hand-wavy.
+- **Indexer runs single-node lowdb.** Fine for local dev and demo. Not horizontally scalable, not durable past a process restart.
+- **Runtime integration tests are thin.** `blockchain/runtime/src/tests.rs` covers the most important paths but isn't exhaustive; per-pallet unit tests carry most of the weight.
+- **Post encryption keys aren't recoverable across tabs.** The viewer's ephemeral `buyer_sk` lives in `sessionStorage`; closing the tab before OCW delivery forces a re-unlock from another account. Acceptable for a demo, not for a product.
+- **Statement Store allowance is set conservatively.** Heavy notification traffic from a single account will trip the per-account budget; the pallet logs a reject but the UI has no surface for it.
+
+## Known limitations & design compromises
+
+- **Key custody is a compile-time constant.** Moving it out of the collator is the single biggest production blocker (see above). Design is ready; infra is not.
+- **PAPI vs subxt split.** The frontend uses PAPI; the CLI uses subxt. Don't mix them — descriptor regeneration (`cd web && pnpm exec papi update && pnpm exec papi`) is required after any storage/call change.
+- **`blockchain/chain_spec.json` is generated** and gitignored. Each environment rebuilds it.
+- **Dev accounts (Alice / Bob / Charlie) are public Substrate well-known keys** — treat them as demo credentials, never as secrets.
+
+## Getting started
+
+- [`docs/FLOWS.md`](docs/FLOWS.md) — sequence diagrams for the non-trivial flows
+
+## Key versions
 
 | Component | Version |
 |---|---|
@@ -137,3 +168,7 @@ does not touch GitHub Actions.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+Built by [Germán Küber](https://germankuber.com).

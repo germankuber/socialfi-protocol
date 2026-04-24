@@ -43,11 +43,11 @@ export default function SponsorshipPage() {
 				<header className="space-y-2">
 					<h1 className="heading-1">Sponsorship</h1>
 					<p className="text-secondary text-sm max-w-2xl">
-						Pay another account's transaction fees from a personal pot.
-						Their extrinsics sign with their own keys; the runtime's
+						Pay another account's transaction fees from a personal pot. Their extrinsics
+						sign with their own keys; the runtime's
 						<code className="text-brand-500 mx-1">ChargeSponsored</code>
-						transaction extension redirects the fee to your pot inside
-						the dispatch pipeline.
+						transaction extension redirects the fee to your pot inside the dispatch
+						pipeline.
 					</p>
 					<div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-semibold text-brand-500">
 						<svg
@@ -74,12 +74,8 @@ export default function SponsorshipPage() {
 					disabled={txInFlight(s.tracker.state.stage)}
 					onTopUp={(amt) => account && s.topUp(amt, account.signer)}
 					onWithdraw={(amt) => account && s.withdraw(amt, account.signer)}
-					onRegister={(who) =>
-						account && s.registerBeneficiary(who, account.signer)
-					}
-					onRevoke={(who) =>
-						account && s.revokeBeneficiary(who, account.signer)
-					}
+					onRegister={(who) => account && s.registerBeneficiary(who, account.signer)}
+					onRevoke={(who) => account && s.revokeBeneficiary(who, account.signer)}
 				/>
 
 				<BeneficiaryPanel
@@ -151,8 +147,7 @@ function SponsorPanel({
 				<div className="flex-1 min-w-0">
 					<h2 className="text-base font-semibold">My sponsor pot</h2>
 					<p className="text-[11px] text-secondary mt-0.5">
-						Balance available to cover transaction fees for the
-						accounts you sponsor.
+						Balance available to cover transaction fees for the accounts you sponsor.
 					</p>
 				</div>
 			</div>
@@ -162,10 +157,7 @@ function SponsorPanel({
 					Available
 				</span>
 				<span className="text-xl font-bold text-brand-500 font-mono">
-					{potUnits}{" "}
-					<span className="text-[11px] text-secondary font-normal">
-						UNIT
-					</span>
+					{potUnits} <span className="text-[11px] text-secondary font-normal">UNIT</span>
 				</span>
 			</div>
 
@@ -209,8 +201,7 @@ function SponsorPanel({
 						/>
 						<button
 							onClick={() => {
-								const amt =
-									BigInt(withdrawAmount || "0") * 10n ** 9n;
+								const amt = BigInt(withdrawAmount || "0") * 10n ** 9n;
 								if (amt > 0n) onWithdraw(amt);
 							}}
 							disabled={disabled || myPot === 0n || !withdrawAmount}
@@ -253,11 +244,7 @@ function SponsorPanel({
 							stroke="currentColor"
 							strokeWidth={2}
 						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M12 4v16m8-8H4"
-							/>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
 						</svg>
 						Add a beneficiary
 					</button>
@@ -265,10 +252,9 @@ function SponsorPanel({
 
 				{beneficiaries.length === 0 ? (
 					<p className="text-xs text-secondary">
-						Add any account here and the runtime will cover their
-						transaction fees from your pot. The beneficiary does not
-						need to know or accept — they will just notice their
-						fee went to zero.
+						Add any account here and the runtime will cover their transaction fees from
+						your pot. The beneficiary does not need to know or accept — they will just
+						notice their fee went to zero.
 					</p>
 				) : (
 					<div className="space-y-2">
@@ -352,9 +338,7 @@ function BeneficiaryPanel({
 }) {
 	const { getProfile } = useProfileCache();
 	const profile = mySponsor ? getProfile(mySponsor) : null;
-	const truncated = mySponsor
-		? `${mySponsor.slice(0, 6)}…${mySponsor.slice(-4)}`
-		: "";
+	const truncated = mySponsor ? `${mySponsor.slice(0, 6)}…${mySponsor.slice(-4)}` : "";
 	const potUnits = (Number(mySponsorPot) / 1e9).toFixed(3);
 
 	if (!mySponsor) {
@@ -362,9 +346,8 @@ function BeneficiaryPanel({
 			<section className="panel space-y-2">
 				<h2 className="text-base font-semibold">My sponsor</h2>
 				<p className="text-sm text-secondary">
-					Nobody is covering your fees right now. When a sponsor adds
-					you here, your next transactions will be paid from their pot
-					— with no extra steps on your side.
+					Nobody is covering your fees right now. When a sponsor adds you here, your next
+					transactions will be paid from their pot — with no extra steps on your side.
 				</p>
 			</section>
 		);
@@ -373,9 +356,7 @@ function BeneficiaryPanel({
 	const potEmpty = mySponsorPot === 0n;
 
 	return (
-		<section
-			className={`panel space-y-4 ${potEmpty ? "" : "ring-1 ring-brand-500/40"}`}
-		>
+		<section className={`panel space-y-4 ${potEmpty ? "" : "ring-1 ring-brand-500/40"}`}>
 			<h2 className="text-base font-semibold">My sponsor</h2>
 			<div className="flex items-center gap-3">
 				{profile?.avatar ? (
@@ -422,15 +403,12 @@ function BeneficiaryPanel({
 				<span className="text-[11px] uppercase tracking-wider font-semibold">
 					Sponsor's pot
 				</span>
-				<span className="text-sm font-mono font-bold">
-					{potUnits} UNIT
-				</span>
+				<span className="text-sm font-mono font-bold">{potUnits} UNIT</span>
 			</div>
 			{potEmpty && (
 				<p className="text-[11px] text-secondary">
-					Their pot is empty — next transactions will fall through to
-					regular fee payment. When they top it up, your txs become
-					gasless again automatically.
+					Their pot is empty — next transactions will fall through to regular fee payment.
+					When they top it up, your txs become gasless again automatically.
 				</p>
 			)}
 		</section>
@@ -469,8 +447,7 @@ function ProfilePicker({
 			try {
 				setLoading(true);
 				setError(null);
-				const entries =
-					await getApi().query.SocialProfiles.Profiles.getEntries();
+				const entries = await getApi().query.SocialProfiles.Profiles.getEntries();
 				if (cancelled) return;
 				setProfiles(entries.map((e) => e.keyArgs[0].toString()));
 			} catch (e) {
@@ -485,10 +462,7 @@ function ProfilePicker({
 		};
 	}, [getApi]);
 
-	const pickable = useMemo(
-		() => profiles.filter((a) => !excluded.has(a)),
-		[profiles, excluded],
-	);
+	const pickable = useMemo(() => profiles.filter((a) => !excluded.has(a)), [profiles, excluded]);
 
 	return (
 		<div className="rounded-xl border border-brand-500/30 bg-brand-500/5 p-3 space-y-2">
@@ -576,9 +550,7 @@ function ProfileCard({
 					</span>
 					{profile?.verified && <VerifiedBadge size="sm" />}
 				</div>
-				<span className="text-[11px] font-mono text-surface-500 truncate">
-					{truncated}
-				</span>
+				<span className="text-[11px] font-mono text-surface-500 truncate">{truncated}</span>
 			</div>
 		</button>
 	);

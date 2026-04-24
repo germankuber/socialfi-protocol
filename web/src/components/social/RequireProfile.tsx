@@ -19,8 +19,18 @@ export default function RequireProfile({ children }: RequireProfileProps) {
 			) : hasProfile === false ? (
 				<div className="panel text-center py-12 space-y-4">
 					<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
-						<svg className="w-8 h-8 text-surface-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+						<svg
+							className="w-8 h-8 text-surface-600"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={1.5}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+							/>
 						</svg>
 					</div>
 					<div>

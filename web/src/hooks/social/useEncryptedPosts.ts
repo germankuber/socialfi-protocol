@@ -158,37 +158,23 @@ export function useUnlockEncryptedPost(postId: bigint | null, viewer: string | n
 
 	const decryptNow = useCallback(
 		async (ipfsCid: string, fetchRaw: (cid: string) => Promise<Uint8Array>) => {
-			console.log("[decrypt] start", { postId, hasWrappedKey: !!wrappedKey, cid: ipfsCid });
-			if (postId === null || !wrappedKey) {
-				console.warn("[decrypt] skipped", { postId, hasWrappedKey: !!wrappedKey });
-				return;
-			}
+			if (postId === null || !wrappedKey) return;
 			const sk = loadBuyerSk(postId);
-			console.log("[decrypt] buyer sk from sessionStorage:", sk ? `${sk.length}b` : "MISSING");
 			if (!sk) {
 				setState({ status: "error", error: "buyer secret not found in this browser tab" });
 				return;
 			}
 			try {
 				const pk = await derivePublicKey(sk);
-				console.log("[decrypt] derived pk:", pk.length, "bytes");
 				const contentKey = await unsealKey(wrappedKey, pk, sk);
-				console.log("[decrypt] unsealed content key:", contentKey.length, "bytes");
-				console.log("[decrypt] fetching ipfs blob...", ipfsCid);
 				const blob = await fetchRaw(ipfsCid);
-				console.log("[decrypt] blob fetched:", blob.length, "bytes");
 				const decoded = decodeBlob(blob);
-				console.log("[decrypt] decoded:", {
-					nonce: decoded.nonce.length,
-					aad: decoded.aad.length,
-					ct: decoded.ciphertext.length,
-				});
 				const pt = await decrypt(decoded, contentKey);
-				console.log("[decrypt] plaintext:", pt.length, "bytes");
+				// Scrub the symmetric key from memory before we release the
+				// reference — anything after this point only holds plaintext.
 				contentKey.fill(0);
 				setState({ status: "ready", plaintext: pt });
 			} catch (e) {
-				console.error("[decrypt] failed", e);
 				setState({
 					status: "error",
 					error: e instanceof Error ? e.message : "decryption failed",

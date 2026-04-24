@@ -72,9 +72,7 @@ pub mod crypto {
 	app_crypto!(sr25519, KEY_TYPE);
 
 	pub struct AuthorityId;
-	impl frame::deps::frame_system::offchain::AppCrypto<MultiSigner, MultiSignature>
-		for AuthorityId
-	{
+	impl frame::deps::frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for AuthorityId {
 		type RuntimeAppPublic = Public;
 		type GenericSignature = frame::deps::sp_core::sr25519::Signature;
 		type GenericPublic = frame::deps::sp_core::sr25519::Public;
@@ -91,6 +89,9 @@ pub mod pallet {
 		PostProvider,
 	};
 	use codec::{Decode, DecodeWithMemTracking, Encode};
+	use frame::deps::frame_system::offchain::{
+		AppCrypto, CreateBare, CreateSignedTransaction, SignedPayload, SigningTypes,
+	};
 	use frame::{
 		deps::{
 			frame_support::pallet_prelude::{TransactionSource, ValidTransaction},
@@ -102,13 +103,10 @@ pub mod pallet {
 		prelude::*,
 		traits::{Currency, ExistenceRequirement},
 	};
-	use frame::deps::frame_system::offchain::{
-		AppCrypto, CreateBare, CreateSignedTransaction, SignedPayload, SigningTypes,
-	};
 	use pallet_social_app_registry::AppProvider;
 	use pallet_social_profiles::ProfileProvider;
-	use social_notifications_primitives::StatementSubmitter;
 	use scale_info::{prelude::vec::Vec, TypeInfo};
+	use social_notifications_primitives::StatementSubmitter;
 
 	pub type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -132,13 +130,7 @@ pub mod pallet {
 	/// hand-written on purpose: `DebugNoBound` prints every field, and
 	/// `wrapped_key` + `viewer` should not land in logs.
 	#[derive(
-		Encode,
-		Decode,
-		DecodeWithMemTracking,
-		TypeInfo,
-		CloneNoBound,
-		PartialEqNoBound,
-		EqNoBound,
+		Encode, Decode, DecodeWithMemTracking, TypeInfo, CloneNoBound, PartialEqNoBound, EqNoBound,
 	)]
 	#[scale_info(skip_type_params(T))]
 	pub struct DeliverUnlockPayload<T: Config> {
@@ -339,8 +331,7 @@ pub mod pallet {
 
 	/// On-chain record of the custodial key service (collator).
 	#[pallet::storage]
-	pub type KeyService<T: Config> =
-		StorageValue<_, KeyServiceInfo<T::AccountId>, OptionQuery>;
+	pub type KeyService<T: Config> = StorageValue<_, KeyServiceInfo<T::AccountId>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -375,11 +366,7 @@ pub mod pallet {
 		/// An app moderator redacted a post. The record is kept (author
 		/// stays visible for appeals) but clients are expected to render
 		/// the content as removed.
-		PostRedacted {
-			post_id: T::PostId,
-			app_id: T::AppId,
-			moderator: T::AccountId,
-		},
+		PostRedacted { post_id: T::PostId, app_id: T::AppId, moderator: T::AccountId },
 		/// The admin configured (or rotated) the key service.
 		///
 		/// Observers can diff `previous_account` vs `account` to detect
@@ -700,10 +687,7 @@ pub mod pallet {
 			ensure!(post.visibility != PostVisibility::Public, Error::<T>::PostIsPublic);
 
 			if who == post.author {
-				Self::deposit_event(Event::AuthorSelfUnlockAcknowledged {
-					post_id,
-					author: who,
-				});
+				Self::deposit_event(Event::AuthorSelfUnlockAcknowledged { post_id, author: who });
 				return Ok(());
 			}
 
@@ -824,28 +808,18 @@ pub mod pallet {
 		/// registry.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::redact_post())]
-		pub fn redact_post(
-			origin: OriginFor<T>,
-			post_id: T::PostId,
-		) -> DispatchResult {
+		pub fn redact_post(origin: OriginFor<T>, post_id: T::PostId) -> DispatchResult {
 			let (authorized_app, moderator) = T::ModerationOrigin::ensure_origin(origin)?;
 
 			Posts::<T>::try_mutate(post_id, |maybe_post| -> DispatchResult {
 				let post = maybe_post.as_mut().ok_or(Error::<T>::PostNotFound)?;
 				ensure!(post.redacted_by.is_none(), Error::<T>::AlreadyRedacted);
-				ensure!(
-					post.app_id == Some(authorized_app),
-					Error::<T>::PostNotInApp,
-				);
+				ensure!(post.app_id == Some(authorized_app), Error::<T>::PostNotInApp,);
 				post.redacted_by = Some(moderator.clone());
 				Ok(())
 			})?;
 
-			Self::deposit_event(Event::PostRedacted {
-				post_id,
-				app_id: authorized_app,
-				moderator,
-			});
+			Self::deposit_event(Event::PostRedacted { post_id, app_id: authorized_app, moderator });
 			Ok(())
 		}
 	}
@@ -867,8 +841,7 @@ pub mod pallet {
 			let mut keys: Vec<(BlockNumberFor<T>, T::PostId)> =
 				PostsTimeline::<T>::iter_key_prefix(author)
 					.filter(|(block, _)| {
-						from.map_or(true, |lo| *block >= lo)
-							&& to.map_or(true, |hi| *block <= hi)
+						from.map_or(true, |lo| *block >= lo) && to.map_or(true, |hi| *block <= hi)
 					})
 					.collect();
 			// Newest first by (block, post_id). post_id tiebreaks in the
@@ -899,9 +872,7 @@ pub mod pallet {
 			// 1. Freshness window.
 			let now = frame_system::Pallet::<T>::block_number();
 			let window = T::UnsignedValidityWindow::get();
-			if payload.block_number > now
-				|| now.saturating_sub(payload.block_number) > window
-			{
+			if payload.block_number > now || now.saturating_sub(payload.block_number) > window {
 				return InvalidTransaction::Custom(unsigned_error::STALE_PAYLOAD).into();
 			}
 
@@ -912,9 +883,8 @@ pub mod pallet {
 			}
 
 			// 3. Signer must be the current key service.
-			let ks = KeyService::<T>::get().ok_or_else(|| {
-				InvalidTransaction::Custom(unsigned_error::KEY_SERVICE_NOT_SET)
-			})?;
+			let ks = KeyService::<T>::get()
+				.ok_or_else(|| InvalidTransaction::Custom(unsigned_error::KEY_SERVICE_NOT_SET))?;
 			let signer: T::AccountId = payload.public.clone().into_account();
 			if signer != ks.account {
 				return InvalidTransaction::Custom(unsigned_error::SIGNER_NOT_KEY_SERVICE).into();
@@ -936,10 +906,7 @@ pub mod pallet {
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
 
-		fn validate_unsigned(
-			source: TransactionSource,
-			call: &Self::Call,
-		) -> TransactionValidity {
+		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Only accept from a local OCW or in-block propagation — stops
 			// external peers from flooding the pool with speculative keys.
 			if !matches!(source, TransactionSource::Local | TransactionSource::InBlock) {
@@ -1004,9 +971,7 @@ pub mod pallet {
 		) -> Vec<(T::PostId, PostInfo<T>)> {
 			Self::posts_timeline(&author, from, to, limit)
 				.into_iter()
-				.filter_map(|(_, post_id)| {
-					Posts::<T>::get(post_id).map(|info| (post_id, info))
-				})
+				.filter_map(|(_, post_id)| Posts::<T>::get(post_id).map(|info| (post_id, info)))
 				.collect()
 		}
 	}

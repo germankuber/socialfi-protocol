@@ -75,8 +75,15 @@ pub mod pallet {
 	/// one app could tamper with posts in another.
 	#[pallet::origin]
 	#[derive(
-		Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, DecodeWithMemTracking,
-		TypeInfo, MaxEncodedLen,
+		Clone,
+		Eq,
+		PartialEq,
+		RuntimeDebug,
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		TypeInfo,
+		MaxEncodedLen,
 	)]
 	#[scale_info(skip_type_params(T))]
 	pub enum Origin<T: Config> {
@@ -89,11 +96,10 @@ pub mod pallet {
 	/// directly-signed call or a moderation dispatch.
 	pub struct EnsureAppModerator<T>(core::marker::PhantomData<T>);
 
-	impl<T: Config> EnsureOrigin<<T as frame_system::Config>::RuntimeOrigin>
-		for EnsureAppModerator<T>
+	impl<T: Config> EnsureOrigin<<T as frame_system::Config>::RuntimeOrigin> for EnsureAppModerator<T>
 	where
-		<T as frame_system::Config>::RuntimeOrigin: From<Origin<T>>
-			+ Into<Result<Origin<T>, <T as frame_system::Config>::RuntimeOrigin>>,
+		<T as frame_system::Config>::RuntimeOrigin:
+			From<Origin<T>> + Into<Result<Origin<T>, <T as frame_system::Config>::RuntimeOrigin>>,
 	{
 		type Success = (T::AppId, T::AccountId);
 
@@ -113,9 +119,7 @@ pub mod pallet {
 		/// is no real storage interaction, only dispatching through
 		/// `ModerationOrigin` in downstream pallets.
 		#[cfg(feature = "runtime-benchmarks")]
-		fn try_successful_origin()
-			-> Result<<T as frame_system::Config>::RuntimeOrigin, ()>
-		{
+		fn try_successful_origin() -> Result<<T as frame_system::Config>::RuntimeOrigin, ()> {
 			let moderator = T::AccountId::decode(
 				&mut frame::deps::sp_runtime::traits::TrailingZeroInput::zeroes(),
 			)
@@ -128,13 +132,13 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config<
-			RuntimeCall: Parameter
-				+ Dispatchable<
-					RuntimeOrigin = <Self as frame_system::Config>::RuntimeOrigin,
-					PostInfo = frame::deps::frame_support::dispatch::PostDispatchInfo,
-				> + GetDispatchInfo,
-			RuntimeOrigin: From<Origin<Self>>,
-		>
+		RuntimeCall: Parameter
+		                 + Dispatchable<
+			RuntimeOrigin = <Self as frame_system::Config>::RuntimeOrigin,
+			PostInfo = frame::deps::frame_support::dispatch::PostDispatchInfo,
+		> + GetDispatchInfo,
+		RuntimeOrigin: From<Origin<Self>>,
+	>
 	{
 		/// The app ID type — auto-incrementing identifier for registered apps.
 		type AppId: Member
@@ -400,10 +404,7 @@ pub mod pallet {
 			ensure!(app.owner == who, Error::<T>::NotAppOwner);
 			ensure!(app.status == AppStatus::Active, Error::<T>::AppAlreadyInactive);
 
-			Self::deposit_event(Event::ModeratorDispatched {
-				app_id,
-				moderator: who.clone(),
-			});
+			Self::deposit_event(Event::ModeratorDispatched { app_id, moderator: who.clone() });
 
 			let mod_origin: <T as frame_system::Config>::RuntimeOrigin =
 				Origin::AppModerator { app_id, moderator: who }.into();
@@ -417,9 +418,7 @@ pub mod pallet {
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(
-					T::WeightInfo::deregister_app().saturating_add(actual_weight),
-				),
+				actual_weight: Some(T::WeightInfo::deregister_app().saturating_add(actual_weight)),
 				pays_fee: Pays::Yes,
 			})
 		}

@@ -34,7 +34,11 @@ export default function EditProfilePage() {
 	const { identity } = useIdentity(accountAddress);
 
 	const loadProfile = useCallback(async () => {
-		if (!accountAddress) { setProfile(null); setResolvedMetadata(null); return; }
+		if (!accountAddress) {
+			setProfile(null);
+			setResolvedMetadata(null);
+			return;
+		}
 		try {
 			setLoadingProfile(true);
 			const api = getApi();
@@ -59,7 +63,9 @@ export default function EditProfilePage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
-	useEffect(() => { loadProfile(); }, [loadProfile]);
+	useEffect(() => {
+		loadProfile();
+	}, [loadProfile]);
 
 	async function handleUpdate(metadata: ProfileMetadata, followFee: string) {
 		if (!account) return;
@@ -70,13 +76,19 @@ export default function EditProfilePage() {
 			setUploading(false);
 
 			const api = getApi();
-			const tx = api.tx.SocialProfiles.update_metadata({ new_metadata: Binary.fromText(cid) });
+			const tx = api.tx.SocialProfiles.update_metadata({
+				new_metadata: Binary.fromText(cid),
+			});
 			const ok = await tracker.submit(tx, account.signer, "Update Profile");
 			if (!ok) return;
 
 			const fee = BigInt(followFee || "0");
 			if (profile && fee !== profile.followFee) {
-				await tracker.submit(api.tx.SocialProfiles.set_follow_fee({ fee }), account.signer, "Set Follow Fee");
+				await tracker.submit(
+					api.tx.SocialProfiles.set_follow_fee({ fee }),
+					account.signer,
+					"Set Follow Fee",
+				);
 			}
 
 			// Identity (display name + verification) is maintained on the
@@ -93,17 +105,34 @@ export default function EditProfilePage() {
 
 	async function handleDelete() {
 		if (!account) return;
-		const ok = await tracker.submit(getApi().tx.SocialProfiles.delete_profile(), account.signer, "Delete Profile");
+		const ok = await tracker.submit(
+			getApi().tx.SocialProfiles.delete_profile(),
+			account.signer,
+			"Delete Profile",
+		);
 		if (ok) loadProfile();
 	}
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	return (
 		<RequireWallet>
 			<div className="space-y-6 animate-fade-in">
-				<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors">
-					<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<Link
+					to="/"
+					className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors"
+				>
+					<svg
+						className="w-3.5 h-3.5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={2}
+					>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 					</svg>
 					Back
@@ -111,7 +140,11 @@ export default function EditProfilePage() {
 
 				<div className="panel flex items-center justify-between gap-4">
 					<div className="flex items-center gap-3 min-w-0">
-						<VerificationBadge status={identityStatus(identity)} size="md" showNoneLabel={false} />
+						<VerificationBadge
+							status={identityStatus(identity)}
+							size="md"
+							showNoneLabel={false}
+						/>
 						<div className="min-w-0">
 							<div className="text-sm font-medium">Polkadot People Identity</div>
 							<div className="text-xs text-secondary truncate">
@@ -140,16 +173,29 @@ export default function EditProfilePage() {
 						<div className="panel space-y-4">
 							<div className="flex items-center justify-between">
 								<h2 className="heading-2">Current Profile</h2>
-								<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">Delete</button>
+								<button
+									onClick={handleDelete}
+									disabled={busy}
+									className="btn-danger btn-sm"
+								>
+									Delete
+								</button>
 							</div>
-							<ProfileCard metadata={resolvedMetadata} cid={profile.cid} createdAt={profile.createdAt} loading={loadingMetadata} />
+							<ProfileCard
+								metadata={resolvedMetadata}
+								cid={profile.cid}
+								createdAt={profile.createdAt}
+								loading={loadingMetadata}
+							/>
 							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 						</div>
 
 						<div className="panel space-y-4">
 							<h2 className="heading-2">Update</h2>
 							{error && (
-								<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">{error}</div>
+								<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">
+									{error}
+								</div>
 							)}
 							<ProfileForm
 								initial={resolvedMetadata ?? undefined}
@@ -159,12 +205,13 @@ export default function EditProfilePage() {
 								disabled={busy}
 							/>
 						</div>
-
 					</>
 				) : (
 					<div className="panel text-center py-8">
 						<p className="text-secondary">No profile found.</p>
-						<Link to="/create-profile" className="btn-brand btn-sm inline-flex mt-3">Create Profile</Link>
+						<Link to="/create-profile" className="btn-brand btn-sm inline-flex mt-3">
+							Create Profile
+						</Link>
 					</div>
 				)}
 

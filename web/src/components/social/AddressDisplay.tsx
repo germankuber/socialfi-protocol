@@ -22,11 +22,7 @@ export default function AddressDisplay({ address, chars = 8 }: AddressDisplayPro
 			className="font-mono text-xs text-secondary hover:text-surface-100 transition-colors"
 			title={address}
 		>
-			{copied ? (
-				<span className="text-success">Copied!</span>
-			) : (
-				truncated
-			)}
+			{copied ? <span className="text-success">Copied!</span> : truncated}
 		</button>
 	);
 }

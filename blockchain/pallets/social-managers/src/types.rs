@@ -38,11 +38,11 @@ pub enum ManagerScope {
 impl ManagerScope {
 	/// Convenience mask used by `remove_all_managers` and by callers that want
 	/// to grant "everything this pallet currently supports".
-	pub const ALL: u16 = (Self::Post as u16) |
-		(Self::Comment as u16) |
-		(Self::Follow as u16) |
-		(Self::Collect as u16) |
-		(Self::UpdateProfile as u16);
+	pub const ALL: u16 = (Self::Post as u16)
+		| (Self::Comment as u16)
+		| (Self::Follow as u16)
+		| (Self::Collect as u16)
+		| (Self::UpdateProfile as u16);
 }
 
 /// Raw bitmask of [`ManagerScope`] values authorized for a single manager.

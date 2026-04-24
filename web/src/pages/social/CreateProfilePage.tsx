@@ -18,7 +18,11 @@ export default function CreateProfilePage() {
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	async function handleCreate(metadata: ProfileMetadata, followFee: string) {
 		if (!account) return;
@@ -36,7 +40,10 @@ export default function CreateProfilePage() {
 			// separately from the "Polkadot People Identity" panel in the
 			// profile editor — we no longer auto-sync because sending a tx
 			// to People would require DOT on that chain.
-			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid), follow_fee: fee });
+			const tx = api.tx.SocialProfiles.create_profile({
+				metadata: Binary.fromText(cid),
+				follow_fee: fee,
+			});
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
 			if (!ok) return;
 
@@ -50,8 +57,17 @@ export default function CreateProfilePage() {
 	return (
 		<RequireWallet>
 			<div className="space-y-6 animate-fade-in">
-				<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors">
-					<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<Link
+					to="/"
+					className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors"
+				>
+					<svg
+						className="w-3.5 h-3.5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={2}
+					>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 					</svg>
 					Back
@@ -59,19 +75,32 @@ export default function CreateProfilePage() {
 
 				<div className="text-center space-y-2">
 					<div className="w-16 h-16 rounded-full bg-brand-500/10 flex items-center justify-center mx-auto">
-						<svg className="w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+						<svg
+							className="w-8 h-8 text-brand-500"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={1.5}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+							/>
 						</svg>
 					</div>
 					<h1 className="text-2xl font-bold">Create your profile</h1>
 					<p className="text-secondary text-sm">
-						Set up your on-chain identity. Your profile data is uploaded to IPFS — only the CID is stored on-chain.
+						Set up your on-chain identity. Your profile data is uploaded to IPFS — only
+						the CID is stored on-chain.
 					</p>
 				</div>
 
 				<div className="panel space-y-4">
 					{error && (
-						<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">{error}</div>
+						<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">
+							{error}
+						</div>
 					)}
 					<ProfileForm
 						onSubmit={handleCreate}

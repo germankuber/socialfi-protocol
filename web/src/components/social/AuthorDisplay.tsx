@@ -8,7 +8,11 @@ interface AuthorDisplayProps {
 	showIdentityStatus?: boolean;
 }
 
-export default function AuthorDisplay({ address, size = "sm", showIdentityStatus = true }: AuthorDisplayProps) {
+export default function AuthorDisplay({
+	address,
+	size = "sm",
+	showIdentityStatus = true,
+}: AuthorDisplayProps) {
 	const { getProfile } = useProfileCache();
 	const profile = getProfile(address);
 
@@ -23,19 +27,26 @@ export default function AuthorDisplay({ address, size = "sm", showIdentityStatus
 					src={profile.avatar}
 					alt={profile.name}
 					className={`${avatarSize} rounded-full object-cover bg-surface-800 shrink-0`}
-					onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+					onError={(e) => {
+						(e.target as HTMLImageElement).style.display = "none";
+					}}
 				/>
 			) : (
-				<div className={`${avatarSize} rounded-full bg-brand-500 flex items-center justify-center text-white font-bold shrink-0 ${size === "sm" ? "text-[9px]" : "text-xs"}`}>
+				<div
+					className={`${avatarSize} rounded-full bg-brand-500 flex items-center justify-center text-white font-bold shrink-0 ${size === "sm" ? "text-[9px]" : "text-xs"}`}
+				>
 					{profile?.name?.[0]?.toUpperCase() || address.slice(2, 4)}
 				</div>
 			)}
-			<span className={`${textSize} text-secondary group-hover:text-brand-500 transition-colors flex items-center gap-1`}>
+			<span
+				className={`${textSize} text-secondary group-hover:text-brand-500 transition-colors flex items-center gap-1`}
+			>
 				{profile?.name || truncated}
 				{profile?.verified && <VerifiedBadge size={size} />}
 			</span>
-			{showIdentityStatus && profile && (
-				profile.verified ? (
+			{showIdentityStatus &&
+				profile &&
+				(profile.verified ? (
 					<span className="inline-flex items-center gap-0.5 rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-semibold text-success shrink-0">
 						Verified
 					</span>
@@ -43,8 +54,7 @@ export default function AuthorDisplay({ address, size = "sm", showIdentityStatus
 					<span className="inline-flex items-center rounded-full bg-surface-700/30 px-1.5 py-0.5 text-[9px] font-semibold text-surface-400 shrink-0">
 						Unverified
 					</span>
-				)
-			)}
+				))}
 		</Link>
 	);
 }

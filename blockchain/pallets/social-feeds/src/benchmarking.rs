@@ -123,12 +123,7 @@ mod benchmarks {
 		fill_author_vec::<T>(&caller, n);
 
 		#[extrinsic_call]
-		create_reply(
-			RawOrigin::Signed(caller.clone()),
-			parent_id,
-			max_content::<T>(),
-			None,
-		);
+		create_reply(RawOrigin::Signed(caller.clone()), parent_id, max_content::<T>(), None);
 
 		assert_eq!(PostsByAuthor::<T>::get(&caller).len() as u32, n + 1);
 		Ok(())
@@ -159,11 +154,7 @@ mod benchmarks {
 		);
 
 		#[extrinsic_call]
-		unlock_post(
-			RawOrigin::Signed(caller.clone()),
-			post_id,
-			[1u8; X25519_PK_LEN as usize],
-		);
+		unlock_post(RawOrigin::Signed(caller.clone()), post_id, [1u8; X25519_PK_LEN as usize]);
 
 		assert!(Unlocks::<T>::contains_key(post_id, &caller));
 		assert!(PendingUnlocks::<T>::contains_key((post_id, caller.clone())));
@@ -177,11 +168,15 @@ mod benchmarks {
 		// the first-write shortcut.
 		install_key_service::<T>();
 		let new_account: T::AccountId = account("ks2", 0, SEED);
-		let origin = T::AdminOrigin::try_successful_origin()
-			.map_err(|_| BenchmarkError::Weightless)?;
+		let origin =
+			T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
 		#[extrinsic_call]
-		set_key_service(origin as T::RuntimeOrigin, new_account.clone(), [9u8; X25519_PK_LEN as usize]);
+		set_key_service(
+			origin as T::RuntimeOrigin,
+			new_account.clone(),
+			[9u8; X25519_PK_LEN as usize],
+		);
 
 		let ks = KeyService::<T>::get().expect("written by extrinsic");
 		assert_eq!(ks.account, new_account);
@@ -214,8 +209,8 @@ mod benchmarks {
 			},
 		);
 
-		let origin = T::ModerationOrigin::try_successful_origin()
-			.map_err(|_| BenchmarkError::Weightless)?;
+		let origin =
+			T::ModerationOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
 		#[extrinsic_call]
 		redact_post(origin as T::RuntimeOrigin, post_id);
@@ -234,9 +229,5 @@ mod benchmarks {
 	// AppCrypto signature from a benchmark is infeasible without a
 	// keystore, so we leave this path to end-to-end zombienet traces.
 
-	impl_benchmark_test_suite!(
-		SocialFeeds,
-		crate::mock::new_test_ext(),
-		crate::mock::Test,
-	);
+	impl_benchmark_test_suite!(SocialFeeds, crate::mock::new_test_ext(), crate::mock::Test,);
 }

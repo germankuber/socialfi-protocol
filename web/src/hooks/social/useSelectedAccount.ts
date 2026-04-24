@@ -9,9 +9,12 @@ export function useSelectedAccount() {
 
 	const allAccounts: WalletAccount[] = useMemo(() => externalAccounts, [externalAccounts]);
 
-	const safeIndex = allAccounts.length > 0
-		? (selectedAccountIndex < allAccounts.length ? selectedAccountIndex : 0)
-		: -1;
+	const safeIndex =
+		allAccounts.length > 0
+			? selectedAccountIndex < allAccounts.length
+				? selectedAccountIndex
+				: 0
+			: -1;
 	const account = safeIndex >= 0 ? allAccounts[safeIndex] : null;
 
 	return { account, allAccounts, selectedAccountIndex: safeIndex, setSelectedAccountIndex };

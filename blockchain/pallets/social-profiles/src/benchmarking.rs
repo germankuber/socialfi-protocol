@@ -88,9 +88,5 @@ mod benchmarks {
 		assert!(!Profiles::<T>::contains_key(&caller));
 	}
 
-	impl_benchmark_test_suite!(
-		SocialProfiles,
-		crate::mock::new_test_ext(),
-		crate::mock::Test,
-	);
+	impl_benchmark_test_suite!(SocialProfiles, crate::mock::new_test_ext(), crate::mock::Test,);
 }

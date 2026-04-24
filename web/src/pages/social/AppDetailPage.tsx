@@ -79,7 +79,8 @@ export default function AppDetailPage() {
 	const { getApi } = useSocialApi();
 	const { account } = useSelectedAccount();
 	const tracker = useTxTracker();
-	const { uploadImage, uploadPostContent, fetchPostContent, fetchProfileMetadata, ipfsUrl } = useIpfs();
+	const { uploadImage, uploadPostContent, fetchPostContent, fetchProfileMetadata, ipfsUrl } =
+		useIpfs();
 	const [app, setApp] = useState<AppData | null>(null);
 	const [appMeta, setAppMeta] = useState<AppMeta | null>(null);
 	const [posts, setPosts] = useState<PostData[]>([]);
@@ -221,16 +222,16 @@ export default function AppDetailPage() {
 					unlockFee: e.value.unlock_fee,
 					createdAt: Number(e.value.created_at),
 					replyCount: replyCountMap[Number(e.keyArgs[0])] || 0,
-					redactedBy: e.value.redacted_by
-						? e.value.redacted_by.toString()
-						: null,
+					redactedBy: e.value.redacted_by ? e.value.redacted_by.toString() : null,
 				}))
 				.sort((a, b) => b.id - a.id);
 			setPosts(appPosts);
 			setReplies(replyMap);
 
 			// Auto-expand posts that have replies
-			setExpanded(new Set(appPosts.filter((p) => (replyCountMap[p.id] || 0) > 0).map((p) => p.id)));
+			setExpanded(
+				new Set(appPosts.filter((p) => (replyCountMap[p.id] || 0) > 0).map((p) => p.id)),
+			);
 
 			let unlockedSet = new Set<number>();
 			if (accountAddress) {
@@ -258,17 +259,33 @@ export default function AppDetailPage() {
 				const shouldResolve = p.visibility === "Public";
 				if (shouldResolve) {
 					fetchPostContent(p.contentCid).then((result) => {
-						if (result) setPosts((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, resolvedText: result.text, resolvedImage: result.image ? ipfsUrl(result.image) : null } : pp));
+						if (result)
+							setPosts((prev) =>
+								prev.map((pp) =>
+									pp.id === p.id
+										? {
+												...pp,
+												resolvedText: result.text,
+												resolvedImage: result.image
+													? ipfsUrl(result.image)
+													: null,
+											}
+										: pp,
+								),
+							);
 					});
 				}
 			}
 			for (const pid of Object.keys(replyMap)) {
 				for (const r of replyMap[Number(pid)]) {
 					fetchPostContent(r.contentCid).then((result) => {
-						if (result) setReplies((prev) => ({
-							...prev,
-							[Number(pid)]: (prev[Number(pid)] || []).map((rr) => rr.id === r.id ? { ...rr, resolvedText: result.text } : rr),
-						}));
+						if (result)
+							setReplies((prev) => ({
+								...prev,
+								[Number(pid)]: (prev[Number(pid)] || []).map((rr) =>
+									rr.id === r.id ? { ...rr, resolvedText: result.text } : rr,
+								),
+							}));
 					});
 				}
 			}
@@ -280,12 +297,23 @@ export default function AppDetailPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [numericId, accountAddress]);
 
-	useEffect(() => { loadApp(); }, [loadApp]);
+	useEffect(() => {
+		loadApp();
+	}, [loadApp]);
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	function toggle(id: number) {
-		setExpanded((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+		setExpanded((prev) => {
+			const n = new Set(prev);
+			if (n.has(id)) n.delete(id);
+			else n.add(id);
+			return n;
+		});
 	}
 
 	async function createPost() {
@@ -323,7 +351,14 @@ export default function AppDetailPage() {
 			const ok = postingAs
 				? await actAs(postingAs, innerTx, account.signer, "Post (as manager)")
 				: await tracker.submit(innerTx, account.signer, "Create Post");
-			if (ok) { setContent(""); setReplyFee("0"); setUnlockFeeInput("0"); setVisibility("Public"); setPostImageCid(""); loadApp(); }
+			if (ok) {
+				setContent("");
+				setReplyFee("0");
+				setUnlockFeeInput("0");
+				setVisibility("Public");
+				setPostImageCid("");
+				loadApp();
+			}
 		} catch (e) {
 			setUploading(false);
 			console.error("createPost failed", e);
@@ -345,8 +380,14 @@ export default function AppDetailPage() {
 			const ok = postingAs
 				? await actAs(postingAs, innerTx, account.signer, "Reply (as manager)")
 				: await tracker.submit(innerTx, account.signer, "Reply");
-			if (ok) { setReplyContent(""); setReplyingTo(null); loadApp(); }
-		} catch { setUploading(false); }
+			if (ok) {
+				setReplyContent("");
+				setReplyingTo(null);
+				loadApp();
+			}
+		} catch {
+			setUploading(false);
+		}
 	}
 
 	// Unlock is now a two-step flow handled inline per-post by the
@@ -371,7 +412,9 @@ export default function AppDetailPage() {
 		return (
 			<div className="panel text-center py-12 space-y-3">
 				<p className="text-danger font-semibold">App #{appId} not found</p>
-				<Link to="/social" className="btn-outline btn-sm inline-flex">Back</Link>
+				<Link to="/social" className="btn-outline btn-sm inline-flex">
+					Back
+				</Link>
 			</div>
 		);
 	}
@@ -380,15 +423,11 @@ export default function AppDetailPage() {
 	const charsLeft = MAX_CHARS - content.length;
 
 	const actingAsAuth = postingAs
-		? authorizations.find((a) => a.owner === postingAs) ?? null
+		? (authorizations.find((a) => a.owner === postingAs) ?? null)
 		: null;
 
 	return (
-		<div
-			className={`space-y-4 animate-fade-in relative ${
-				postingAs ? "act-as-mode" : ""
-			}`}
-		>
+		<div className={`space-y-4 animate-fade-in relative ${postingAs ? "act-as-mode" : ""}`}>
 			{/* Subtle brand-tinted overlay while acting as someone else — the
 			    visual cue that every action on this page is attributed to
 			    another identity. */}
@@ -409,8 +448,17 @@ export default function AppDetailPage() {
 
 			{/* App header */}
 			<div className="panel">
-				<Link to="/" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors mb-3">
-					<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<Link
+					to="/"
+					className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors mb-3"
+				>
+					<svg
+						className="w-3.5 h-3.5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={2}
+					>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 					</svg>
 					Back
@@ -418,16 +466,28 @@ export default function AppDetailPage() {
 				<div className="flex items-start gap-4">
 					{/* Icon */}
 					{appMeta?.icon ? (
-						<img src={ipfsUrl(appMeta.icon)} alt={appMeta.name || ""} className="w-14 h-14 rounded-xl object-cover bg-surface-800 shrink-0" />
+						<img
+							src={ipfsUrl(appMeta.icon)}
+							alt={appMeta.name || ""}
+							className="w-14 h-14 rounded-xl object-cover bg-surface-800 shrink-0"
+						/>
 					) : (
-						<div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shrink-0`}>
+						<div
+							className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold shrink-0`}
+						>
 							{app.id}
 						</div>
 					)}
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2">
 							<h1 className="heading-2">{appMeta?.name || `App #${app.id}`}</h1>
-							<span className={app.status === "Active" ? "badge-success" : "badge-danger"}>{app.status}</span>
+							<span
+								className={
+									app.status === "Active" ? "badge-success" : "badge-danger"
+								}
+							>
+								{app.status}
+							</span>
 						</div>
 						{appMeta?.description && (
 							<p className="text-sm text-secondary mt-1">{appMeta.description}</p>
@@ -441,7 +501,12 @@ export default function AppDetailPage() {
 							{appMeta?.website && (
 								<>
 									<span>·</span>
-									<a href={appMeta.website} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
+									<a
+										href={appMeta.website}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-brand-500 hover:underline"
+									>
 										{appMeta.website.replace(/^https?:\/\//, "")}
 									</a>
 								</>
@@ -464,8 +529,18 @@ export default function AppDetailPage() {
 							onClick={() => setPickerOpen(true)}
 							className="w-full flex items-center gap-2 rounded-xl border border-dashed border-surface-700 hover:border-brand-500/50 px-3 py-2 text-xs text-surface-400 hover:text-brand-500 transition-colors"
 						>
-							<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7.835 11.442a3 3 0 004.33 0M20 19l-2-2m0 0l-2-2m2 2l-2 2m2-2l2-2" />
+							<svg
+								className="w-4 h-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={1.7}
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7.835 11.442a3 3 0 004.33 0M20 19l-2-2m0 0l-2-2m2 2l-2 2m2-2l2-2"
+								/>
 							</svg>
 							Act as someone who authorized you ({authorizations.length})
 						</button>
@@ -475,7 +550,10 @@ export default function AppDetailPage() {
 						<ActAsPicker
 							authorizations={authorizations}
 							current={postingAs}
-							onPick={(owner) => { setPostingAs(owner); setPickerOpen(false); }}
+							onPick={(owner) => {
+								setPostingAs(owner);
+								setPickerOpen(false);
+							}}
 							onClose={() => setPickerOpen(false)}
 						/>
 					)}
@@ -496,7 +574,10 @@ export default function AppDetailPage() {
 						<div className="flex-1">
 							<textarea
 								value={content}
-								onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setContent(e.target.value); }}
+								onChange={(e) => {
+									if (e.target.value.length <= MAX_CHARS)
+										setContent(e.target.value);
+								}}
 								placeholder={
 									postingAs
 										? `Post in App #${app.id} as someone else…`
@@ -507,7 +588,9 @@ export default function AppDetailPage() {
 								disabled={!canPost}
 							/>
 							<div className="flex items-center justify-between mt-1">
-								<span className={`text-xs ${charsLeft < 50 ? (charsLeft < 0 ? "text-danger" : "text-warning") : "text-surface-500"}`}>
+								<span
+									className={`text-xs ${charsLeft < 50 ? (charsLeft < 0 ? "text-danger" : "text-warning") : "text-surface-500"}`}
+								>
 									{charsLeft} characters left
 								</span>
 							</div>
@@ -518,60 +601,115 @@ export default function AppDetailPage() {
 						<div className="space-y-3">
 							{postImageCid ? (
 								<div className="relative">
-									<img src={ipfsUrl(postImageCid)} alt="" className="w-full rounded-xl object-cover max-h-80 bg-surface-800" />
+									<img
+										src={ipfsUrl(postImageCid)}
+										alt=""
+										className="w-full rounded-xl object-cover max-h-80 bg-surface-800"
+									/>
 									<button
 										type="button"
 										onClick={() => setPostImageCid("")}
 										className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
 									>
-										<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+										<svg
+											className="w-4 h-4"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											strokeWidth={2}
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M6 18L18 6M6 6l12 12"
+											/>
 										</svg>
 									</button>
 								</div>
 							) : (
 								<label htmlFor="post-img" className="block cursor-pointer">
 									<div className="border-2 border-dashed border-surface-700 rounded-xl p-8 text-center hover:border-brand-500/50 transition-colors">
-										<svg className="w-10 h-10 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a2.25 2.25 0 002.25-2.25V5.25a2.25 2.25 0 00-2.25-2.25H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+										<svg
+											className="w-10 h-10 text-surface-500 mx-auto"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											strokeWidth={1}
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a2.25 2.25 0 002.25-2.25V5.25a2.25 2.25 0 00-2.25-2.25H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+											/>
 										</svg>
 										<p className="text-sm text-secondary mt-2">
-											{uploadingImage ? "Uploading to IPFS..." : "Click to upload an image"}
+											{uploadingImage
+												? "Uploading to IPFS..."
+												: "Click to upload an image"}
 										</p>
-										<p className="text-[10px] text-surface-500 mt-1">Required for this app</p>
+										<p className="text-[10px] text-surface-500 mt-1">
+											Required for this app
+										</p>
 									</div>
 								</label>
 							)}
-							<input type="file" accept="image/*" id="post-img" className="hidden" onChange={async (e) => {
-								const file = e.target.files?.[0]; if (!file) return;
-								setUploadingImage(true);
-								try { setPostImageCid(await uploadImage(file)); } catch { /* */ }
-								finally { setUploadingImage(false); e.target.value = ""; }
-							}} />
+							<input
+								type="file"
+								accept="image/*"
+								id="post-img"
+								className="hidden"
+								onChange={async (e) => {
+									const file = e.target.files?.[0];
+									if (!file) return;
+									setUploadingImage(true);
+									try {
+										setPostImageCid(await uploadImage(file));
+									} catch {
+										/* */
+									} finally {
+										setUploadingImage(false);
+										e.target.value = "";
+									}
+								}}
+							/>
 							<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
 						</div>
 					)}
 					<div className="grid grid-cols-3 gap-3">
 						<div>
 							<label className="form-label">Visibility</label>
-							<select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)} className="input">
+							<select
+								value={visibility}
+								onChange={(e) => setVisibility(e.target.value as Visibility)}
+								className="input"
+							>
 								<option value="Public">Public</option>
 								<option value="Obfuscated">Obfuscated</option>
 								<option value="Private">Private</option>
 							</select>
 						</div>
 						<div>
-							<FeeRangeInput label="Reply Fee" value={replyFee} onChange={setReplyFee} />
+							<FeeRangeInput
+								label="Reply Fee"
+								value={replyFee}
+								onChange={setReplyFee}
+							/>
 						</div>
 						{visibility !== "Public" && (
 							<div>
-								<FeeRangeInput label="Unlock Fee" value={unlockFeeInput} onChange={setUnlockFeeInput} />
+								<FeeRangeInput
+									label="Unlock Fee"
+									value={unlockFeeInput}
+									onChange={setUnlockFeeInput}
+								/>
 							</div>
 						)}
 					</div>
 					<button
 						onClick={createPost}
-						disabled={!content.trim() || busy || (app.hasImages && !postImageCid) || !canPost}
+						disabled={
+							!content.trim() || busy || (app.hasImages && !postImageCid) || !canPost
+						}
 						className="btn-brand w-full"
 					>
 						{!canPost
@@ -593,42 +731,57 @@ export default function AppDetailPage() {
 					<div className="flex">
 						<button
 							onClick={() => setFeedTab("all")}
-							className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${feedTab === "all" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
-								}`}
+							className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+								feedTab === "all"
+									? "text-brand-500"
+									: "text-surface-500 hover:text-surface-200"
+							}`}
 						>
 							All Posts
-							{feedTab === "all" && <span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />}
+							{feedTab === "all" && (
+								<span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />
+							)}
 						</button>
 						{account && (
 							<button
 								onClick={() => setFeedTab("mine")}
-								className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${feedTab === "mine" ? "text-brand-500" : "text-surface-500 hover:text-surface-200"
-									}`}
+								className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+									feedTab === "mine"
+										? "text-brand-500"
+										: "text-surface-500 hover:text-surface-200"
+								}`}
 							>
 								My Posts
-								{feedTab === "mine" && <span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />}
+								{feedTab === "mine" && (
+									<span className="absolute bottom-0 inset-x-2 h-0.5 bg-brand-500 rounded-t-full" />
+								)}
 							</button>
 						)}
 					</div>
-					<button onClick={loadApp} disabled={loading} className="btn-ghost btn-sm">Refresh</button>
+					<button onClick={loadApp} disabled={loading} className="btn-ghost btn-sm">
+						Refresh
+					</button>
 				</div>
 				<style>{`html.light .border-surface-800 { border-color: #e4e4e7; }`}</style>
 
 				{(() => {
 					const isMine = feedTab === "mine";
-					const filtered = isMine && accountAddress
-						? posts.filter((p) => p.author === accountAddress)
-						: posts.filter((p) => p.visibility !== "Private");
+					const filtered =
+						isMine && accountAddress
+							? posts.filter((p) => p.author === accountAddress)
+							: posts.filter((p) => p.visibility !== "Private");
 
 					return filtered.length === 0 ? (
 						<div className="panel text-center py-8 text-secondary text-sm">
-							{isMine ? "You haven't posted in this app yet." : "No posts in this app yet. Be the first!"}
+							{isMine
+								? "You haven't posted in this app yet."
+								: "No posts in this app yet. Be the first!"}
 						</div>
 					) : (
 						filtered.map((post) => {
 							// In "My Posts" tab, author always sees their own content
 							const visible = isMine || canSee(post);
-							const postReplies = isMine ? [] : (replies[post.id] || []);
+							const postReplies = isMine ? [] : replies[post.id] || [];
 							const isExpanded = isMine ? false : expanded.has(post.id);
 
 							return (
@@ -637,15 +790,24 @@ export default function AppDetailPage() {
 									<div className="flex items-center gap-3">
 										<AuthorDisplay address={post.author} size="md" />
 										<div className="flex-1 min-w-0">
-											<p className="text-[11px] text-surface-500 font-mono">Block #{post.createdAt}</p>
+											<p className="text-[11px] text-surface-500 font-mono">
+												Block #{post.createdAt}
+											</p>
 										</div>
 										<div className="flex items-center gap-2">
 											{post.visibility !== "Public" && (
-												<span className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
+												<span
+													className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}
+												>
 													{post.visibility}
 												</span>
 											)}
-											<Link to={`/post/${post.id}`} className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors">#{post.id}</Link>
+											<Link
+												to={`/post/${post.id}`}
+												className="text-[11px] font-mono text-surface-600 hover:text-brand-500 transition-colors"
+											>
+												#{post.id}
+											</Link>
 										</div>
 									</div>
 
@@ -671,12 +833,13 @@ export default function AppDetailPage() {
 														Redacted by app moderator
 													</p>
 													<p className="text-[11px] text-secondary mt-0.5">
-														The original author remains visible so the takedown
-														can be contested.
+														The original author remains visible so the
+														takedown can be contested.
 													</p>
 												</div>
 											</div>
-										) : post.visibility !== "Public" && post.author !== accountAddress ? (
+										) : post.visibility !== "Public" &&
+										  post.author !== accountAddress ? (
 											// Encrypted post from another author: always go through the
 											// unlock component — it transparently handles the three
 											// states (pay / wait for OCW / decrypt & show).
@@ -691,12 +854,20 @@ export default function AppDetailPage() {
 										) : (
 											<div className="space-y-2">
 												{post.resolvedImage && (
-													<img src={post.resolvedImage} alt="" className="w-full rounded-xl object-cover max-h-96" />
+													<img
+														src={post.resolvedImage}
+														alt=""
+														className="w-full rounded-xl object-cover max-h-96"
+													/>
 												)}
 												{post.resolvedText ? (
-													<p className="text-sm whitespace-pre-wrap break-words">{post.resolvedText}</p>
+													<p className="text-sm whitespace-pre-wrap break-words">
+														{post.resolvedText}
+													</p>
 												) : (
-													<span className="text-surface-500 italic text-sm">Loading content...</span>
+													<span className="text-surface-500 italic text-sm">
+														Loading content...
+													</span>
 												)}
 											</div>
 										)}
@@ -707,14 +878,30 @@ export default function AppDetailPage() {
 										<div className="flex items-center gap-4">
 											{/* Reply count with icon */}
 											<button
-												onClick={() => !isMine && postReplies.length > 0 && visible && toggle(post.id)}
-												className={`flex items-center gap-1.5 text-xs transition-colors ${!isMine && postReplies.length > 0 && visible
-													? "text-surface-400 hover:text-info cursor-pointer"
-													: "text-surface-500 cursor-default"
-													}`}
+												onClick={() =>
+													!isMine &&
+													postReplies.length > 0 &&
+													visible &&
+													toggle(post.id)
+												}
+												className={`flex items-center gap-1.5 text-xs transition-colors ${
+													!isMine && postReplies.length > 0 && visible
+														? "text-surface-400 hover:text-info cursor-pointer"
+														: "text-surface-500 cursor-default"
+												}`}
 											>
-												<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+												<svg
+													className="w-4 h-4"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke="currentColor"
+													strokeWidth={1.5}
+												>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
+													/>
 												</svg>
 												{post.replyCount}
 											</button>
@@ -722,22 +909,43 @@ export default function AppDetailPage() {
 											{/* Reply fee */}
 											{!isMine && post.replyFee > 0n && (
 												<span className="flex items-center gap-1 text-xs text-surface-500">
-													<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-														<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+													<svg
+														className="w-3.5 h-3.5"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+														strokeWidth={1.5}
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+														/>
 													</svg>
 													{post.replyFee.toString()}
 												</span>
 											)}
 
 											{/* Visibility badge */}
-											{post.visibility !== "Public" && post.unlockFee > 0n && (
-												<span className="flex items-center gap-1 text-xs text-surface-500">
-													<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-														<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-													</svg>
-													{post.unlockFee.toString()}
-												</span>
-											)}
+											{post.visibility !== "Public" &&
+												post.unlockFee > 0n && (
+													<span className="flex items-center gap-1 text-xs text-surface-500">
+														<svg
+															className="w-3.5 h-3.5"
+															fill="none"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															strokeWidth={1.5}
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+															/>
+														</svg>
+														{post.unlockFee.toString()}
+													</span>
+												)}
 										</div>
 
 										<div className="flex items-center gap-1">
@@ -750,7 +958,11 @@ export default function AppDetailPage() {
 												!post.redactedBy && (
 													<button
 														onClick={() => takedownPost(post.id)}
-														disabled={busy || moderation.tracker.state.stage !== "idle"}
+														disabled={
+															busy ||
+															moderation.tracker.state.stage !==
+																"idle"
+														}
 														title="Redact as app moderator"
 														className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-danger hover:bg-danger/10 transition-colors"
 													>
@@ -770,22 +982,46 @@ export default function AppDetailPage() {
 														Takedown
 													</button>
 												)}
-										{!isMine && account && visible && canComment && !post.redactedBy && (
-											<button
-												onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-												className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
-											>
-												<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-												</svg>
-												Reply{postingAs ? " (as manager)" : ""}
-											</button>
-										)}
-										{!isMine && account && visible && !canComment && postingAs && (
-											<span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 italic">
-												Reply not authorized for this owner
-											</span>
-										)}
+											{!isMine &&
+												account &&
+												visible &&
+												canComment &&
+												!post.redactedBy && (
+													<button
+														onClick={() =>
+															setReplyingTo(
+																replyingTo === post.id
+																	? null
+																	: post.id,
+															)
+														}
+														className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-500 hover:bg-brand-500/10 transition-colors"
+													>
+														<svg
+															className="w-4 h-4"
+															fill="none"
+															viewBox="0 0 24 24"
+															stroke="currentColor"
+															strokeWidth={1.5}
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
+															/>
+														</svg>
+														Reply{postingAs ? " (as manager)" : ""}
+													</button>
+												)}
+											{!isMine &&
+												account &&
+												visible &&
+												!canComment &&
+												postingAs && (
+													<span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 italic">
+														Reply not authorized for this owner
+													</span>
+												)}
 										</div>
 									</div>
 									<style>{`html.light .border-surface-800\\/50 { border-color: rgba(228,228,231,0.5); }`}</style>
@@ -795,13 +1031,18 @@ export default function AppDetailPage() {
 										<div className="ml-[52px] pl-4 border-l-2 border-brand-500/20 space-y-2">
 											<textarea
 												value={replyContent}
-												onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value); }}
+												onChange={(e) => {
+													if (e.target.value.length <= MAX_CHARS)
+														setReplyContent(e.target.value);
+												}}
 												placeholder="Write a reply..."
 												rows={2}
 												className="input resize-none w-full"
 											/>
 											<div className="flex items-center justify-between">
-												<span className="text-[10px] text-surface-500">{MAX_CHARS - replyContent.length} chars left</span>
+												<span className="text-[10px] text-surface-500">
+													{MAX_CHARS - replyContent.length} chars left
+												</span>
 												<button
 													onClick={() => setConfirmReplyTo(post.id)}
 													disabled={!replyContent.trim() || busy}
@@ -814,17 +1055,28 @@ export default function AppDetailPage() {
 									)}
 
 									{/* Replies */}
-									{isExpanded && visible && postReplies.map((r) => (
-										<div key={r.id} className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1">
-											<div className="flex items-center gap-2 text-xs">
-												<AuthorDisplay address={r.author} size="sm" />
-												<span className="text-surface-600 font-mono">#{r.createdAt}</span>
+									{isExpanded &&
+										visible &&
+										postReplies.map((r) => (
+											<div
+												key={r.id}
+												className="ml-[52px] pl-4 border-l-2 border-surface-800 py-2 space-y-1"
+											>
+												<div className="flex items-center gap-2 text-xs">
+													<AuthorDisplay address={r.author} size="sm" />
+													<span className="text-surface-600 font-mono">
+														#{r.createdAt}
+													</span>
+												</div>
+												<p className="text-sm whitespace-pre-wrap break-words">
+													{r.resolvedText ?? (
+														<span className="text-surface-500 italic">
+															Loading...
+														</span>
+													)}
+												</p>
 											</div>
-											<p className="text-sm whitespace-pre-wrap break-words">
-												{r.resolvedText ?? <span className="text-surface-500 italic">Loading...</span>}
-											</p>
-										</div>
-									))}
+										))}
 								</div>
 							);
 						})
@@ -848,7 +1100,8 @@ export default function AppDetailPage() {
 				}}
 			>
 				{(() => {
-					const parent = confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
+					const parent =
+						confirmReplyTo !== null ? posts.find((p) => p.id === confirmReplyTo) : null;
 					const postFee = "Post fee (to app/treasury)";
 					return (
 						<div className="space-y-3 text-sm">
@@ -859,13 +1112,18 @@ export default function AppDetailPage() {
 								</div>
 								{parent && parent.replyFee > 0n && (
 									<div className="flex items-center justify-between">
-										<span className="text-secondary">Reply fee (to post author)</span>
-										<span className="font-mono font-semibold">{parent.replyFee.toString()}</span>
+										<span className="text-secondary">
+											Reply fee (to post author)
+										</span>
+										<span className="font-mono font-semibold">
+											{parent.replyFee.toString()}
+										</span>
 									</div>
 								)}
 							</div>
 							<p className="text-xs text-secondary">
-								These fees will be deducted from your balance when the reply is submitted.
+								These fees will be deducted from your balance when the reply is
+								submitted.
 							</p>
 							<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 						</div>
@@ -914,8 +1172,18 @@ function ActingAsBanner({
 					</div>
 				)}
 				<span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-brand-500 border-2 border-surface-950 flex items-center justify-center">
-					<svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7 21a5 5 0 015-5h0a5 5 0 015 5" />
+					<svg
+						className="w-2 h-2 text-white"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={3}
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M15 7a3 3 0 11-6 0 3 3 0 016 0zM7 21a5 5 0 015-5h0a5 5 0 015 5"
+						/>
 					</svg>
 				</span>
 			</div>
@@ -980,11 +1248,7 @@ function ComposerAvatar({
 		);
 	}
 
-	return (
-		<div className="avatar bg-brand-500 text-xs shrink-0">
-			{fallbackName[0]}
-		</div>
-	);
+	return <div className="avatar bg-brand-500 text-xs shrink-0">{fallbackName[0]}</div>;
 }
 
 /**
@@ -1094,13 +1358,7 @@ function ActAsOption({
  * active sponsor. Pulls the sponsor's profile so the beneficiary sees who
  * is covering their fees, not just an address.
  */
-function SponsoredByPill({
-	sponsor,
-	potBalance,
-}: {
-	sponsor: string;
-	potBalance: bigint;
-}) {
+function SponsoredByPill({ sponsor, potBalance }: { sponsor: string; potBalance: bigint }) {
 	const { getProfile } = useProfileCache();
 	const profile = getProfile(sponsor);
 	const truncated = `${sponsor.slice(0, 6)}…${sponsor.slice(-4)}`;
@@ -1122,11 +1380,7 @@ function SponsoredByPill({
 				stroke="currentColor"
 				strokeWidth={2}
 			>
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					d="M13 10V3L4 14h7v7l9-11h-7z"
-				/>
+				<path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
 			</svg>
 			{profile?.avatar ? (
 				<img
@@ -1140,9 +1394,7 @@ function SponsoredByPill({
 					? `${profile?.name || truncated}'s pot is empty — you'll pay this fee.`
 					: `Sponsored by ${profile?.name || truncated}`}
 			</span>
-			<span className="font-mono shrink-0">
-				{(Number(potBalance) / 1e9).toFixed(2)} UNIT
-			</span>
+			<span className="font-mono shrink-0">{(Number(potBalance) / 1e9).toFixed(2)} UNIT</span>
 		</div>
 	);
 }
@@ -1196,15 +1448,24 @@ function EncryptedPostUnlock({
 		}
 	}, [state]);
 
-	const busy =
-		tracker.state.stage !== "idle" && tracker.state.stage !== "error";
+	const busy = tracker.state.stage !== "idle" && tracker.state.stage !== "error";
 
 	if (decoded) {
 		return (
 			<div className="space-y-2">
 				<div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-500">
-					<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+					<svg
+						className="w-3 h-3"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={2.4}
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+						/>
 					</svg>
 					Decrypted locally
 				</div>
@@ -1253,9 +1514,7 @@ function EncryptedPostUnlock({
 			) : (
 				<p className="text-[11px] text-surface-500">Connect a wallet to unlock.</p>
 			)}
-			{state.status === "error" && (
-				<p className="text-[11px] text-danger">{state.error}</p>
-			)}
+			{state.status === "error" && <p className="text-[11px] text-danger">{state.error}</p>}
 			<style>{`html.light .bg-surface-800 { background: #f4f4f5; } html.light .border-surface-700 { border-color: #e4e4e7; }`}</style>
 		</div>
 	);

@@ -48,7 +48,10 @@ export default function PostDetailPage() {
 			const api = getApi();
 
 			const data = await api.query.SocialFeeds.Posts.getValue(BigInt(numericId));
-			if (!data) { setPost(null); return; }
+			if (!data) {
+				setPost(null);
+				return;
+			}
 
 			const p: PostData = {
 				id: numericId,
@@ -80,7 +83,8 @@ export default function PostDetailPage() {
 			const canSee = p.visibility === "Public" || p.author === accountAddress || unlockedNow;
 			if (canSee) {
 				const result = await fetchPostContent(p.contentCid);
-				if (result) setPost((prev) => prev ? { ...prev, resolvedText: result.text } : prev);
+				if (result)
+					setPost((prev) => (prev ? { ...prev, resolvedText: result.text } : prev));
 			}
 
 			// Load replies
@@ -109,7 +113,12 @@ export default function PostDetailPage() {
 			// Resolve reply content
 			for (const r of replyPosts) {
 				fetchPostContent(r.contentCid).then((result) => {
-					if (result) setReplies((prev) => prev.map((rr) => rr.id === r.id ? { ...rr, resolvedText: result.text } : rr));
+					if (result)
+						setReplies((prev) =>
+							prev.map((rr) =>
+								rr.id === r.id ? { ...rr, resolvedText: result.text } : rr,
+							),
+						);
 				});
 			}
 		} catch {
@@ -120,9 +129,15 @@ export default function PostDetailPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [numericId, accountAddress, isUnlocked]);
 
-	useEffect(() => { loadPost(); }, [loadPost]);
+	useEffect(() => {
+		loadPost();
+	}, [loadPost]);
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	function canSeeContent(): boolean {
 		if (!post) return false;
@@ -137,9 +152,7 @@ export default function PostDetailPage() {
 		// secret for the viewer's next visit, submit with the public key.
 		// The content key is delivered asynchronously by the collator
 		// OCW; decryption happens once `Unlocks.wrapped_key` is populated.
-		const { generateX25519Keypair, stashBuyerSk } = await import(
-			"../../utils/postCrypto"
-		);
+		const { generateX25519Keypair, stashBuyerSk } = await import("../../utils/postCrypto");
 		const { FixedSizeBinary } = await import("polkadot-api");
 		const kp = await generateX25519Keypair();
 		stashBuyerSk(post.id, kp.secretKey);
@@ -165,8 +178,13 @@ export default function PostDetailPage() {
 				app_id: post.appId != null ? post.appId : undefined,
 			});
 			const ok = await tracker.submit(tx, account.signer, "Reply");
-			if (ok) { setReplyContent(""); loadPost(); }
-		} catch { setUploading(false); }
+			if (ok) {
+				setReplyContent("");
+				loadPost();
+			}
+		} catch {
+			setUploading(false);
+		}
 	}
 
 	if (loading) {
@@ -181,7 +199,9 @@ export default function PostDetailPage() {
 		return (
 			<div className="panel text-center py-12 space-y-3">
 				<p className="text-danger font-semibold">Post #{postId} not found</p>
-				<Link to="/" className="btn-outline btn-sm inline-flex">Back</Link>
+				<Link to="/" className="btn-outline btn-sm inline-flex">
+					Back
+				</Link>
 			</div>
 		);
 	}
@@ -191,8 +211,17 @@ export default function PostDetailPage() {
 	return (
 		<div className="space-y-4 animate-fade-in">
 			{/* Back */}
-			<Link to={post.appId != null ? `/app/${post.appId}` : "/social/feed"} className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors">
-				<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+			<Link
+				to={post.appId != null ? `/app/${post.appId}` : "/social/feed"}
+				className="inline-flex items-center gap-1 text-xs text-secondary hover:text-surface-100 transition-colors"
+			>
+				<svg
+					className="w-3.5 h-3.5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					strokeWidth={2}
+				>
 					<path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
 				</svg>
 				Back
@@ -205,12 +234,16 @@ export default function PostDetailPage() {
 					<div className="flex-1 min-w-0">
 						<p className="text-[11px] text-surface-500 font-mono">
 							Block #{post.createdAt}
-							{post.appId !== null && <span className="ml-2 text-info">App #{post.appId}</span>}
+							{post.appId !== null && (
+								<span className="ml-2 text-info">App #{post.appId}</span>
+							)}
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
 						{post.visibility !== "Public" && (
-							<span className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}>
+							<span
+								className={`badge ${post.visibility === "Obfuscated" ? "badge-info" : "badge-danger"}`}
+							>
 								{post.visibility}
 							</span>
 						)}
@@ -221,14 +254,28 @@ export default function PostDetailPage() {
 				{/* Content */}
 				{visible ? (
 					<p className="text-base whitespace-pre-wrap break-words leading-relaxed">
-						{post.resolvedText ?? <span className="text-surface-500 italic">Loading content...</span>}
+						{post.resolvedText ?? (
+							<span className="text-surface-500 italic">Loading content...</span>
+						)}
 					</p>
 				) : (
 					<div className="rounded-xl bg-surface-800 border border-surface-700 p-6 text-center space-y-3">
-						<svg className="w-8 h-8 text-surface-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+						<svg
+							className="w-8 h-8 text-surface-500 mx-auto"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={1.5}
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+							/>
 						</svg>
-						<p className="text-sm text-secondary">This post is {post.visibility.toLowerCase()}.</p>
+						<p className="text-sm text-secondary">
+							This post is {post.visibility.toLowerCase()}.
+						</p>
 						{account && (
 							<button onClick={unlockPost} disabled={busy} className="btn-brand">
 								Unlock for {post.unlockFee.toString()} units
@@ -240,9 +287,13 @@ export default function PostDetailPage() {
 
 				{/* Meta */}
 				<div className="flex items-center gap-4 text-xs text-surface-500 pt-2 border-t border-surface-800/50">
-					<span>{replies.length} {replies.length === 1 ? "reply" : "replies"}</span>
+					<span>
+						{replies.length} {replies.length === 1 ? "reply" : "replies"}
+					</span>
 					{post.replyFee > 0n && <span>Reply fee: {post.replyFee.toString()}</span>}
-					{post.unlockFee > 0n && post.visibility !== "Public" && <span>Unlock fee: {post.unlockFee.toString()}</span>}
+					{post.unlockFee > 0n && post.visibility !== "Public" && (
+						<span>Unlock fee: {post.unlockFee.toString()}</span>
+					)}
 				</div>
 			</div>
 
@@ -251,14 +302,22 @@ export default function PostDetailPage() {
 				<div className="panel space-y-3">
 					<textarea
 						value={replyContent}
-						onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value); }}
+						onChange={(e) => {
+							if (e.target.value.length <= MAX_CHARS) setReplyContent(e.target.value);
+						}}
 						placeholder="Write a reply..."
 						rows={3}
 						className="input resize-none w-full"
 					/>
 					<div className="flex items-center justify-between">
-						<span className="text-xs text-surface-500">{MAX_CHARS - replyContent.length} chars left</span>
-						<button onClick={() => setShowConfirm(true)} disabled={!replyContent.trim() || busy} className="btn-brand btn-sm">
+						<span className="text-xs text-surface-500">
+							{MAX_CHARS - replyContent.length} chars left
+						</span>
+						<button
+							onClick={() => setShowConfirm(true)}
+							disabled={!replyContent.trim() || busy}
+							className="btn-brand btn-sm"
+						>
 							Reply
 						</button>
 					</div>
@@ -273,12 +332,18 @@ export default function PostDetailPage() {
 							<div className="flex items-center gap-3">
 								<AuthorDisplay address={r.author} size="sm" />
 								<div className="flex-1 min-w-0">
-									<p className="text-[11px] text-surface-500 font-mono">Block #{r.createdAt}</p>
+									<p className="text-[11px] text-surface-500 font-mono">
+										Block #{r.createdAt}
+									</p>
 								</div>
-								<span className="text-[11px] font-mono text-surface-600">#{r.id}</span>
+								<span className="text-[11px] font-mono text-surface-600">
+									#{r.id}
+								</span>
 							</div>
 							<p className="text-sm whitespace-pre-wrap break-words pl-[52px]">
-								{r.resolvedText ?? <span className="text-surface-500 italic">Loading...</span>}
+								{r.resolvedText ?? (
+									<span className="text-surface-500 italic">Loading...</span>
+								)}
 							</p>
 						</div>
 					))}
@@ -305,7 +370,9 @@ export default function PostDetailPage() {
 						{post && post.replyFee > 0n && (
 							<div className="flex items-center justify-between">
 								<span className="text-secondary">Reply fee (to author)</span>
-								<span className="font-mono font-semibold">{post.replyFee.toString()}</span>
+								<span className="font-mono font-semibold">
+									{post.replyFee.toString()}
+								</span>
 							</div>
 						)}
 						{post && post.replyFee === 0n && (
@@ -315,7 +382,9 @@ export default function PostDetailPage() {
 							</div>
 						)}
 					</div>
-					<p className="text-xs text-secondary">Fees are deducted when the reply is submitted.</p>
+					<p className="text-xs text-secondary">
+						Fees are deducted when the reply is submitted.
+					</p>
 					<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
 				</div>
 			</ConfirmModal>

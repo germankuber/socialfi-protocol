@@ -93,9 +93,7 @@ pub mod pallet {
 		}
 
 		fn follow_fee(account: &T::AccountId) -> BalanceOf<T> {
-			Profiles::<T>::get(account)
-				.map(|p| p.follow_fee)
-				.unwrap_or_else(Zero::zero)
+			Profiles::<T>::get(account).map(|p| p.follow_fee).unwrap_or_else(Zero::zero)
 		}
 	}
 
@@ -163,7 +161,20 @@ pub mod pallet {
 			ensure!(Profiles::<T>::contains_key(&who), Error::<T>::ProfileNotFound);
 
 			Profiles::<T>::remove(&who);
-			T::Currency::unreserve(&who, T::ProfileBond::get());
+			// `unreserve` returns the portion it could not release. Our
+			// bookkeeping invariant (`ProfileBond` was reserved in
+			// `create_profile`) makes this always zero — a non-zero value
+			// signals state corruption worth flagging. Matches the pattern
+			// used by `social-app-registry::deregister_app` and
+			// `social-managers::remove_manager`.
+			let not_unreserved = T::Currency::unreserve(&who, T::ProfileBond::get());
+			if !not_unreserved.is_zero() {
+				log::warn!(
+					target: "social-profiles",
+					"⚠️ delete_profile could not unreserve full bond for {:?}: {:?} remaining",
+					who, not_unreserved,
+				);
+			}
 			ProfileCount::<T>::mutate(|count| *count = count.saturating_sub(1));
 
 			log::info!(target: "social-profiles", "🗑️ delete_profile account={:?}", who);
@@ -176,10 +187,7 @@ pub mod pallet {
 		/// Set to 0 for free follows.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::set_follow_fee())]
-		pub fn set_follow_fee(
-			origin: OriginFor<T>,
-			fee: BalanceOf<T>,
-		) -> DispatchResult {
+		pub fn set_follow_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			Profiles::<T>::try_mutate(&who, |maybe_profile| -> DispatchResult {

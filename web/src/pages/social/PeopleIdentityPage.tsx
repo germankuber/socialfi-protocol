@@ -24,9 +24,9 @@ export default function PeopleIdentityPage() {
 
 				<h1 className="heading-1">Register on Polkadot People</h1>
 				<p className="text-sm text-secondary">
-					Identity lives on the Polkadot People parachain and is reused by
-					every app across the ecosystem. A registrar judgement marks your
-					profile as verified everywhere.
+					Identity lives on the Polkadot People parachain and is reused by every app
+					across the ecosystem. A registrar judgement marks your profile as verified
+					everywhere.
 				</p>
 
 				<IdentityPanel />

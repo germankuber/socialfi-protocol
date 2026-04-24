@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Binary } from "polkadot-api";
+import { Pencil, Trash2, UserPlus, Fingerprint, Hash, Blocks, Coins } from "lucide-react";
 import { useSocialApi } from "../../hooks/social/useSocialApi";
 import { useSelectedAccount } from "../../hooks/social/useSelectedAccount";
 import { useTxTracker } from "../../hooks/social/useTxTracker";
@@ -9,6 +10,7 @@ import RequireWallet from "../../components/social/RequireWallet";
 import TxToast from "../../components/social/TxToast";
 import ProfileForm from "../../components/social/ProfileForm";
 import ProfileCard from "../../components/social/ProfileCard";
+import { Badge, Button, Card, EmptyState, SectionHeading } from "../../components/ui";
 
 interface ProfileData {
 	cid: string;
@@ -28,11 +30,17 @@ export default function ProfilePage() {
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
+	const [followerCount, setFollowerCount] = useState<number | null>(null);
+	const [followingCount, setFollowingCount] = useState<number | null>(null);
 
 	const accountAddress = account?.address ?? null;
 
 	const loadProfile = useCallback(async () => {
-		if (!accountAddress) { setProfile(null); setResolvedMetadata(null); return; }
+		if (!accountAddress) {
+			setProfile(null);
+			setResolvedMetadata(null);
+			return;
+		}
 		try {
 			setLoadingProfile(true);
 			const api = getApi();
@@ -41,11 +49,23 @@ export default function ProfilePage() {
 				const cid = data.metadata.asText();
 				setProfile({ cid, followFee: data.follow_fee, createdAt: Number(data.created_at) });
 
-				// Resolve metadata from IPFS
 				setLoadingMetadata(true);
 				const meta = await fetchProfileMetadata(cid);
 				setResolvedMetadata(meta);
 				setLoadingMetadata(false);
+
+				// Follower / following counts
+				try {
+					const [followers, following] = await Promise.all([
+						api.query.SocialGraph.FollowerCount.getValue(accountAddress),
+						api.query.SocialGraph.FollowingCount.getValue(accountAddress),
+					]);
+					setFollowerCount(Number(followers ?? 0));
+					setFollowingCount(Number(following ?? 0));
+				} catch {
+					setFollowerCount(null);
+					setFollowingCount(null);
+				}
 			} else {
 				setProfile(null);
 				setResolvedMetadata(null);
@@ -60,23 +80,29 @@ export default function ProfilePage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountAddress]);
 
-	useEffect(() => { loadProfile(); }, [loadProfile]);
+	useEffect(() => {
+		loadProfile();
+	}, [loadProfile]);
 
-	async function handleCreate(metadata: ProfileMetadata, _followFee: string) {
+	async function handleCreate(metadata: ProfileMetadata, followFee: string) {
 		if (!account) return;
 		try {
 			setError(null);
 			setUploading(true);
 
-			// 1. Upload metadata JSON to IPFS → get CID
 			const cid = await uploadProfileMetadata(metadata);
 			setUploading(false);
 
-			// 2. Store CID on-chain
 			const api = getApi();
-			const tx = api.tx.SocialProfiles.create_profile({ metadata: Binary.fromText(cid), follow_fee: 0n });
+			const tx = api.tx.SocialProfiles.create_profile({
+				metadata: Binary.fromText(cid),
+				follow_fee: BigInt(followFee || "0"),
+			});
 			const ok = await tracker.submit(tx, account.signer, "Create Profile");
-			if (ok) { setShowForm(false); loadProfile(); }
+			if (ok) {
+				setShowForm(false);
+				loadProfile();
+			}
 		} catch (e) {
 			setUploading(false);
 			setError(e instanceof Error ? e.message : "Upload failed");
@@ -92,20 +118,17 @@ export default function ProfilePage() {
 			setUploading(false);
 
 			const api = getApi();
-			const tx = api.tx.SocialProfiles.update_metadata({ new_metadata: Binary.fromText(cid) });
+			const tx = api.tx.SocialProfiles.update_metadata({
+				new_metadata: Binary.fromText(cid),
+			});
 			const ok = await tracker.submit(tx, account.signer, "Update Profile");
 			if (!ok) return;
 
-			// Update follow fee if changed
 			const fee = BigInt(followFee || "0");
 			if (profile && fee !== profile.followFee) {
 				const feeTx = api.tx.SocialProfiles.set_follow_fee({ fee });
 				await tracker.submit(feeTx, account.signer, "Set Follow Fee");
 			}
-
-			// Identity (display name + verification) is maintained on the
-			// Polkadot People parachain via the IdentityPanel on the profile
-			// editor — no longer auto-synced from here.
 
 			setShowForm(false);
 			loadProfile();
@@ -123,71 +146,233 @@ export default function ProfilePage() {
 		if (ok) loadProfile();
 	}
 
-	const busy = uploading || tracker.state.stage === "signing" || tracker.state.stage === "broadcasting" || tracker.state.stage === "in_block";
+	const busy =
+		uploading ||
+		tracker.state.stage === "signing" ||
+		tracker.state.stage === "broadcasting" ||
+		tracker.state.stage === "in_block";
 
 	return (
 		<RequireWallet>
-		<div className="space-y-4">
-
-			{account && (
-				<>
-					<div className="panel space-y-4">
-						<div className="flex items-center justify-between">
-							<h2 className="heading-2">Profile</h2>
-							{profile && (
-								<div className="flex gap-2">
-									<Link to="/profile/edit" className="btn-outline btn-sm">
+			<div className="mx-auto max-w-4xl space-y-8">
+				<SectionHeading
+					eyebrow="Identity"
+					title="Your profile"
+					description="Profile metadata lives on IPFS. Only the CID and your follow fee are on-chain."
+					action={
+						profile ? (
+							<div className="flex items-center gap-2">
+								<Link to="/profile/edit">
+									<Button
+										variant="secondary"
+										size="sm"
+										leadingIcon={<Pencil size={13} />}
+									>
 										Edit
-									</Link>
-									<button onClick={handleDelete} disabled={busy} className="btn-danger btn-sm">Delete</button>
-								</div>
-							)}
-						</div>
-
-						{loadingProfile ? (
-							<div className="flex items-center gap-2 text-secondary text-sm">
-								<div className="w-4 h-4 border-2 border-surface-600 border-t-brand-500 rounded-full animate-spin" />
-								Loading...
+									</Button>
+								</Link>
+								<Button
+									variant="danger"
+									size="sm"
+									onClick={handleDelete}
+									disabled={busy}
+									leadingIcon={<Trash2 size={13} />}
+								>
+									Delete
+								</Button>
 							</div>
-						) : profile ? (
-							<ProfileCard metadata={resolvedMetadata} cid={profile.cid} createdAt={profile.createdAt} loading={loadingMetadata} />
-						) : (
-							<div className="text-center py-6 space-y-3">
-								<div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto">
-									<svg className="w-8 h-8 text-surface-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-										<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-									</svg>
-								</div>
-								<p className="text-secondary text-sm">No profile yet</p>
-								<button onClick={() => setShowForm(true)} className="btn-brand btn-sm">Create Profile</button>
+						) : undefined
+					}
+				/>
+
+				{account && (
+					<>
+						{/* Hero card */}
+						<Card tone="overlay" padding="lg" className="relative overflow-hidden">
+							{/* Ambient glow */}
+							<div
+								aria-hidden
+								className="pointer-events-none absolute -top-32 -right-32 h-80 w-80 rounded-full bg-brand/10 blur-3xl"
+							/>
+
+							{loadingProfile ? (
+								<ProfileCard metadata={null} cid="" createdAt={0} loading />
+							) : profile ? (
+								<ProfileCard
+									metadata={resolvedMetadata}
+									cid={profile.cid}
+									createdAt={profile.createdAt}
+									loading={loadingMetadata}
+									address={accountAddress ?? undefined}
+								/>
+							) : (
+								<EmptyState
+									icon={<Fingerprint size={20} />}
+									title="No profile yet"
+									description="Mint your identity to start posting, following and composing with apps."
+									action={
+										<Button
+											variant="primary"
+											leadingIcon={<UserPlus size={14} />}
+											onClick={() => setShowForm(true)}
+										>
+											Create profile
+										</Button>
+									}
+								/>
+							)}
+						</Card>
+
+						{/* Stats row */}
+						{profile && (
+							<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+								<MetricCard
+									label="Followers"
+									value={followerCount !== null ? followerCount.toString() : "—"}
+								/>
+								<MetricCard
+									label="Following"
+									value={
+										followingCount !== null ? followingCount.toString() : "—"
+									}
+								/>
+								<MetricCard
+									label="Follow fee"
+									value={profile.followFee.toString()}
+									icon={<Coins size={12} strokeWidth={1.75} />}
+								/>
+								<MetricCard
+									label="Created"
+									value={`#${profile.createdAt}`}
+									mono
+									icon={<Blocks size={12} strokeWidth={1.75} />}
+								/>
 							</div>
 						)}
-						<style>{`html.light .bg-surface-800 { background: #f4f4f5; }`}</style>
-					</div>
 
-					{showForm && (
-						<div className="panel space-y-4">
-							<h2 className="heading-2">{profile ? "Update Profile" : "Create Profile"}</h2>
-							<p className="text-xs text-secondary">
-								Profile data and images are uploaded to IPFS. Only the CID (46 bytes) is stored on-chain.
-							</p>
-							{error && (
-								<div className="rounded-xl px-4 py-3 text-sm font-medium bg-danger/10 text-danger border border-danger/20">{error}</div>
-							)}
-							<ProfileForm
-								initial={resolvedMetadata ?? undefined}
-								initialFollowFee={profile ? profile.followFee.toString() : "0"}
-								onSubmit={profile ? handleUpdate : handleCreate}
-								submitLabel={profile ? "Update Profile" : "Create Profile"}
-								disabled={busy}
-							/>
-						</div>
-					)}
-				</>
-			)}
+						{/* On-chain record */}
+						{profile && (
+							<Card tone="default" padding="lg" className="space-y-4">
+								<div className="flex items-center gap-2">
+									<Hash
+										size={14}
+										className="text-ink-subtle"
+										strokeWidth={1.75}
+									/>
+									<h4 className="font-display text-lg font-medium text-ink">
+										On-chain record
+									</h4>
+									<Badge tone="success" size="sm" dot className="ml-auto">
+										Stored
+									</Badge>
+								</div>
+								<dl className="grid grid-cols-1 gap-x-6 gap-y-3 border-t border-hairline/[0.06] pt-4 md:grid-cols-3">
+									<Entry
+										label="Address"
+										value={accountAddress ?? "—"}
+										mono
+										truncate
+									/>
+									<Entry label="Metadata CID" value={profile.cid} mono truncate />
+									<Entry
+										label="Follow fee"
+										value={`${profile.followFee.toString()}`}
+										mono
+									/>
+								</dl>
+							</Card>
+						)}
 
-			<TxToast state={tracker.state} onDismiss={tracker.reset} />
-		</div>
+						{showForm && (
+							<Card tone="default" padding="lg" className="space-y-4">
+								<div>
+									<h3 className="font-display text-xl font-medium text-ink">
+										{profile ? "Update profile" : "Create profile"}
+									</h3>
+									<p className="mt-1 text-xs text-ink-subtle">
+										Profile data and images are uploaded to IPFS. Only the CID
+										(46 bytes) is stored on-chain.
+									</p>
+								</div>
+
+								{error && (
+									<div className="rounded-lg border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
+										{error}
+									</div>
+								)}
+
+								<ProfileForm
+									initial={resolvedMetadata ?? undefined}
+									initialFollowFee={profile ? profile.followFee.toString() : "0"}
+									onSubmit={profile ? handleUpdate : handleCreate}
+									submitLabel={profile ? "Update Profile" : "Create Profile"}
+									disabled={busy}
+								/>
+							</Card>
+						)}
+					</>
+				)}
+
+				<TxToast state={tracker.state} onDismiss={tracker.reset} />
+			</div>
 		</RequireWallet>
+	);
+}
+
+function MetricCard({
+	label,
+	value,
+	icon,
+	mono,
+}: {
+	label: string;
+	value: string;
+	icon?: React.ReactNode;
+	mono?: boolean;
+}) {
+	return (
+		<div className="rounded-xl border border-hairline/[0.07] bg-canvas-raised p-4">
+			<div className="flex items-center justify-between">
+				<span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-subtle">
+					{label}
+				</span>
+				{icon ? <span className="text-ink-subtle">{icon}</span> : null}
+			</div>
+			<p
+				className={`mt-2 text-2xl font-medium tabular text-ink tracking-tight ${
+					mono ? "font-mono" : "font-display"
+				}`}
+			>
+				{value}
+			</p>
+		</div>
+	);
+}
+
+function Entry({
+	label,
+	value,
+	mono,
+	truncate,
+}: {
+	label: string;
+	value: string;
+	mono?: boolean;
+	truncate?: boolean;
+}) {
+	return (
+		<div className="min-w-0">
+			<dt className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-subtle">
+				{label}
+			</dt>
+			<dd
+				className={`mt-1 text-sm text-ink ${mono ? "font-mono tabular" : ""} ${
+					truncate ? "truncate" : ""
+				}`}
+				title={value}
+			>
+				{value}
+			</dd>
+		</div>
 	);
 }

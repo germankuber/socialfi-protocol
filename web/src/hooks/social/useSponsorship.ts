@@ -36,7 +36,13 @@ export function useSponsorship(account: string | null) {
 
 	const refresh = useCallback(async () => {
 		if (!account) {
-			setState((s) => ({ ...s, myPot: 0n, myBeneficiaries: [], mySponsor: null, mySponsorPot: 0n }));
+			setState((s) => ({
+				...s,
+				myPot: 0n,
+				myBeneficiaries: [],
+				mySponsor: null,
+				mySponsorPot: 0n,
+			}));
 			return;
 		}
 		try {

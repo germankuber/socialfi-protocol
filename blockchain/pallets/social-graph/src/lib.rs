@@ -99,11 +99,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A user followed another user.
-		Followed {
-			follower: T::AccountId,
-			followed: T::AccountId,
-			fee_paid: BalanceOf<T>,
-		},
+		Followed { follower: T::AccountId, followed: T::AccountId, fee_paid: BalanceOf<T> },
 		/// A user unfollowed another user.
 		Unfollowed { follower: T::AccountId, followed: T::AccountId },
 	}

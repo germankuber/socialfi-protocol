@@ -7,10 +7,7 @@ import { useChainStore } from "../../store/chainStore";
 export function useSocialApi() {
 	const wsUrl = useChainStore((s) => s.wsUrl);
 
-	const getApi = useCallback(
-		() => getClient(wsUrl).getTypedApi(stack_template),
-		[wsUrl],
-	);
+	const getApi = useCallback(() => getClient(wsUrl).getTypedApi(stack_template), [wsUrl]);
 
 	return { getApi, wsUrl };
 }

@@ -93,9 +93,7 @@ function getPeopleClient() {
  * connect to People. The unsafe API path is fine here: we only read
  * a single well-known storage item.
  */
-export async function fetchPeopleIdentity(
-	address: string,
-): Promise<IdentityData | null> {
+export async function fetchPeopleIdentity(address: string): Promise<IdentityData | null> {
 	try {
 		const client = getPeopleClient();
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,7 +146,30 @@ export function useIdentity(address: string | null) {
 	const [identity, setIdentity] = useState<IdentityData | null>(null);
 	const [loading, setLoading] = useState(false);
 
-	const load = useCallback(async () => {
+	// Fetch runs inside the effect with a `cancelled` flag so a stale
+	// resolution (after `address` changed) can't overwrite a fresher one.
+	// The explicit reload handle mirrors the fetch so callers can refresh
+	// without needing to bounce `address`.
+	useEffect(() => {
+		let cancelled = false;
+		async function run() {
+			if (!address) {
+				setIdentity(null);
+				return;
+			}
+			setLoading(true);
+			const data = await fetchPeopleIdentity(address);
+			if (cancelled) return;
+			setIdentity(data);
+			setLoading(false);
+		}
+		run();
+		return () => {
+			cancelled = true;
+		};
+	}, [address]);
+
+	const reload = useCallback(async () => {
 		if (!address) {
 			setIdentity(null);
 			return;
@@ -159,9 +180,5 @@ export function useIdentity(address: string | null) {
 		setLoading(false);
 	}, [address]);
 
-	useEffect(() => {
-		load();
-	}, [load]);
-
-	return { identity, loading, reload: load };
+	return { identity, loading, reload };
 }
