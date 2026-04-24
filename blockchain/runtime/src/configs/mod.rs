@@ -367,6 +367,10 @@ parameter_types! {
 	pub const MaxContentLen: u32 = 128;
 	pub const MaxPostsPerAuthor: u32 = 10_000;
 	pub const MaxRepliesPerPost: u32 = 10_000;
+	/// Treasury sink for post fees on global (app-less) posts. Production
+	/// runtimes should point this at a governance-controlled account via a
+	/// runtime upgrade; `[0xff; 32]` is an unclaimable stub so fees are
+	/// effectively burned in dev.
 	pub FeedsTreasuryAccount: AccountId = sp_runtime::AccountId32::new([0xffu8; 32]);
 }
 
